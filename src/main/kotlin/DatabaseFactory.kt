@@ -8,10 +8,10 @@ import org.jetbrains.exposed.sql.transactions.transaction
 object DatabaseFactory {
     fun init() {
         Database.connect(
-            url = "jdbc:postgresql://localhost:5432/battleon",
+            url = "jdbc:postgresql://localhost:5432/battleon_db",
             driver = "org.postgresql.Driver",
-            user = "postgres",
-            password = "Suna1988!"
+            user = "battleon",
+            password = "battleon123$"
         )
         transaction {
             SchemaUtils.create(UserAuth, UserProfile, UserCardCollection)
