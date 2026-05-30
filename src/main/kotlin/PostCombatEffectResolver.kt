@@ -31,11 +31,16 @@ object PostCombatEffectResolver {
         val playerLostCombat = playerPower < opponentPower
         val opponentLostCombat = opponentPower < playerPower
 
+        val playerWonCombat = playerPower > opponentPower
+        val opponentWonCombat = opponentPower > playerPower
+
+        val drawCombat = opponentPower == playerPower
+
         //=============================================
         //======== ------ COTER Joueur ---- ===========
         //=============================================
         if (!game.playerEffectBlockedBySentinelle) {
-            if (!playerLostCombat && playerCard.id == CardId.NECROMANCIEN) {
+            if (playerWonCombat && playerCard.id == CardId.NECROMANCIEN) {
                 updatedGame = updatedGame.copy(
                     opponentDiscard = updatedGame.opponentDiscard + CardEffectManager.createRandomSkeletonCard()
                 )
@@ -173,7 +178,7 @@ object PostCombatEffectResolver {
         //=============================================
         if (!game.opponentEffectBlockedBySentinelle) {
 
-            if (!opponentLostCombat && opponentCard.id == CardId.NECROMANCIEN) {
+            if (opponentWonCombat && opponentCard.id == CardId.NECROMANCIEN) {
                 updatedGame = updatedGame.copy(
                     playerDiscard = updatedGame.playerDiscard + CardEffectManager.createRandomSkeletonCard()
                 )

@@ -10,7 +10,7 @@ import io.ktor.server.auth.jwt.*
 import java.util.UUID
 
 // !!!!!!!!!!!!!!!!!!!! A METTRE A JOUR A CHAQUE NOUVELLE VERSION !!!!!!!!!!!!!!!!!!!!!!!!!!!!
-private const val MIN_SUPPORTED_APP_VERSION_CODE = 10
+private const val MIN_SUPPORTED_APP_VERSION_CODE = 11
 
 fun Application.configureRouting() {
     routing {

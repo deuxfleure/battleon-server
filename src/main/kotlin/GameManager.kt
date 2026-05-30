@@ -1837,15 +1837,19 @@ object GameManager {
                     var newPlayerHp = game.playerHp
                     var newOpponentHp = game.opponentHp
 
-                    val playerHasBrute = CardEffectManager.hasBrute(
-                        card = playerCard,
-                        nextCardHasBrute = game.playerCurrentCardHasBruteBonus
-                    )
+                    val playerHasBrute =
+                        !game.playerEffectBlockedBySentinelle &&
+                                CardEffectManager.hasBrute(
+                                    card = playerCard,
+                                    nextCardHasBrute = game.playerCurrentCardHasBruteBonus
+                                )
 
-                    val opponentHasBrute = CardEffectManager.hasBrute(
-                        card = opponentCard,
-                        nextCardHasBrute = game.opponentCurrentCardHasBruteBonus
-                    )
+                    val opponentHasBrute =
+                        !game.opponentEffectBlockedBySentinelle &&
+                                CardEffectManager.hasBrute(
+                                    card = opponentCard,
+                                    nextCardHasBrute = game.opponentCurrentCardHasBruteBonus
+                                )
 
                     val playerEffectivePower = CardEffectManager.getEffectivePower(
                         game = game,
