@@ -7,5 +7,9 @@ data class PlayerCollectionCard(
     val cardId: String,
     val isOwned: Boolean,
     val selectedSkinId: String? = null,
-    val canBeTried: Boolean
+    val canBeTried: Boolean,
+    val ownedCopies: Int = 0,
+    val maxCopies: Int = 1,
+    val cost: Int = 0,
+    val power: Int = 0
 )

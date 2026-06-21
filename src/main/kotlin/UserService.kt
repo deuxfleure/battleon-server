@@ -56,6 +56,7 @@ object UserService {
                     it[userAuthId] = userId
                     it[UserCardCollection.cardId] = cardId.name
                     it[isOwned] = true
+                    it[ownedCopies] = 3
                     it[selectedSkinId] = null
                 }
             }
@@ -177,11 +178,21 @@ object UserService {
                         false
                     }
 
+                    val card = cardEnum?.let {
+                        CardCatalog.getCard(it)
+                    }
+
+                    val ownedCopies = row[UserCardCollection.ownedCopies]
+
                     PlayerCollectionCard(
                         cardId = cardIdString,
-                        isOwned = row[UserCardCollection.isOwned],
+                        isOwned = ownedCopies > 0,
                         selectedSkinId = row[UserCardCollection.selectedSkinId],
-                        canBeTried = canBeTried
+                        canBeTried = canBeTried,
+                        ownedCopies = ownedCopies,
+                        maxCopies = if (canBeTried) 3 else 1,
+                        cost = card?.cost ?: 0,
+                        power = card?.power ?: 0
                     )
                 }
         }
