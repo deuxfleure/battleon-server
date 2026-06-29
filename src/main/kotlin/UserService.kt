@@ -158,6 +158,164 @@ object UserService {
         }
     }
 
+    fun redeemPromoCode(
+        userId: Int,
+        rawCode: String
+    ): RedeemPromoCodeResponse {
+        val normalizedCode = rawCode
+            .trim()
+            .uppercase()
+            .replace(" ", "")
+
+        if (normalizedCode.isBlank()) {
+            return RedeemPromoCodeResponse(
+                success = false,
+                message = "Code vide",
+                error = "EMPTY_CODE"
+            )
+        }
+
+        return transaction {
+            val now = System.currentTimeMillis()
+
+            val profile = UserProfile
+                .selectAll()
+                .where { UserProfile.userAuthId eq userId }
+                .singleOrNull()
+                ?: return@transaction RedeemPromoCodeResponse(
+                    success = false,
+                    message = "Profil introuvable",
+                    error = "PROFILE_NOT_FOUND"
+                )
+
+            val codeRow = PromoCodes
+                .selectAll()
+                .where { PromoCodes.code eq normalizedCode }
+                .singleOrNull()
+                ?: return@transaction RedeemPromoCodeResponse(
+                    success = false,
+                    message = "Code invalide",
+                    error = "INVALID_CODE"
+                )
+
+            if (codeRow[PromoCodes.isUsed]) {
+                return@transaction RedeemPromoCodeResponse(
+                    success = false,
+                    message = "Ce code a déjà été utilisé",
+                    error = "CODE_ALREADY_USED"
+                )
+            }
+
+            val expiresAtMillis = codeRow[PromoCodes.expiresAtMillis]
+            if (expiresAtMillis != null && expiresAtMillis < now) {
+                return@transaction RedeemPromoCodeResponse(
+                    success = false,
+                    message = "Ce code a expiré",
+                    error = "CODE_EXPIRED"
+                )
+            }
+
+            val rewardType = codeRow[PromoCodes.rewardType].uppercase()
+            val rewardValue = codeRow[PromoCodes.rewardValue]
+            val rewardAmount = codeRow[PromoCodes.rewardAmount]
+
+            val rewardText = when (rewardType) {
+                "GEMS" -> {
+                    val amount = rewardAmount ?: return@transaction RedeemPromoCodeResponse(
+                        success = false,
+                        message = "Code mal configuré",
+                        error = "INVALID_REWARD_CONFIGURATION"
+                    )
+
+                    UserProfile.update({ UserProfile.userAuthId eq userId }) {
+                        it[gems] = profile[UserProfile.gems] + amount
+                    }
+
+                    "$amount gemmes"
+                }
+
+                "DUST" -> {
+                    val amount = rewardAmount ?: return@transaction RedeemPromoCodeResponse(
+                        success = false,
+                        message = "Code mal configuré",
+                        error = "INVALID_REWARD_CONFIGURATION"
+                    )
+
+                    UserProfile.update({ UserProfile.userAuthId eq userId }) {
+                        it[dust] = profile[UserProfile.dust] + amount
+                    }
+
+                    "$amount poussières"
+                }
+
+                "AVATAR" -> {
+                    val cosmeticId = rewardValue ?: return@transaction RedeemPromoCodeResponse(
+                        success = false,
+                        message = "Code mal configuré",
+                        error = "INVALID_REWARD_CONFIGURATION"
+                    )
+
+                    UserProfileCosmetics.insert {
+                        it[UserProfileCosmetics.userAuthId] = userId
+                        it[UserProfileCosmetics.cosmeticId] = cosmeticId
+                        it[UserProfileCosmetics.cosmeticType] = "AVATAR"
+                        it[UserProfileCosmetics.unlockedAtMillis] = now
+                    }
+
+                    "Avatar débloqué : $cosmeticId"
+                }
+
+                "TITLE" -> {
+                    val cosmeticId = rewardValue ?: return@transaction RedeemPromoCodeResponse(
+                        success = false,
+                        message = "Code mal configuré",
+                        error = "INVALID_REWARD_CONFIGURATION"
+                    )
+
+                    UserProfileCosmetics.insert {
+                        it[UserProfileCosmetics.userAuthId] = userId
+                        it[UserProfileCosmetics.cosmeticId] = cosmeticId
+                        it[UserProfileCosmetics.cosmeticType] = "TITLE"
+                        it[UserProfileCosmetics.unlockedAtMillis] = now
+                    }
+
+                    "Titre débloqué : $cosmeticId"
+                }
+
+                else -> {
+                    return@transaction RedeemPromoCodeResponse(
+                        success = false,
+                        message = "Type de récompense inconnu",
+                        error = "UNKNOWN_REWARD_TYPE"
+                    )
+                }
+            }
+
+            val markedAsUsed = PromoCodes.update({
+                (PromoCodes.code eq normalizedCode) and
+                        (PromoCodes.isUsed eq false)
+            }) {
+                it[isUsed] = true
+                it[usedByUserAuthId] = userId
+                it[usedAtMillis] = now
+            } > 0
+
+            if (!markedAsUsed) {
+                return@transaction RedeemPromoCodeResponse(
+                    success = false,
+                    message = "Ce code a déjà été utilisé",
+                    error = "CODE_ALREADY_USED"
+                )
+            }
+
+            RedeemPromoCodeResponse(
+                success = true,
+                message = "Code validé",
+                rewardText = rewardText
+            )
+        }
+    }
+
     fun getPlayerCollection(userId: Int): List<PlayerCollectionCard> {
         return transaction {
             UserCardCollection

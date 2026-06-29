@@ -14,7 +14,13 @@ object DatabaseFactory {
             password = "battleon123$"
         )
         transaction {
-            SchemaUtils.create(UserAuth, UserProfile, UserCardCollection)
+            SchemaUtils.create(
+                UserAuth,
+                UserProfile,
+                UserCardCollection,
+                UserProfileCosmetics,
+                PromoCodes
+            )
         }
     }
 }

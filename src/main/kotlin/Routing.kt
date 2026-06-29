@@ -200,6 +200,24 @@ fun Application.configureRouting() {
                 }
             }
 
+            post("/shop/redeem-code") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal!!.payload.getClaim("userId").asInt()
+
+                val request = call.receive<RedeemPromoCodeRequest>()
+
+                val response = UserService.redeemPromoCode(
+                    userId = userId,
+                    rawCode = request.code
+                )
+
+                if (response.success) {
+                    call.respond(response)
+                } else {
+                    call.respond(HttpStatusCode.BadRequest, response)
+                }
+            }
+
             post("/matchmaking/join") {
                 val principal = call.principal<JWTPrincipal>()
                 val userId = principal!!.payload.getClaim("userId").asInt()
