@@ -44,7 +44,17 @@ object ProfileCosmeticCatalog {
             id = "FACTION_DEMON",
             type = ProfileCosmeticType.FACTION,
             displayName = "Démon"
-        )
+        ),
+        ProfileCosmeticDefinition(
+            id = "title_test_account",
+            type = ProfileCosmeticType.TITLE,
+            displayName = "Compte de test"
+        ),
+        ProfileCosmeticDefinition(
+            id = "title_the_primordial",
+            type = ProfileCosmeticType.TITLE,
+            displayName = "Le Primordial"
+        ),
     )
 
     fun findById(id: String): ProfileCosmeticDefinition? {
