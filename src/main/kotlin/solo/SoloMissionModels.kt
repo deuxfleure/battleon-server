@@ -11,6 +11,12 @@ enum class SoloAiType {
     STANDARD
 }
 
+data class SoloMissionReward(
+    val gems: Int = 0,
+    val dust: Int = 0,
+    val cardIds: List<CardId> = emptyList()
+)
+
 data class SoloMissionGameConfig(
     val missionId: String,
     val difficulty: SoloMissionDifficulty,
@@ -30,7 +36,9 @@ data class SoloMissionGameConfig(
     val shopDefinition: SoloShopDefinition,
 
     val selectedRuneIds: List<String>,
-    val selectedCardIds: List<String>
+    val selectedCardIds: List<String>,
+
+    val reward: SoloMissionReward = SoloMissionReward(),
 )
 
 sealed interface SoloShopSlotDefinition

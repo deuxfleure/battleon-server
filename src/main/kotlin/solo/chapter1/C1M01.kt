@@ -8,6 +8,7 @@ import com.battleon.solo.SoloMissionDefinition
 import com.battleon.solo.SoloMissionDifficulty
 import com.battleon.solo.SoloMissionGameConfig
 import com.battleon.solo.SoloShopDefinition
+import com.battleon.solo.SoloMissionReward
 
 object C1M01 : SoloMissionDefinition {
 
@@ -61,7 +62,12 @@ object C1M01 : SoloMissionDefinition {
             ),
 
             selectedRuneIds = selectedRuneIds,
-            selectedCardIds = selectedCardIds
+            selectedCardIds = selectedCardIds,
+
+            reward = SoloMissionReward(
+                gems = 500
+            ),
+
         )
     }
 
