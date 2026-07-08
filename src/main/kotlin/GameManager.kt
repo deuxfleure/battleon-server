@@ -2,6 +2,12 @@ package com.battleon
 
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import com.battleon.solo.EmptyShopSlot
+import com.battleon.solo.FixedShopCard
+import com.battleon.solo.PlayerSelectedShopCard
+import com.battleon.solo.SoloMissionCatalog
+import com.battleon.solo.SoloMissionDifficulty
+import com.battleon.solo.SoloMissionGameConfig
 
 object GameManager {
 
@@ -622,6 +628,146 @@ object GameManager {
         return game
     }
 
+    private fun createSoloDeck(
+        cardIds: List<CardId>
+    ): MutableList<Card> {
+        return cardIds
+            .map { cardId -> CardCatalog.getCard(cardId) }
+            .toMutableList()
+            .also { it.shuffle() }
+    }
+
+    private fun createSoloShop(
+        config: SoloMissionGameConfig
+    ): List<ShopEntry> {
+        return config.shopDefinition.slots.mapNotNull { slot ->
+            when (slot) {
+                is FixedShopCard -> ShopEntry(
+                    card = CardCatalog.getCard(slot.cardId),
+                    copiesRemaining = config.shopDefinition.copiesRemainingPerCard
+                )
+
+                is PlayerSelectedShopCard -> {
+                    val selectedCardId = config.selectedCardIds.getOrNull(slot.selectionIndex)
+
+                    val enumCardId = selectedCardId?.let {
+                        try {
+                            CardId.valueOf(it)
+                        } catch (_: Exception) {
+                            null
+                        }
+                    }
+
+                    enumCardId?.let {
+                        ShopEntry(
+                            card = CardCatalog.getCard(it),
+                            copiesRemaining = config.shopDefinition.copiesRemainingPerCard
+                        )
+                    }
+                }
+
+                EmptyShopSlot -> null
+            }
+        }
+    }
+
+    fun createSoloMissionGame(
+        playerUserId: Int,
+        playerName: String,
+        missionId: String,
+        difficulty: SoloMissionDifficulty,
+        selectedRuneIds: List<String>,
+        selectedCardIds: List<String>
+    ): GameState? {
+        val mission = SoloMissionCatalog.findMission(missionId)
+            ?: return null
+
+        val config = when (difficulty) {
+            SoloMissionDifficulty.CAMPAIGN -> mission.buildCampaignConfig(
+                selectedRuneIds = selectedRuneIds,
+                selectedCardIds = selectedCardIds
+            )
+
+            SoloMissionDifficulty.HARD -> mission.buildHardConfig(
+                selectedRuneIds = selectedRuneIds,
+                selectedCardIds = selectedCardIds
+            )
+        }
+
+        val shopEntries = createSoloShop(config)
+
+        val game = GameState(
+            gameId = UUID.randomUUID().toString(),
+            mode = "SOLO",
+
+            turnNumber = 0,
+            phase = TurnPhase.PRE_START,
+            isFinished = false,
+            result = null,
+
+            playerReady = false,
+            opponentReady = true,
+
+            playerName = playerName,
+            opponentName = config.opponentNameKey,
+
+            playerUserId = playerUserId,
+            opponentUserId = null,
+
+            playerHp = config.playerHp,
+            opponentHp = config.opponentHp,
+            playerGold = config.playerGold,
+            opponentGold = config.opponentGold,
+
+            playerDeck = createSoloDeck(config.playerStartingDeck),
+            opponentDeck = createSoloDeck(config.opponentStartingDeck),
+            playerDiscard = emptyList(),
+            opponentDiscard = emptyList(),
+            playerAmbush = emptyList(),
+            opponentAmbush = emptyList(),
+
+            playerTokens = emptyList(),
+            opponentTokens = emptyList(),
+
+            playerNextCardPowerBonus = 0,
+            opponentNextCardPowerBonus = 0,
+            playerNextCardDamageBonus = 0,
+            opponentNextCardDamageBonus = 0,
+            playerNextCardHasBrute = false,
+            opponentNextCardHasBrute = false,
+
+            lastPlayerCard = null,
+            lastOpponentCard = null,
+
+            delayedEffects = emptyList(),
+
+            shopEntries = shopEntries,
+
+            playerAvailableSpiderCardIds = emptyList(),
+            opponentAvailableSpiderCardIds = emptyList(),
+
+            playerPurchasedCardCounts = emptyMap(),
+            opponentPurchasedCardCounts = emptyMap(),
+
+            playerPendingShopPurchaseCardId = null,
+            opponentPendingShopPurchaseCardId = shopEntries.randomOrNull()?.card?.id?.name,
+
+            playerShopStatus = ShopPurchaseStatus.NONE,
+            opponentShopStatus = ShopPurchaseStatus.NONE,
+            shopPriorityPlayerFirst = null,
+            currentShopBuyerIsPlayer = null,
+            playerPassedShop = false,
+            opponentPassedShop = false,
+
+            pendingChoice = null,
+            playerEffectResolved = false,
+            opponentEffectResolved = false,
+            infoMessage = null
+        )
+
+        games[game.gameId] = game
+        return game
+    }
 
     fun createStartingDeck(): MutableList<Card> {
         val deck = mutableListOf(

@@ -7,11 +7,16 @@ enum class SoloMissionDifficulty {
     HARD
 }
 
+enum class SoloAiType {
+    STANDARD
+}
+
 data class SoloMissionGameConfig(
     val missionId: String,
     val difficulty: SoloMissionDifficulty,
 
-    val opponentName: String,
+    val opponentNameKey: String,
+    val aiType: SoloAiType = SoloAiType.STANDARD,
 
     val playerHp: Int,
     val opponentHp: Int,
