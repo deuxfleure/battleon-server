@@ -8,6 +8,8 @@ import io.ktor.server.routing.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import java.util.UUID
+import com.battleon.SoloMissionStartRequest
+import com.battleon.solo.SoloMissionDifficulty
 
 // !!!!!!!!!!!!!!!!!!!! A METTRE A JOUR A CHAQUE NOUVELLE VERSION !!!!!!!!!!!!!!!!!!!!!!!!!!!!
 private const val MIN_SUPPORTED_APP_VERSION_CODE = 11
@@ -320,6 +322,52 @@ fun Application.configureRouting() {
                     ownedCardIds = ownedCardIds,
                     forcedCardId = request.cardId
                 )
+
+                call.respond(gameState)
+            }
+
+            post("/duel/solo/start") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal!!.payload.getClaim("userId").asInt()
+
+                val me = UserService.getMe(userId)
+
+                if (me == null) {
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        mapOf("error" to "User not found")
+                    )
+                    return@post
+                }
+
+                val request = call.receive<SoloMissionStartRequest>()
+
+                val difficulty = try {
+                    SoloMissionDifficulty.valueOf(request.difficulty)
+                } catch (_: Exception) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Invalid solo difficulty")
+                    )
+                    return@post
+                }
+
+                val gameState = GameManager.createSoloMissionGame(
+                    playerUserId = userId,
+                    playerName = me.displayName,
+                    missionId = request.missionId,
+                    difficulty = difficulty,
+                    selectedRuneIds = request.selectedRuneIds,
+                    selectedCardIds = request.selectedCardIds
+                )
+
+                if (gameState == null) {
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        mapOf("error" to "Solo mission not found")
+                    )
+                    return@post
+                }
 
                 call.respond(gameState)
             }
