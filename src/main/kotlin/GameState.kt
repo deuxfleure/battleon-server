@@ -98,6 +98,8 @@ data class GameState(
     // =========================================================
     val gameId: String,
     val mode: String,
+    val soloMissionId: String? = null,
+    val soloDifficulty: String? = null,
 
     // =========================================================
     // 2. AVANCEMENT GLOBAL DE LA PARTIE

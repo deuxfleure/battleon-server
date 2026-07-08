@@ -8,6 +8,7 @@ import com.battleon.solo.PlayerSelectedShopCard
 import com.battleon.solo.SoloMissionCatalog
 import com.battleon.solo.SoloMissionDifficulty
 import com.battleon.solo.SoloMissionGameConfig
+import com.battleon.solo.SoloProgressService
 
 object GameManager {
 
@@ -699,6 +700,8 @@ object GameManager {
         val game = GameState(
             gameId = UUID.randomUUID().toString(),
             mode = "SOLO",
+            soloMissionId = config.missionId,
+            soloDifficulty = config.difficulty.name,
 
             turnNumber = 0,
             phase = TurnPhase.PRE_START,
@@ -919,6 +922,54 @@ object GameManager {
             "RANKED",
             "SEASON"
         )
+    }
+
+    private fun recordSoloResultIfNeeded(game: GameState): GameState {
+        if (game.mode != "SOLO") return game
+        if (!game.isFinished) return game
+        if (game.resultRecorded) return game
+        if (game.result != "WIN") return game
+
+        val playerUserId = game.playerUserId ?: return game
+        val missionId = game.soloMissionId ?: return game
+        val difficultyName = game.soloDifficulty ?: return game
+
+        val difficulty = try {
+            SoloMissionDifficulty.valueOf(difficultyName)
+        } catch (_: Exception) {
+            return game
+        }
+
+        val mission = SoloMissionCatalog.findMission(missionId)
+            ?: return game
+
+        val config = when (difficulty) {
+            SoloMissionDifficulty.CAMPAIGN -> mission.buildCampaignConfig(
+                selectedRuneIds = emptyList(),
+                selectedCardIds = emptyList()
+            )
+
+            SoloMissionDifficulty.HARD -> mission.buildHardConfig(
+                selectedRuneIds = emptyList(),
+                selectedCardIds = emptyList()
+            )
+        }
+
+        when (difficulty) {
+            SoloMissionDifficulty.CAMPAIGN -> {
+                SoloProgressService.completeCampaignAndClaimReward(
+                    userId = playerUserId,
+                    missionId = missionId,
+                    reward = config.reward
+                )
+            }
+
+            SoloMissionDifficulty.HARD -> {
+                // À coder quand on branchera les récompenses hardmode.
+            }
+        }
+
+        return game.copy(resultRecorded = true)
     }
 
     private fun recordDuelResultIfNeeded(game: GameState): GameState {
@@ -2169,7 +2220,9 @@ object GameManager {
                                 phase = TurnPhase.POST_COMBAT
                             )
 
-                            recordDuelResultIfNeeded(finishedGame)
+                            var recordedGame = recordDuelResultIfNeeded(finishedGame)
+                            recordedGame = recordSoloResultIfNeeded(recordedGame)
+                            recordedGame
                         } else {
 
                             // ===============================

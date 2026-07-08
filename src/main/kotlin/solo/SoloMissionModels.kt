@@ -14,6 +14,9 @@ enum class SoloAiType {
 data class SoloMissionReward(
     val gems: Int = 0,
     val dust: Int = 0,
+    val avatarIds: List<String> = emptyList(),
+    val titleIds: List<String> = emptyList(),
+    val skinIds: List<String> = emptyList(),
     val cardIds: List<CardId> = emptyList()
 )
 
