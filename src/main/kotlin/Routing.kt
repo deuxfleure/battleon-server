@@ -12,7 +12,7 @@ import com.battleon.SoloMissionStartRequest
 import com.battleon.solo.SoloMissionDifficulty
 
 // !!!!!!!!!!!!!!!!!!!! A METTRE A JOUR A CHAQUE NOUVELLE VERSION !!!!!!!!!!!!!!!!!!!!!!!!!!!!
-private const val MIN_SUPPORTED_APP_VERSION_CODE = 11
+private const val MIN_SUPPORTED_APP_VERSION_CODE = 16
 
 fun Application.configureRouting() {
     routing {

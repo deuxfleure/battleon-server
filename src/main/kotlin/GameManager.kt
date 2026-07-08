@@ -9,6 +9,7 @@ import com.battleon.solo.SoloMissionCatalog
 import com.battleon.solo.SoloMissionDifficulty
 import com.battleon.solo.SoloMissionGameConfig
 import com.battleon.solo.SoloProgressService
+import com.battleon.solo.SoloAiRouter
 
 object GameManager {
 
@@ -1200,10 +1201,19 @@ object GameManager {
     // 6. SHOP — DEMANDES / PASS / ACHAT IMMÉDIAT TEMPORAIRE
     // =========================================================
 
+    private fun assignSoloAiShopIntent(game: GameState): GameState {
+        return SoloAiRouter.assignShopIntent(
+            game = game,
+            standardShopIntent = { currentGame ->
+                assignTrainingAiShopIntent(currentGame)
+            }
+        )
+    }
+
     private fun assignAiShopIntentIfNeeded(game: GameState): GameState {
         return when (game.mode) {
             "TRAINING" -> assignTrainingAiShopIntent(game)
-            "SOLO" -> game // à remplacer plus tard par la vraie IA scénario
+            "SOLO" -> assignSoloAiShopIntent(game)
             else -> game
         }
     }
