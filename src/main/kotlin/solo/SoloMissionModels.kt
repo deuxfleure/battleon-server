@@ -19,7 +19,8 @@ data class SoloMissionReward(
     val avatarIds: List<String> = emptyList(),
     val titleIds: List<String> = emptyList(),
     val skinIds: List<String> = emptyList(),
-    val cardIds: List<CardId> = emptyList()
+    val cardIds: List<CardId> = emptyList(),
+    val runeIds: List<String> = emptyList()
 )
 
 data class SoloMissionGameConfig(
