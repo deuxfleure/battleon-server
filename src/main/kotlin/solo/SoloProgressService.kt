@@ -1,6 +1,5 @@
 package com.battleon.solo
 
-import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
@@ -11,18 +10,24 @@ import org.jetbrains.exposed.sql.update
 
 object SoloProgressService {
 
-    fun getProgress(
-        userId: Int,
-        missionId: String
-    ): ResultRow? =
+    fun getAllProgress(
+        userId: Int
+    ): List<SoloMissionProgressResponse> =
         transaction {
             UserSoloMissionProgress
                 .selectAll()
                 .where {
-                    (UserSoloMissionProgress.userId eq userId) and
-                            (UserSoloMissionProgress.missionId eq missionId)
+                    UserSoloMissionProgress.userId eq userId
                 }
-                .singleOrNull()
+                .map { row ->
+                    SoloMissionProgressResponse(
+                        missionId = row[UserSoloMissionProgress.missionId],
+                        campaignCompleted = row[UserSoloMissionProgress.campaignCompleted],
+                        campaignRewardClaimed = row[UserSoloMissionProgress.campaignRewardClaimed],
+                        hardCompleted = row[UserSoloMissionProgress.hardCompleted],
+                        hardRewardClaimed = row[UserSoloMissionProgress.hardRewardClaimed]
+                    )
+                }
         }
 
     fun ensureMissionExists(

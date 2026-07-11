@@ -1,6 +1,8 @@
 package com.battleon.solo
 
 import com.battleon.CardId
+import kotlinx.serialization.Serializable
+
 
 enum class SoloMissionDifficulty {
     CAMPAIGN,
@@ -74,3 +76,12 @@ interface SoloMissionDefinition {
         selectedCardIds: List<String>
     ): SoloMissionGameConfig
 }
+
+@Serializable
+data class SoloMissionProgressResponse(
+    val missionId: String,
+    val campaignCompleted: Boolean,
+    val campaignRewardClaimed: Boolean,
+    val hardCompleted: Boolean,
+    val hardRewardClaimed: Boolean
+)

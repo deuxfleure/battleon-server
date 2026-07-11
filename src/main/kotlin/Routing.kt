@@ -10,6 +10,7 @@ import io.ktor.server.auth.jwt.*
 import java.util.UUID
 import com.battleon.SoloMissionStartRequest
 import com.battleon.solo.SoloMissionDifficulty
+import com.battleon.solo.SoloProgressService
 
 // !!!!!!!!!!!!!!!!!!!! A METTRE A JOUR A CHAQUE NOUVELLE VERSION !!!!!!!!!!!!!!!!!!!!!!!!!!!!
 private const val MIN_SUPPORTED_APP_VERSION_CODE = 16
@@ -178,6 +179,15 @@ fun Application.configureRouting() {
                 val response = UserService.getUnlockedProfileCosmetics(userId)
 
                 call.respond(response)
+            }
+
+            get("/solo/progress") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal!!.payload.getClaim("userId").asInt()
+
+                val progress = SoloProgressService.getAllProgress(userId)
+
+                call.respond(progress)
             }
 
             get("/collection") {
