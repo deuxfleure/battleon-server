@@ -86,3 +86,9 @@ data class SoloMissionProgressResponse(
     val hardCompleted: Boolean,
     val hardRewardClaimed: Boolean
 )
+
+@Serializable
+data class SoloProgressResponse(
+    val missions: List<SoloMissionProgressResponse>,
+    val runeIds: List<String>
+)

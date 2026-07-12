@@ -958,11 +958,17 @@ object GameManager {
 
         when (difficulty) {
             SoloMissionDifficulty.CAMPAIGN -> {
-                SoloProgressService.completeCampaignAndClaimReward(
+                val rewardRecorded = SoloProgressService.completeCampaignAndClaimReward(
                     userId = playerUserId,
                     missionId = missionId,
                     reward = config.reward
                 )
+
+                if (!rewardRecorded) {
+                    return game.copy(
+                        infoMessage = "Impossible d’enregistrer la progression Solo."
+                    )
+                }
             }
 
             SoloMissionDifficulty.HARD -> {

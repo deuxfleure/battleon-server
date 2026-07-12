@@ -31,6 +31,21 @@ object SoloProgressService {
                 }
         }
 
+    fun getUnlockedRuneIds(
+        userId: Int
+    ): List<String> =
+        transaction {
+            UserRunes
+                .selectAll()
+                .where {
+                    UserRunes.userId eq userId
+                }
+                .map { row ->
+                    row[UserRunes.runeId]
+                }
+                .sorted()
+        }
+
     fun ensureMissionExists(
         userId: Int,
         missionId: String
