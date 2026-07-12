@@ -1,6 +1,7 @@
 package com.battleon
 
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.statements.StatementType
 
 object LeaderboardService {
 
@@ -148,7 +149,10 @@ object LeaderboardService {
                 ORDER BY player_rank ASC
             """.trimIndent()
 
-            val entries = exec(query) { resultSet ->
+            val entries = exec(
+                stmt = query,
+                explicitStatementType = StatementType.SELECT
+            ) { resultSet ->
                 buildList {
                     while (resultSet.next()) {
                         add(
