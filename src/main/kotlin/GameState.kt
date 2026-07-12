@@ -111,6 +111,17 @@ data class GameState(
     val result: String? = null,
     val resultRecorded: Boolean = false,
 
+    val soloRewardGranted: Boolean = false,
+
+    val soloRewardGems: Int = 0,
+    val soloRewardDust: Int = 0,
+
+    val soloRewardRuneIds: List<String> = emptyList(),
+    val soloRewardCardIds: List<String> = emptyList(),
+    val soloRewardTitleIds: List<String> = emptyList(),
+    val soloRewardAvatarIds: List<String> = emptyList(),
+    val soloRewardSkinIds: List<String> = emptyList(),
+
     // =========================================================
     // 3. ÉTAT DE PRÉPARATION DES JOUEURS
     // =========================================================

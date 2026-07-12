@@ -956,27 +956,47 @@ object GameManager {
             )
         }
 
-        when (difficulty) {
+        return when (difficulty) {
             SoloMissionDifficulty.CAMPAIGN -> {
-                val rewardRecorded = SoloProgressService.completeCampaignAndClaimReward(
-                    userId = playerUserId,
-                    missionId = missionId,
-                    reward = config.reward
-                )
+                val claimResult =
+                    SoloProgressService.completeCampaignAndClaimReward(
+                        userId = playerUserId,
+                        missionId = missionId,
+                        reward = config.reward
+                    )
 
-                if (!rewardRecorded) {
-                    return game.copy(
+                if (!claimResult.success) {
+                    game.copy(
                         infoMessage = "Impossible d’enregistrer la progression Solo."
+                    )
+                } else {
+                    game.copy(
+                        resultRecorded = true,
+
+                        soloRewardGranted = claimResult.rewardGranted,
+
+                        soloRewardGems = claimResult.gems,
+                        soloRewardDust = claimResult.dust,
+
+                        soloRewardRuneIds = claimResult.runeIds,
+                        soloRewardCardIds = claimResult.cardIds,
+                        soloRewardTitleIds = claimResult.titleIds,
+                        soloRewardAvatarIds = claimResult.avatarIds,
+                        soloRewardSkinIds = claimResult.skinIds
                     )
                 }
             }
 
             SoloMissionDifficulty.HARD -> {
-                // À coder quand on branchera les récompenses hardmode.
+                // Le Hard Mode n’est pas encore accessible.
+                // On enregistrera sa progression et ses récompenses
+                // lorsque son fonctionnement sera défini.
+                game.copy(
+                    resultRecorded = true
+                )
             }
         }
 
-        return game.copy(resultRecorded = true)
     }
 
     private fun recordDuelResultIfNeeded(game: GameState): GameState {

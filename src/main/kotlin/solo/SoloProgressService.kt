@@ -8,6 +8,22 @@ import com.battleon.UserProfile
 import com.battleon.solo.SoloMissionReward
 import org.jetbrains.exposed.sql.update
 import org.jetbrains.exposed.sql.insertIgnore
+import com.battleon.UserCardCollection
+import com.battleon.UserProfileCosmetics
+
+data class SoloRewardClaimResult(
+    val success: Boolean,
+    val rewardGranted: Boolean,
+
+    val gems: Int = 0,
+    val dust: Int = 0,
+
+    val runeIds: List<String> = emptyList(),
+    val cardIds: List<String> = emptyList(),
+    val titleIds: List<String> = emptyList(),
+    val avatarIds: List<String> = emptyList(),
+    val skinIds: List<String> = emptyList()
+)
 
 
 object SoloProgressService {
@@ -205,7 +221,7 @@ object SoloProgressService {
         userId: Int,
         missionId: String,
         reward: SoloMissionReward
-    ): Boolean {
+    ): SoloRewardClaimResult {
         return transaction {
             val now = System.currentTimeMillis()
 
@@ -221,7 +237,10 @@ object SoloProgressService {
                             (UserSoloMissionProgress.missionId eq missionId)
                 }
                 .singleOrNull()
-                ?: return@transaction false
+                ?: return@transaction SoloRewardClaimResult(
+                    success = false,
+                    rewardGranted = false
+                )
 
             val campaignAlreadyCompleted =
                 progress[UserSoloMissionProgress.campaignCompleted]
@@ -236,7 +255,10 @@ object SoloProgressService {
                         UserProfile.userAuthId eq userId
                     }
                     .singleOrNull()
-                    ?: return@transaction false
+                    ?: return@transaction SoloRewardClaimResult(
+                        success = false,
+                        rewardGranted = false
+                    )
 
                 UserProfile.update({
                     UserProfile.userAuthId eq userId
@@ -254,9 +276,74 @@ object SoloProgressService {
                             it[UserRunes.runeId] = runeId
                         }
                     }
+
+                reward.cardIds
+                    .distinct()
+                    .forEach { cardId ->
+                        val existingCard = UserCardCollection
+                            .selectAll()
+                            .where {
+                                (UserCardCollection.userAuthId eq userId) and
+                                        (UserCardCollection.cardId eq cardId.name)
+                            }
+                            .singleOrNull()
+
+                        if (existingCard == null) {
+                            UserCardCollection.insert {
+                                it[UserCardCollection.userAuthId] = userId
+                                it[UserCardCollection.cardId] = cardId.name
+                                it[UserCardCollection.isOwned] = true
+                                it[UserCardCollection.ownedCopies] = 1
+                                it[UserCardCollection.selectedSkinId] = null
+                            }
+                        } else {
+                            UserCardCollection.update({
+                                (UserCardCollection.userAuthId eq userId) and
+                                        (UserCardCollection.cardId eq cardId.name)
+                            }) {
+                                it[isOwned] = true
+
+                                if (existingCard[UserCardCollection.ownedCopies] < 1) {
+                                    it[ownedCopies] = 1
+                                }
+                            }
+                        }
+                    }
+
+                fun unlockProfileCosmetic(
+                    cosmeticId: String,
+                    cosmeticType: String
+                ) {
+                    if (cosmeticId.isBlank()) return
+
+                    UserProfileCosmetics.insertIgnore {
+                        it[UserProfileCosmetics.userAuthId] = userId
+                        it[UserProfileCosmetics.cosmeticId] = cosmeticId
+                        it[UserProfileCosmetics.cosmeticType] = cosmeticType
+                        it[UserProfileCosmetics.unlockedAtMillis] = now
+                    }
+                }
+
+                reward.avatarIds
+                    .distinct()
+                    .forEach { avatarId ->
+                        unlockProfileCosmetic(avatarId, "AVATAR")
+                    }
+
+                reward.titleIds
+                    .distinct()
+                    .forEach { titleId ->
+                        unlockProfileCosmetic(titleId, "TITLE")
+                    }
+
+                reward.skinIds
+                    .distinct()
+                    .forEach { skinId ->
+                        unlockProfileCosmetic(skinId, "SKIN")
+                    }
             }
 
-            UserSoloMissionProgress.update({
+            val updated = UserSoloMissionProgress.update({
                 (UserSoloMissionProgress.userId eq userId) and
                         (UserSoloMissionProgress.missionId eq missionId)
             }) {
@@ -270,6 +357,57 @@ object SoloProgressService {
                     it[campaignRewardClaimed] = true
                 }
             } > 0
+
+            val rewardGranted =
+                updated && !rewardAlreadyClaimed
+
+            SoloRewardClaimResult(
+                success = updated,
+                rewardGranted = rewardGranted,
+
+                gems = if (rewardGranted) reward.gems else 0,
+                dust = if (rewardGranted) reward.dust else 0,
+
+                runeIds = if (rewardGranted) {
+                    reward.runeIds
+                        .filter { it.isNotBlank() }
+                        .distinct()
+                } else {
+                    emptyList()
+                },
+
+                cardIds = if (rewardGranted) {
+                    reward.cardIds
+                        .distinct()
+                        .map { it.name }
+                } else {
+                    emptyList()
+                },
+
+                titleIds = if (rewardGranted) {
+                    reward.titleIds
+                        .filter { it.isNotBlank() }
+                        .distinct()
+                } else {
+                    emptyList()
+                },
+
+                avatarIds = if (rewardGranted) {
+                    reward.avatarIds
+                        .filter { it.isNotBlank() }
+                        .distinct()
+                } else {
+                    emptyList()
+                },
+
+                skinIds = if (rewardGranted) {
+                    reward.skinIds
+                        .filter { it.isNotBlank() }
+                        .distinct()
+                } else {
+                    emptyList()
+                }
+            )
         }
     }
 
