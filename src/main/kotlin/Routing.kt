@@ -144,6 +144,25 @@ fun Application.configureRouting() {
                     )
                 }
             }
+
+            get("/leaderboard") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal!!.payload.getClaim("userId").asInt()
+
+                val leaderboard = LeaderboardService.getLeaderboard(
+                    currentUserId = userId
+                )
+
+                if (leaderboard != null) {
+                    call.respond(leaderboard)
+                } else {
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        mapOf("error" to "Player not found in leaderboard")
+                    )
+                }
+            }
+
             post("/me/profile") {
                 val principal = call.principal<JWTPrincipal>()
                 val userId = principal!!.payload.getClaim("userId").asInt()
