@@ -12,9 +12,12 @@ import com.battleon.SoloMissionStartRequest
 import com.battleon.solo.SoloMissionDifficulty
 import com.battleon.solo.SoloProgressService
 import com.battleon.solo.SoloProgressResponse
+import com.battleon.solo.SoloRuneLoadoutUpdateRequest
+import com.battleon.solo.SoloRuneLoadoutUpdateResult
+
 
 // !!!!!!!!!!!!!!!!!!!! A METTRE A JOUR A CHAQUE NOUVELLE VERSION !!!!!!!!!!!!!!!!!!!!!!!!!!!!
-private const val MIN_SUPPORTED_APP_VERSION_CODE = 16
+private const val MIN_SUPPORTED_APP_VERSION_CODE = 17
 
 fun Application.configureRouting() {
     routing {
@@ -188,10 +191,36 @@ fun Application.configureRouting() {
 
                 val response = SoloProgressResponse(
                     missions = SoloProgressService.getAllProgress(userId),
-                    runeIds = SoloProgressService.getUnlockedRuneIds(userId)
+                    runeIds = SoloProgressService.getUnlockedRuneIds(userId),
+                    activeRunes = SoloProgressService.getRuneLoadout(userId)
                 )
 
                 call.respond(response)
+            }
+
+            post("/solo/runes/loadout") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal!!.payload.getClaim("userId").asInt()
+
+                val request = call.receive<SoloRuneLoadoutUpdateRequest>()
+
+                when (
+                    val result = SoloProgressService.updateRuneLoadout(
+                        userId = userId,
+                        request = request
+                    )
+                ) {
+                    is SoloRuneLoadoutUpdateResult.Success -> {
+                        call.respond(result.loadout)
+                    }
+
+                    is SoloRuneLoadoutUpdateResult.Invalid -> {
+                        call.respond(
+                            HttpStatusCode.BadRequest,
+                            mapOf("error" to result.reason)
+                        )
+                    }
+                }
             }
 
             get("/collection") {

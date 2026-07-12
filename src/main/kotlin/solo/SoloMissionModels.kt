@@ -90,5 +90,31 @@ data class SoloMissionProgressResponse(
 @Serializable
 data class SoloProgressResponse(
     val missions: List<SoloMissionProgressResponse>,
-    val runeIds: List<String>
+    val runeIds: List<String>,
+    val activeRunes: SoloRuneLoadoutResponse
 )
+
+@Serializable
+data class SoloRuneLoadoutResponse(
+    val majorRuneId: String? = null,
+    val minorLeftRuneId: String? = null,
+    val minorRightRuneId: String? = null
+)
+
+@Serializable
+data class SoloRuneLoadoutUpdateRequest(
+    val majorRuneId: String? = null,
+    val minorLeftRuneId: String? = null,
+    val minorRightRuneId: String? = null
+)
+
+sealed class SoloRuneLoadoutUpdateResult {
+
+    data class Success(
+        val loadout: SoloRuneLoadoutResponse
+    ) : SoloRuneLoadoutUpdateResult()
+
+    data class Invalid(
+        val reason: String
+    ) : SoloRuneLoadoutUpdateResult()
+}

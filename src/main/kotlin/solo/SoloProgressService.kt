@@ -9,6 +9,7 @@ import com.battleon.solo.SoloMissionReward
 import org.jetbrains.exposed.sql.update
 import org.jetbrains.exposed.sql.insertIgnore
 
+
 object SoloProgressService {
 
     fun getAllProgress(
@@ -44,6 +45,138 @@ object SoloProgressService {
                     row[UserRunes.runeId]
                 }
                 .sorted()
+        }
+
+    fun getRuneLoadout(
+        userId: Int
+    ): SoloRuneLoadoutResponse =
+        transaction {
+            val row = UserSoloRuneLoadout
+                .selectAll()
+                .where {
+                    UserSoloRuneLoadout.userId eq userId
+                }
+                .singleOrNull()
+
+            if (row == null) {
+                SoloRuneLoadoutResponse()
+            } else {
+                SoloRuneLoadoutResponse(
+                    majorRuneId = row[UserSoloRuneLoadout.majorRuneId],
+                    minorLeftRuneId = row[UserSoloRuneLoadout.minorLeftRuneId],
+                    minorRightRuneId = row[UserSoloRuneLoadout.minorRightRuneId]
+                )
+            }
+        }
+
+    fun updateRuneLoadout(
+        userId: Int,
+        request: SoloRuneLoadoutUpdateRequest
+    ): SoloRuneLoadoutUpdateResult =
+        transaction {
+
+            val requestedRuneIds = listOfNotNull(
+                request.majorRuneId,
+                request.minorLeftRuneId,
+                request.minorRightRuneId
+            )
+
+            // Une même rune ne peut pas occuper plusieurs slots.
+            if (requestedRuneIds.distinct().size != requestedRuneIds.size) {
+                return@transaction SoloRuneLoadoutUpdateResult.Invalid(
+                    reason = "duplicate_rune"
+                )
+            }
+
+            // Vérifie que toutes les runes demandées existent dans le catalogue serveur.
+            val requestedRunes = requestedRuneIds.map { runeId ->
+                SoloRuneCatalog.findById(runeId)
+                    ?: return@transaction SoloRuneLoadoutUpdateResult.Invalid(
+                        reason = "unknown_rune"
+                    )
+            }
+
+            // Vérifie que le joueur possède réellement toutes les runes demandées.
+            val ownedRuneIds = UserRunes
+                .selectAll()
+                .where {
+                    UserRunes.userId eq userId
+                }
+                .map { row ->
+                    row[UserRunes.runeId]
+                }
+                .toSet()
+
+            if (!ownedRuneIds.containsAll(requestedRuneIds)) {
+                return@transaction SoloRuneLoadoutUpdateResult.Invalid(
+                    reason = "rune_not_owned"
+                )
+            }
+
+            // Vérifie que le slot majeur contient uniquement une rune majeure.
+            request.majorRuneId?.let { runeId ->
+                val rune = requestedRunes.first { it.id == runeId }
+
+                if (rune.type != SoloRuneType.MAJOR) {
+                    return@transaction SoloRuneLoadoutUpdateResult.Invalid(
+                        reason = "invalid_major_slot"
+                    )
+                }
+            }
+
+            // Vérifie que le slot mineur gauche contient uniquement une rune mineure.
+            request.minorLeftRuneId?.let { runeId ->
+                val rune = requestedRunes.first { it.id == runeId }
+
+                if (rune.type != SoloRuneType.MINOR) {
+                    return@transaction SoloRuneLoadoutUpdateResult.Invalid(
+                        reason = "invalid_minor_left_slot"
+                    )
+                }
+            }
+
+            // Vérifie que le slot mineur droit contient uniquement une rune mineure.
+            request.minorRightRuneId?.let { runeId ->
+                val rune = requestedRunes.first { it.id == runeId }
+
+                if (rune.type != SoloRuneType.MINOR) {
+                    return@transaction SoloRuneLoadoutUpdateResult.Invalid(
+                        reason = "invalid_minor_right_slot"
+                    )
+                }
+            }
+
+            val existingRow = UserSoloRuneLoadout
+                .selectAll()
+                .where {
+                    UserSoloRuneLoadout.userId eq userId
+                }
+                .singleOrNull()
+
+            if (existingRow == null) {
+                UserSoloRuneLoadout.insert {
+                    it[UserSoloRuneLoadout.userId] = userId
+                    it[majorRuneId] = request.majorRuneId
+                    it[minorLeftRuneId] = request.minorLeftRuneId
+                    it[minorRightRuneId] = request.minorRightRuneId
+                }
+            } else {
+                UserSoloRuneLoadout.update({
+                    UserSoloRuneLoadout.userId eq userId
+                }) {
+                    it[majorRuneId] = request.majorRuneId
+                    it[minorLeftRuneId] = request.minorLeftRuneId
+                    it[minorRightRuneId] = request.minorRightRuneId
+                }
+            }
+
+            SoloRuneLoadoutUpdateResult.Success(
+                loadout = SoloRuneLoadoutResponse(
+                    majorRuneId = request.majorRuneId,
+                    minorLeftRuneId = request.minorLeftRuneId,
+                    minorRightRuneId = request.minorRightRuneId
+                )
+            )
         }
 
     fun ensureMissionExists(

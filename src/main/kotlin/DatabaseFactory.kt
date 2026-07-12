@@ -5,6 +5,7 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 import com.battleon.solo.UserSoloMissionProgress
 import com.battleon.solo.UserRunes
+import com.battleon.solo.UserSoloRuneLoadout
 
 
 object DatabaseFactory {
@@ -23,7 +24,8 @@ object DatabaseFactory {
                 UserProfileCosmetics,
                 PromoCodes,
                 UserSoloMissionProgress,
-                UserRunes
+                UserRunes,
+                UserSoloRuneLoadout
             )
         }
     }
