@@ -350,7 +350,8 @@ object UserService {
                         ownedCopies = ownedCopies,
                         maxCopies = if (canBeTried) 3 else 1,
                         cost = card?.cost ?: 0,
-                        power = card?.power ?: 0
+                        power = card?.power ?: 0,
+                        faction = card?.faction?.name
                     )
                 }
         }

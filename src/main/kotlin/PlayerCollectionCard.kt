@@ -11,5 +11,6 @@ data class PlayerCollectionCard(
     val ownedCopies: Int = 0,
     val maxCopies: Int = 1,
     val cost: Int = 0,
-    val power: Int = 0
+    val power: Int = 0,
+    val faction: String? = null,
 )
