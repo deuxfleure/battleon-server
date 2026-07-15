@@ -16,6 +16,63 @@ object SoloRuneCatalog {
         SoloRuneDefinition(
             id = "rune_minor_1",
             type = SoloRuneType.MINOR
+        ),
+        SoloRuneDefinition(
+            id = "rune_minor_2",
+            type = SoloRuneType.MINOR
+        ),
+        SoloRuneDefinition(
+            id = "rune_minor_3",
+            type = SoloRuneType.MINOR
+        ),
+        SoloRuneDefinition(
+            id = "rune_minor_4",
+            type = SoloRuneType.MINOR
+        ),
+        SoloRuneDefinition(
+            id = "rune_minor_5",
+            type = SoloRuneType.MINOR
+        ),
+        SoloRuneDefinition(
+            id = "rune_minor_6",
+            type = SoloRuneType.MINOR
+        ),
+        SoloRuneDefinition(
+            id = "rune_minor_7",
+            type = SoloRuneType.MINOR
+        ),
+        SoloRuneDefinition(
+            id = "rune_minor_8",
+            type = SoloRuneType.MINOR
+        ),
+        SoloRuneDefinition(
+            id = "rune_minor_9",
+            type = SoloRuneType.MINOR
+        ),
+        SoloRuneDefinition(
+            id = "rune_minor_10",
+            type = SoloRuneType.MINOR
+        ),
+
+        SoloRuneDefinition(
+            id = "rune_major_1",
+            type = SoloRuneType.MAJOR
+        ),
+        SoloRuneDefinition(
+            id = "rune_major_2",
+            type = SoloRuneType.MAJOR
+        ),
+        SoloRuneDefinition(
+            id = "rune_major_3",
+            type = SoloRuneType.MAJOR
+        ),
+        SoloRuneDefinition(
+            id = "rune_major_4",
+            type = SoloRuneType.MAJOR
+        ),
+        SoloRuneDefinition(
+            id = "rune_major_5",
+            type = SoloRuneType.MAJOR
         )
     )
 
