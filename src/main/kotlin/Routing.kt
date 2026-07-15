@@ -17,7 +17,7 @@ import com.battleon.solo.SoloRuneLoadoutUpdateResult
 
 
 // !!!!!!!!!!!!!!!!!!!! A METTRE A JOUR A CHAQUE NOUVELLE VERSION !!!!!!!!!!!!!!!!!!!!!!!!!!!!
-private const val MIN_SUPPORTED_APP_VERSION_CODE = 17
+private const val MIN_SUPPORTED_APP_VERSION_CODE = 19
 
 fun Application.configureRouting() {
     routing {

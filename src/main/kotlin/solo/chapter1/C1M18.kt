@@ -1,22 +1,85 @@
 package com.battleon.solo.chapter1
 
-import com.battleon.solo.*
+import com.battleon.CardId
+import com.battleon.solo.FixedShopCard
+import com.battleon.solo.SoloAiType
+import com.battleon.solo.SoloMissionDefinition
+import com.battleon.solo.SoloMissionDifficulty
+import com.battleon.solo.SoloMissionGameConfig
+import com.battleon.solo.SoloMissionReward
+import com.battleon.solo.SoloShopDefinition
 
 object C1M18 : SoloMissionDefinition {
 
-    override val id = "c1_m18"
+    override val id: String = "c1_m18"
 
     override fun buildCampaignConfig(
         selectedRuneIds: List<String>,
         selectedCardIds: List<String>
     ): SoloMissionGameConfig {
-        TODO("Mission not implemented yet")
+        return SoloMissionGameConfig(
+            missionId = id,
+            difficulty = SoloMissionDifficulty.CAMPAIGN,
+            opponentNameKey = "opponent.c1_m18.flame_cult",
+            aiType = SoloAiType.STANDARD,
+
+            playerHp = 20,
+            opponentHp = 20,
+
+            playerGold = 1,
+            opponentGold = 3,
+
+            playerStartingDeck = listOf(
+                CardId.COLLECTOR,
+                CardId.COLLECTOR,
+                CardId.WARRIOR,
+                CardId.CURSED,
+                CardId.HEALER
+            ),
+
+            opponentStartingDeck = listOf(
+                CardId.WARRIOR,
+                CardId.COLLECTOR,
+                CardId.COLLECTOR,
+                CardId.CURSED,
+                CardId.HEALER
+            ),
+
+            shopDefinition = SoloShopDefinition(
+                slots = listOf(
+                    FixedShopCard(CardId.BARBAREVIKING),
+                    FixedShopCard(CardId.REVENDEUR),
+                    FixedShopCard(CardId.ENVOUTEUSE),
+                    FixedShopCard(CardId.DEVINDELUMIERE),
+                    FixedShopCard(CardId.PYROMANCIEN),
+                    FixedShopCard(CardId.DURACUIRE),
+                    FixedShopCard(CardId.ROIDEMON),
+                    FixedShopCard(CardId.DEVINDESTENEBRES),
+                    FixedShopCard(CardId.PORTEURDEGIDEDECHU),
+                    FixedShopCard(CardId.MAUVAISGENIE)
+                )
+            ),
+
+            selectedRuneIds = selectedRuneIds,
+            selectedCardIds = selectedCardIds,
+
+            reward = SoloMissionReward(
+                gems = 200,
+                runeIds = listOf("rune_minor_3")
+            )
+        )
     }
 
     override fun buildHardConfig(
         selectedRuneIds: List<String>,
         selectedCardIds: List<String>
     ): SoloMissionGameConfig {
-        TODO("Mission not implemented yet")
+        return buildCampaignConfig(
+            selectedRuneIds = selectedRuneIds,
+            selectedCardIds = selectedCardIds
+        ).copy(
+            difficulty = SoloMissionDifficulty.HARD,
+            opponentNameKey = "opponent.c1_m18.flame_cult_hard"
+        )
     }
 }
