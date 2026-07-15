@@ -696,6 +696,14 @@ object GameManager {
             )
         }
 
+        val requiredSelectedCardCount = config.shopDefinition.slots.count { slot ->
+            slot is PlayerSelectedShopCard
+        }
+
+        if (selectedCardIds.size != requiredSelectedCardCount) {
+            return null
+        }
+
         val shopEntries = createSoloShop(config)
 
         val game = GameState(
