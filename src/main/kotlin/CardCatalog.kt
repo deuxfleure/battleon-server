@@ -107,4 +107,8 @@ object CardCatalog {
         return cardsById[cardId]
             ?: error("No card found in CardCatalog for $cardId")
     }
+
+    fun getAllCards(): List<Card> {
+        return cardsById.values.toList()
+    }
 }

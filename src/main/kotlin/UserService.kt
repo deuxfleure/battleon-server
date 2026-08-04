@@ -318,42 +318,40 @@ object UserService {
 
     fun getPlayerCollection(userId: Int): List<PlayerCollectionCard> {
         return transaction {
-            UserCardCollection
+            val ownedRowsByCardId = UserCardCollection
                 .selectAll()
                 .where { UserCardCollection.userAuthId eq userId }
-                .map { row ->
-                    val cardIdString = row[UserCardCollection.cardId]
-
-                    val cardEnum = try {
-                        CardId.valueOf(cardIdString)
-                    } catch (_: IllegalArgumentException) {
-                        null
-                    }
-
-                    val canBeTried = if (cardEnum != null) {
-                        !CardCatalog.isExcludedFromShop(cardEnum)
-                    } else {
-                        false
-                    }
-
-                    val card = cardEnum?.let {
-                        CardCatalog.getCard(it)
-                    }
-
-                    val ownedCopies = row[UserCardCollection.ownedCopies]
-
-                    PlayerCollectionCard(
-                        cardId = cardIdString,
-                        isOwned = ownedCopies > 0,
-                        selectedSkinId = row[UserCardCollection.selectedSkinId],
-                        canBeTried = canBeTried,
-                        ownedCopies = ownedCopies,
-                        maxCopies = if (canBeTried) 3 else 1,
-                        cost = card?.cost ?: 0,
-                        power = card?.power ?: 0,
-                        faction = card?.faction?.name
-                    )
+                .associateBy { row ->
+                    row[UserCardCollection.cardId]
                 }
+
+            CardCatalog.getAllCards().map { card ->
+                val cardIdString = card.id.name
+                val ownedRow = ownedRowsByCardId[cardIdString]
+
+                val ownedCopies = ownedRow
+                    ?.get(UserCardCollection.ownedCopies)
+                    ?: 0
+
+                val canBeTried = !CardCatalog.isExcludedFromShop(card.id)
+
+                PlayerCollectionCard(
+                    cardId = cardIdString,
+                    isOwned = ownedCopies > 0,
+                    selectedSkinId = ownedRow
+                        ?.get(UserCardCollection.selectedSkinId),
+                    canBeTried = canBeTried,
+                    ownedCopies = ownedCopies,
+                    maxCopies = if (canBeTried) {
+                        card.purchaseLimit ?: 3
+                    } else {
+                        1
+                    },
+                    cost = card.cost,
+                    power = card.power,
+                    faction = card.faction.name
+                )
+            }
         }
     }
 
