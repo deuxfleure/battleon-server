@@ -51,6 +51,12 @@ object CardCatalog {
         Card(CardId.THERMOGUERRIER, 2, 4,CardFaction.HUMAN, purchaseLimit = null,false,false,false),
 
         // =====================================================
+        // Mission Solo et cartes de booster saison 1
+        // =====================================================
+
+        Card(CardId.EXPERIENCEDELABORATOIRE, 2, 5,CardFaction.HUMAN, purchaseLimit = null,false,false,false),
+
+        // =====================================================
         // MERCENAIRES SAISON
         // =====================================================
         Card(CardId.MERCENARY_TNT, 5, 3, CardFaction.MERCENARY, purchaseLimit = 1, false, false, false),

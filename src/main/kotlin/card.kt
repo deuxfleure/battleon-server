@@ -45,6 +45,9 @@ enum class CardId {
     NOURRICEARAIGNEE,
     OEUFDARAIGNEE,
 
+    // SET Solo
+    EXPERIENCEDELABORATOIRE,
+
 
     // SEASON Mercenary
     MERCENARY_TNT,
