@@ -14,11 +14,16 @@ data class ProfileCosmeticDefinition(
 
 object ProfileCosmeticCatalog {
 
-    val defaultUnlocked = listOf(
+    private val allCosmetics = listOf(
         ProfileCosmeticDefinition(
             id = "AVATAR_TRAVELLER",
             type = ProfileCosmeticType.AVATAR,
             displayName = "Voyageur"
+        ),
+        ProfileCosmeticDefinition(
+            id = "AVATAR_MALVARIS",
+            type = ProfileCosmeticType.AVATAR,
+            displayName = "Malvaris"
         ),
         ProfileCosmeticDefinition(
             id = "TITLE_NOVICE",
@@ -54,11 +59,24 @@ object ProfileCosmeticCatalog {
             id = "title_the_primordial",
             type = ProfileCosmeticType.TITLE,
             displayName = "Le Primordial"
-        ),
+        )
     )
 
-    fun findById(id: String): ProfileCosmeticDefinition? {
-        return defaultUnlocked.find { it.id == id }
-    }
+    private val defaultUnlockedIds = setOf(
+        "AVATAR_TRAVELLER",
+        "TITLE_NOVICE",
+        "TITLE_ALPHA_TESTER",
+        "FACTION_HUMAN",
+        "FACTION_BEAST",
+        "FACTION_DEMON",
+        "title_test_account",
+        "title_the_primordial"
+    )
 
+    val defaultUnlocked: List<ProfileCosmeticDefinition> =
+        allCosmetics.filter { it.id in defaultUnlockedIds }
+
+    fun findById(id: String): ProfileCosmeticDefinition? {
+        return allCosmetics.find { it.id == id }
+    }
 }
