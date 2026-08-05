@@ -498,6 +498,90 @@ object CardEffectManager {
         )
     }
 
+    fun buildExperienceLaboratoirePendingChoice(
+        game: GameState,
+        owner: ChoiceOwner
+    ): PendingChoice {
+        val ownerIsPlayer = owner == ChoiceOwner.PLAYER
+
+        val ownerCard = if (ownerIsPlayer) {
+            game.lastPlayerCard
+        } else {
+            game.lastOpponentCard
+        } ?: error("L'Expérience de Laboratoire n'est pas révélée")
+
+        val opponentCard = if (ownerIsPlayer) {
+            game.lastOpponentCard
+        } else {
+            game.lastPlayerCard
+        } ?: error("La carte adverse n'est pas révélée")
+
+        val ownerGold = if (ownerIsPlayer) {
+            game.playerGold
+        } else {
+            game.opponentGold
+        }
+
+        val opponentGold = if (ownerIsPlayer) {
+            game.opponentGold
+        } else {
+            game.playerGold
+        }
+
+        val ownerPowerBonus = if (ownerIsPlayer) {
+            game.playerCurrentCardPowerBonus
+        } else {
+            game.opponentCurrentCardPowerBonus
+        }
+
+        val opponentPowerBonus = if (ownerIsPlayer) {
+            game.opponentCurrentCardPowerBonus
+        } else {
+            game.playerCurrentCardPowerBonus
+        }
+
+        val alreadyHasBrute = if (ownerIsPlayer) {
+            game.playerCurrentCardHasBruteBonus
+        } else {
+            game.opponentCurrentCardHasBruteBonus
+        }
+
+        val options = buildList {
+            if (ownerGold >= 1) {
+                add("LAB_POWER")
+            }
+
+            if (ownerGold >= 2 && !alreadyHasBrute) {
+                add("LAB_BRUTE")
+            }
+
+            add("LAB_CLOSE")
+        }
+
+        return PendingChoice(
+            type = "EXPERIENCE_LABORATOIRE_CHOICE",
+            cardId = CardId.EXPERIENCEDELABORATOIRE.name,
+            options = options,
+            message = "Améliorez L’Expérience de Laboratoire pour ce tour.",
+            owner = owner,
+            ownerGold = ownerGold,
+            ownerCurrentPower = getEffectivePower(
+                game = game,
+                card = ownerCard,
+                ownerGold = ownerGold,
+                nextCardPowerBonus = ownerPowerBonus,
+                isPlayer = ownerIsPlayer
+            ),
+            opponentCurrentPower = getEffectivePower(
+                game = game,
+                card = opponentCard,
+                ownerGold = opponentGold,
+                nextCardPowerBonus = opponentPowerBonus,
+                isPlayer = !ownerIsPlayer
+            )
+        )
+    }
+
     fun startChamaneSubterfuge(
         game: GameState,
         owner: ChoiceOwner

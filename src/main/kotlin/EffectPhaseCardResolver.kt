@@ -81,6 +81,16 @@ object EffectPhaseCardResolver {
                 )
             }
 
+            CardId.EXPERIENCEDELABORATOIRE -> {
+                game.copy(
+                    pendingChoice = CardEffectManager.buildExperienceLaboratoirePendingChoice(
+                        game = game,
+                        owner = owner
+                    ),
+                    infoMessage = null
+                )
+            }
+
             CardId.MAGE -> {
                 game.copy(
                     pendingChoice = CardEffectManager.buildMagePendingChoice(

@@ -37,6 +37,10 @@ data class PendingChoice(
     val message: String,
     val owner: ChoiceOwner,
 
+    val ownerGold: Int? = null,
+    val ownerCurrentPower: Int? = null,
+    val opponentCurrentPower: Int? = null,
+
     // Utilisé par certains choix spéciaux, comme le Chaman,
     // pour afficher les cartes regardées sans les déplacer immédiatement.
     val previewOwnTopCard: Card? = null,
