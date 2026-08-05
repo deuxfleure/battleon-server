@@ -174,6 +174,142 @@ object TrainingAiPendingChoiceResolver {
         return "PASS"
     }
 
+    private fun chooseAiExperienceLaboratoire(
+        game: GameState,
+        pendingChoice: PendingChoice
+    ): String {
+        val ownerIsPlayer = pendingChoice.owner == ChoiceOwner.PLAYER
+
+        val opponentCard = if (ownerIsPlayer) {
+            game.lastOpponentCard
+        } else {
+            game.lastPlayerCard
+        }
+
+        if (opponentCard?.id == CardId.SENTINELLE) {
+            return "LAB_CLOSE"
+        }
+
+        val aiHp = if (ownerIsPlayer) {
+            game.playerHp
+        } else {
+            game.opponentHp
+        }
+
+        val aiGold = if (ownerIsPlayer) {
+            game.playerGold
+        } else {
+            game.opponentGold
+        }
+
+        val aiCurrentPower = pendingChoice.ownerCurrentPower
+            ?: return "LAB_CLOSE"
+
+        val opponentCurrentPower = pendingChoice.opponentCurrentPower
+            ?: return "LAB_CLOSE"
+
+        val aiAlreadyHasBrute = if (ownerIsPlayer) {
+            game.playerCurrentCardHasBruteBonus
+        } else {
+            game.opponentCurrentCardHasBruteBonus
+        }
+
+        val canBuyPower =
+            "LAB_POWER" in pendingChoice.options &&
+                    aiGold >= 1
+
+        val canBuyBrute =
+            "LAB_BRUTE" in pendingChoice.options &&
+                    aiGold >= 2 &&
+                    !aiAlreadyHasBrute
+
+
+        // =====================================================
+        // PRIORITÉ 1 — IA en danger : 5 PV ou moins
+        // =====================================================
+        if (aiHp <= 5) {
+
+            // Avant de dépenser quoi que ce soit, l'IA vérifie
+            // qu'elle peut au minimum atteindre l'égalité.
+            if (aiCurrentPower < opponentCurrentPower) {
+                val goldNeededToTie =
+                    opponentCurrentPower - aiCurrentPower
+
+                if (aiGold < goldNeededToTie) {
+                    return "LAB_CLOSE"
+                }
+
+                return if (canBuyPower) {
+                    "LAB_POWER"
+                } else {
+                    "LAB_CLOSE"
+                }
+            }
+
+            // À égalité, elle dépense encore 1 Or si possible
+            // afin de gagner le combat.
+            if (aiCurrentPower == opponentCurrentPower) {
+                return if (canBuyPower) {
+                    "LAB_POWER"
+                } else {
+                    "LAB_CLOSE"
+                }
+            }
+
+            // À partir d'ici, l'IA gagne déjà le combat.
+
+            // Si BRUTE est déjà actif, notamment grâce au Mage,
+            // elle dépense tout son Or restant pour augmenter les dégâts.
+            if (aiAlreadyHasBrute) {
+                return if (canBuyPower) {
+                    "LAB_POWER"
+                } else {
+                    "LAB_CLOSE"
+                }
+            }
+
+            // Sans BRUTE, elle ne l'achète que s'il lui reste au moins
+            // 3 Or : 2 pour BRUTE et au moins 1 pour augmenter ensuite
+            // la différence de force.
+            if (aiGold >= 3 && canBuyBrute) {
+                return "LAB_BRUTE"
+            }
+
+            return "LAB_CLOSE"
+        }
+
+        // =====================================================
+        // PRIORITÉ 2 — IA au-dessus de 5 PV
+        // =====================================================
+
+        // Une fois BRUTE acheté, elle dépense tout l'Or restant en force.
+        if (aiAlreadyHasBrute) {
+            return if (canBuyPower) {
+                "LAB_POWER"
+            } else {
+                "LAB_CLOSE"
+            }
+        }
+
+        // Force imprimée de L'Expérience de Laboratoire : 2.
+        //
+        // Le budget demandé garantit :
+        // - 2 Or pour obtenir BRUTE ;
+        // - assez de bonus de force pour terminer avec
+        //   au moins 3 points d'avance.
+        val requiredGold =
+            (opponentCurrentPower - 2) + 5
+
+        return if (
+            aiGold >= requiredGold &&
+            canBuyBrute
+        ) {
+            "LAB_BRUTE"
+        } else {
+            "LAB_CLOSE"
+        }
+    }
+
     fun chooseOption(
         game: GameState,
         pendingChoice: PendingChoice
@@ -274,6 +410,16 @@ object TrainingAiPendingChoiceResolver {
                         }
                     }
                 }
+            }
+
+            // -----------------------------------
+            // EXPÉRIENCE DE LABORATOIRE
+            // -----------------------------------
+            "EXPERIENCE_LABORATOIRE_CHOICE" -> {
+                chooseAiExperienceLaboratoire(
+                    game = game,
+                    pendingChoice = pendingChoice
+                )
             }
 
             // -----------------------------------
