@@ -1977,6 +1977,138 @@ object CardEffectManager {
             }
 
             // -------------------------------------------------
+            // EXPÉRIENCE DE LABORATOIRE
+            // -------------------------------------------------
+            "EXPERIENCE_LABORATOIRE_CHOICE" -> {
+                when (choice) {
+
+                    "LAB_POWER" -> {
+                        if (choice !in pendingChoice.options) {
+                            game.copy(
+                                infoMessage = "Choix invalide"
+                            )
+                        } else if (ownerIsPlayer) {
+                            if (game.playerGold < 1) {
+                                game.copy(
+                                    infoMessage = "Or insuffisant"
+                                )
+                            } else {
+                                val updatedGame = game.copy(
+                                    playerGold = game.playerGold - 1,
+                                    playerCurrentCardPowerBonus =
+                                        game.playerCurrentCardPowerBonus + 1,
+                                    infoMessage = null
+                                )
+
+                                updatedGame.copy(
+                                    pendingChoice = buildExperienceLaboratoirePendingChoice(
+                                        game = updatedGame,
+                                        owner = pendingChoice.owner
+                                    )
+                                )
+                            }
+                        } else {
+                            if (game.opponentGold < 1) {
+                                game.copy(
+                                    infoMessage = "Or insuffisant"
+                                )
+                            } else {
+                                val updatedGame = game.copy(
+                                    opponentGold = game.opponentGold - 1,
+                                    opponentCurrentCardPowerBonus =
+                                        game.opponentCurrentCardPowerBonus + 1,
+                                    infoMessage = null
+                                )
+
+                                updatedGame.copy(
+                                    pendingChoice = buildExperienceLaboratoirePendingChoice(
+                                        game = updatedGame,
+                                        owner = pendingChoice.owner
+                                    )
+                                )
+                            }
+                        }
+                    }
+
+                    "LAB_BRUTE" -> {
+                        if (choice !in pendingChoice.options) {
+                            game.copy(
+                                infoMessage = "Choix invalide"
+                            )
+                        } else if (ownerIsPlayer) {
+                            if (game.playerGold < 2) {
+                                game.copy(
+                                    infoMessage = "Or insuffisant"
+                                )
+                            } else if (game.playerCurrentCardHasBruteBonus) {
+                                game.copy(
+                                    infoMessage = "BRUTE déjà actif"
+                                )
+                            } else {
+                                val updatedGame = game.copy(
+                                    playerGold = game.playerGold - 2,
+                                    playerCurrentCardHasBruteBonus = true,
+                                    infoMessage = null
+                                )
+
+                                updatedGame.copy(
+                                    pendingChoice = buildExperienceLaboratoirePendingChoice(
+                                        game = updatedGame,
+                                        owner = pendingChoice.owner
+                                    )
+                                )
+                            }
+                        } else {
+                            if (game.opponentGold < 2) {
+                                game.copy(
+                                    infoMessage = "Or insuffisant"
+                                )
+                            } else if (game.opponentCurrentCardHasBruteBonus) {
+                                game.copy(
+                                    infoMessage = "BRUTE déjà actif"
+                                )
+                            } else {
+                                val updatedGame = game.copy(
+                                    opponentGold = game.opponentGold - 2,
+                                    opponentCurrentCardHasBruteBonus = true,
+                                    infoMessage = null
+                                )
+
+                                updatedGame.copy(
+                                    pendingChoice = buildExperienceLaboratoirePendingChoice(
+                                        game = updatedGame,
+                                        owner = pendingChoice.owner
+                                    )
+                                )
+                            }
+                        }
+                    }
+
+                    "LAB_CLOSE" -> {
+                        if (ownerIsPlayer) {
+                            game.copy(
+                                pendingChoice = null,
+                                playerEffectResolved = true,
+                                infoMessage = null
+                            )
+                        } else {
+                            game.copy(
+                                pendingChoice = null,
+                                opponentEffectResolved = true,
+                                infoMessage = null
+                            )
+                        }
+                    }
+
+                    else -> {
+                        game.copy(
+                            infoMessage = "Choix invalide"
+                        )
+                    }
+                }
+            }
+
+            // -------------------------------------------------
             // NON GÉRÉ
             // -------------------------------------------------
             else -> {
