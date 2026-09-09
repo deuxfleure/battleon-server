@@ -81,10 +81,7 @@ object GameManager {
             null
         }
 
-        val forcedCardIsOwned = ownedCardIds.contains(forcedCardId)
-
         val forcedCardIsEligible = forcedEnumCardId != null &&
-                forcedCardIsOwned &&
                 !CardCatalog.isExcludedFromShop(forcedEnumCardId)
 
         if (!forcedCardIsEligible) {
