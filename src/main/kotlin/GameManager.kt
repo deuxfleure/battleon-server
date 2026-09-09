@@ -735,6 +735,9 @@ object GameManager {
             playerAmbush = emptyList(),
             opponentAmbush = emptyList(),
 
+            playerAvailableRuneIds = config.selectedRuneIds,
+            opponentAvailableRuneIds = emptyList(),
+
             playerTokens = emptyList(),
             opponentTokens = emptyList(),
 
@@ -2135,7 +2138,7 @@ object GameManager {
                         playerEffectivePower = playerEffectivePower,
                         opponentEffectivePower = opponentEffectivePower,
 
-                        phase = TurnPhase.POST_COMBAT,
+                        phase = TurnPhase.AMBUSH_BEFORE_POST_COMBAT,
                         infoMessage = null
                     )
 
@@ -2307,11 +2310,11 @@ object GameManager {
                                 }
                             )
 
-                            startShopResolution(
-                                cleanedGame.copy(
-                                    isFinished = false,
-                                    result = null
-                                )
+                            cleanedGame.copy(
+                                isFinished = false,
+                                result = null,
+                                phase = TurnPhase.AMBUSH_BEFORE_SHOP,
+                                infoMessage = null
                             )
                         }
                     }
@@ -2470,6 +2473,22 @@ object GameManager {
                     infoMessage = null
                 )
             }
+
+            TurnPhase.AMBUSH_BEFORE_POST_COMBAT -> {
+                updatedGame = game.copy(
+                    phase = TurnPhase.POST_COMBAT,
+                    infoMessage = null
+                )
+            }
+
+            TurnPhase.AMBUSH_BEFORE_SHOP -> {
+                updatedGame = startShopResolution(
+                    game.copy(
+                        infoMessage = null
+                    )
+                )
+            }
+
         }
 
         games[gameId] = updatedGame
@@ -2503,6 +2522,8 @@ object GameManager {
             TurnPhase.AMBUSH_BEFORE_REVEAL,
             TurnPhase.AMBUSH_BEFORE_EFFECTS,
             TurnPhase.AMBUSH_BEFORE_COMBAT,
+            TurnPhase.AMBUSH_BEFORE_POST_COMBAT,
+            TurnPhase.AMBUSH_BEFORE_SHOP,
             TurnPhase.REVEAL,
             TurnPhase.EFFECTS,
             TurnPhase.COMBAT,

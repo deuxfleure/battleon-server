@@ -5,14 +5,22 @@ import kotlinx.serialization.Serializable
 @Serializable
 enum class TurnPhase {
     PRE_START,
+
     AMBUSH_BEFORE_REVEAL,
     REVEAL,
+
     AMBUSH_BEFORE_EFFECTS,
     EFFECTS,
+
     AMBUSH_BEFORE_COMBAT,
     COMBAT,
+
+    AMBUSH_BEFORE_POST_COMBAT,
     POST_COMBAT,
+
+    AMBUSH_BEFORE_SHOP,
     SHOP_RESOLUTION,
+
     END_TURN
 }
 
@@ -174,6 +182,13 @@ data class GameState(
 
     val playerAmbush: List<Card> = emptyList(),
     val opponentAmbush: List<Card> = emptyList(),
+
+    // =========================================================
+    // 6.b RUNES ENCORE DISPONIBLES DANS CETTE PARTIE
+    // Une rune utilisée sera retirée définitivement de cette liste.
+    // =========================================================
+    val playerAvailableRuneIds: List<String> = emptyList(),
+    val opponentAvailableRuneIds: List<String> = emptyList(),
 
     // =========================================================
     // 7. JETONS
