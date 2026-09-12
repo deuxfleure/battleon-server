@@ -836,13 +836,126 @@ object GameManager {
         }
     }
 
-    private fun getAvailablePlayerRuneIdsForCurrentWindow(
-        game: GameState
+    private fun startAmbushWindow(game: GameState): GameState {
+        val playerFirst = determineAmbushPriorityPlayerFirst(game)
+
+        val firstOwner = if (playerFirst) {
+            ChoiceOwner.PLAYER
+        } else {
+            ChoiceOwner.OPPONENT
+        }
+
+        val secondOwner = oppositeOwner(firstOwner)
+
+        val initializedGame = game.copy(
+            ambushPriorityPlayerFirst = playerFirst,
+            currentAmbushActor = null,
+            playerPassedCurrentAmbushWindow = false,
+            opponentPassedCurrentAmbushWindow = false,
+            infoMessage = null
+        )
+
+        return when {
+            hasAvailableAmbushAction(initializedGame, firstOwner) -> {
+                initializedGame.copy(
+                    currentAmbushActor = firstOwner
+                )
+            }
+
+            hasAvailableAmbushAction(initializedGame, secondOwner) -> {
+                initializedGame.copy(
+                    currentAmbushActor = secondOwner
+                )
+            }
+
+            else -> {
+                advancePastAmbushWindow(initializedGame)
+            }
+        }
+    }
+
+    private fun moveToNextAmbushActorOrFinish(
+        game: GameState,
+        currentActor: ChoiceOwner
+    ): GameState {
+        val otherActor = oppositeOwner(currentActor)
+
+        return if (
+            !hasPassedCurrentAmbushWindow(game, otherActor) &&
+            hasAvailableAmbushAction(game, otherActor)
+        ) {
+            game.copy(
+                currentAmbushActor = otherActor,
+                infoMessage = null
+            )
+        } else {
+            advancePastAmbushWindow(game)
+        }
+    }
+
+    fun passAmbushWindow(
+        gameId: String,
+        owner: ChoiceOwner
+    ): GameState? {
+        val game = games[gameId] ?: return null
+
+        if (!isAmbushPhase(game.phase)) {
+            return game
+        }
+
+        if (game.currentAmbushActor != owner) {
+            return game
+        }
+
+        val afterPass = when (owner) {
+            ChoiceOwner.PLAYER -> {
+                game.copy(
+                    playerPassedCurrentAmbushWindow = true,
+                    currentAmbushActor = null,
+                    infoMessage = null
+                )
+            }
+
+            ChoiceOwner.OPPONENT -> {
+                game.copy(
+                    opponentPassedCurrentAmbushWindow = true,
+                    currentAmbushActor = null,
+                    infoMessage = null
+                )
+            }
+        }
+
+        val updatedGame = moveToNextAmbushActorOrFinish(
+            game = afterPass,
+            currentActor = owner
+        )
+
+        games[gameId] = updatedGame
+        return updatedGame
+    }
+
+    private fun clearAmbushWindowState(game: GameState): GameState {
+        return game.copy(
+            ambushPriorityPlayerFirst = null,
+            currentAmbushActor = null,
+            playerPassedCurrentAmbushWindow = false,
+            opponentPassedCurrentAmbushWindow = false
+        )
+    }
+
+    private fun getAvailableRuneIdsForCurrentWindow(
+        game: GameState,
+        owner: ChoiceOwner
     ): List<String> {
         val currentWindow = getAmbushWindowForPhase(game.phase)
             ?: return emptyList()
 
-        return game.playerAvailableRuneIds.filter { runeId ->
+        val availableRuneIds = when (owner) {
+            ChoiceOwner.PLAYER -> game.playerAvailableRuneIds
+            ChoiceOwner.OPPONENT -> game.opponentAvailableRuneIds
+        }
+
+        return availableRuneIds.filter { runeId ->
             val rune = SoloRuneCatalog.findById(runeId)
                 ?: return@filter false
 
@@ -850,10 +963,31 @@ object GameManager {
         }
     }
 
-    private fun hasAvailablePlayerAmbushAction(
-        game: GameState
+    private fun oppositeOwner(owner: ChoiceOwner): ChoiceOwner {
+        return when (owner) {
+            ChoiceOwner.PLAYER -> ChoiceOwner.OPPONENT
+            ChoiceOwner.OPPONENT -> ChoiceOwner.PLAYER
+        }
+    }
+
+    private fun hasPassedCurrentAmbushWindow(
+        game: GameState,
+        owner: ChoiceOwner
     ): Boolean {
-        return getAvailablePlayerRuneIdsForCurrentWindow(game).isNotEmpty()
+        return when (owner) {
+            ChoiceOwner.PLAYER -> game.playerPassedCurrentAmbushWindow
+            ChoiceOwner.OPPONENT -> game.opponentPassedCurrentAmbushWindow
+        }
+    }
+
+    private fun hasAvailableAmbushAction(
+        game: GameState,
+        owner: ChoiceOwner
+    ): Boolean {
+        return getAvailableRuneIdsForCurrentWindow(
+            game = game,
+            owner = owner
+        ).isNotEmpty()
     }
 
     private fun isPvpMode(game: GameState): Boolean {
@@ -862,6 +996,62 @@ object GameManager {
 
     private fun isSeasonMercenary(card: Card): Boolean {
         return card.faction == CardFaction.MERCENARY
+    }
+
+    private fun isAmbushPhase(phase: TurnPhase): Boolean {
+        return when (phase) {
+            TurnPhase.AMBUSH_BEFORE_REVEAL,
+            TurnPhase.AMBUSH_BEFORE_EFFECTS,
+            TurnPhase.AMBUSH_BEFORE_COMBAT,
+            TurnPhase.AMBUSH_BEFORE_POST_COMBAT,
+            TurnPhase.AMBUSH_BEFORE_SHOP -> true
+
+            else -> false
+        }
+    }
+
+    private fun advancePastAmbushWindow(game: GameState): GameState {
+        val clearedGame = clearAmbushWindowState(game)
+
+        return when (game.phase) {
+            TurnPhase.AMBUSH_BEFORE_REVEAL -> {
+                clearedGame.copy(
+                    phase = TurnPhase.REVEAL,
+                    infoMessage = null
+                )
+            }
+
+            TurnPhase.AMBUSH_BEFORE_EFFECTS -> {
+                clearedGame.copy(
+                    phase = TurnPhase.EFFECTS,
+                    infoMessage = null
+                )
+            }
+
+            TurnPhase.AMBUSH_BEFORE_COMBAT -> {
+                clearedGame.copy(
+                    phase = TurnPhase.COMBAT,
+                    infoMessage = null
+                )
+            }
+
+            TurnPhase.AMBUSH_BEFORE_POST_COMBAT -> {
+                clearedGame.copy(
+                    phase = TurnPhase.POST_COMBAT,
+                    infoMessage = null
+                )
+            }
+
+            TurnPhase.AMBUSH_BEFORE_SHOP -> {
+                startShopResolution(
+                    clearedGame.copy(
+                        infoMessage = null
+                    )
+                )
+            }
+
+            else -> clearedGame
+        }
     }
 
     fun heartbeat(
@@ -1176,8 +1366,20 @@ object GameManager {
             game.playerHp < game.opponentHp -> true
             game.opponentHp < game.playerHp -> false
 
-            game.playerGold > game.opponentGold -> true
-            game.opponentGold > game.playerGold -> false
+            game.playerGold < game.opponentGold -> true
+            game.opponentGold < game.playerGold -> false
+
+            else -> (0..1).random() == 0
+        }
+    }
+
+    private fun determineAmbushPriorityPlayerFirst(game: GameState): Boolean {
+        return when {
+            game.playerHp < game.opponentHp -> true
+            game.opponentHp < game.playerHp -> false
+
+            game.playerGold < game.opponentGold -> true
+            game.opponentGold < game.playerGold -> false
 
             else -> (0..1).random() == 0
         }
@@ -1763,7 +1965,7 @@ object GameManager {
                 updatedGame = if (readyGame.playerReady && readyGame.opponentReady) {
                     readyGame.copy(
                         turnNumber = 1,
-                        phase = TurnPhase.REVEAL,
+                        phase = TurnPhase.AMBUSH_BEFORE_REVEAL,
                         infoMessage = null
                     )
                 } else {
@@ -1896,7 +2098,7 @@ object GameManager {
                         playerPostCombatSacrificeHandled = false,
                         opponentPostCombatSacrificeHandled = false,
 
-                        phase = TurnPhase.EFFECTS,
+                        phase = TurnPhase.AMBUSH_BEFORE_EFFECTS,
                         infoMessage = null
                     )
                 }
@@ -2100,7 +2302,7 @@ object GameManager {
                         workingGame.pendingChoice == null
                     ) {
                         workingGame.copy(
-                            phase = TurnPhase.COMBAT,
+                            phase = TurnPhase.AMBUSH_BEFORE_COMBAT,
                             infoMessage = null
                         )
                     } else {
@@ -2499,40 +2701,16 @@ object GameManager {
             // -------------------------------------------------
             // AMBUSH WINDOWS
             // -------------------------------------------------
-            TurnPhase.AMBUSH_BEFORE_REVEAL -> {
-                updatedGame = game.copy(
-                    phase = TurnPhase.REVEAL,
-                    infoMessage = null
-                )
-            }
-
-            TurnPhase.AMBUSH_BEFORE_EFFECTS -> {
-                updatedGame = game.copy(
-                    phase = TurnPhase.EFFECTS,
-                    infoMessage = null
-                )
-            }
-
-            TurnPhase.AMBUSH_BEFORE_COMBAT -> {
-                updatedGame = game.copy(
-                    phase = TurnPhase.COMBAT,
-                    infoMessage = null
-                )
-            }
-
-            TurnPhase.AMBUSH_BEFORE_POST_COMBAT -> {
-                updatedGame = game.copy(
-                    phase = TurnPhase.POST_COMBAT,
-                    infoMessage = null
-                )
-            }
-
+            TurnPhase.AMBUSH_BEFORE_REVEAL,
+            TurnPhase.AMBUSH_BEFORE_EFFECTS,
+            TurnPhase.AMBUSH_BEFORE_COMBAT,
+            TurnPhase.AMBUSH_BEFORE_POST_COMBAT,
             TurnPhase.AMBUSH_BEFORE_SHOP -> {
-                updatedGame = startShopResolution(
-                    game.copy(
-                        infoMessage = null
-                    )
-                )
+                updatedGame = if (game.ambushPriorityPlayerFirst == null) {
+                    startAmbushWindow(game)
+                } else {
+                    game
+                }
             }
 
         }
@@ -2540,6 +2718,7 @@ object GameManager {
         games[gameId] = updatedGame
         return updatedGame
     }
+
 
     // =========================================================
     // 9. CHOIX INTERACTIFS
@@ -2570,7 +2749,7 @@ object GameManager {
             TurnPhase.AMBUSH_BEFORE_COMBAT,
             TurnPhase.AMBUSH_BEFORE_POST_COMBAT,
             TurnPhase.AMBUSH_BEFORE_SHOP ->
-                hasAvailablePlayerAmbushAction(game)
+                game.currentAmbushActor != null
 
             TurnPhase.REVEAL,
             TurnPhase.EFFECTS,
@@ -2585,6 +2764,13 @@ object GameManager {
     ): GameState? {
         var game = games[gameId] ?: return null
         var safetyCounter = 0
+
+        if (
+            isAmbushPhase(game.phase) &&
+            isPlayerDecisionPoint(game)
+        ) {
+            return game
+        }
 
         if (isPvpMode(game) && isPlayerDecisionPoint(game)) {
             val markedGame = if (isPlayer) {

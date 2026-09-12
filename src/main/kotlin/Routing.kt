@@ -521,6 +521,9 @@ fun Application.configureRouting() {
 
                 call.respond(updatedGame)
             }
+
+
+
             post("/duel/{gameId}/resolve-choice") {
                 val principal = call.principal<JWTPrincipal>()
                 val userId = principal!!.payload.getClaim("userId").asInt()

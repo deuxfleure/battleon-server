@@ -191,6 +191,25 @@ data class GameState(
     val opponentAvailableRuneIds: List<String> = emptyList(),
 
     // =========================================================
+    // 6.c RÉSOLUTION DE LA FENÊTRE D'EMBUSCADE
+    //
+    // ambushPriorityPlayerFirst :
+    //   camp qui avait la priorité à l'ouverture de cette fenêtre.
+    //
+    // currentAmbushActor :
+    //   camp qui doit actuellement choisir d'activer quelque chose
+    //   ou de passer.
+    //
+    // playerPassedCurrentAmbushWindow / opponentPassedCurrentAmbushWindow :
+    //   indique qu'un camp a définitivement passé pour cette fenêtre.
+    // =========================================================
+    val ambushPriorityPlayerFirst: Boolean? = null,
+    val currentAmbushActor: ChoiceOwner? = null,
+
+    val playerPassedCurrentAmbushWindow: Boolean = false,
+    val opponentPassedCurrentAmbushWindow: Boolean = false,
+
+    // =========================================================
     // 7. JETONS
     // =========================================================
     val playerTokens: List<TokenStack> = emptyList(),
