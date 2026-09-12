@@ -12,6 +12,8 @@ import com.battleon.solo.SoloProgressService
 import com.battleon.solo.SoloAiRouter
 import com.battleon.solo.AmbushWindow
 import com.battleon.solo.SoloRuneCatalog
+import com.battleon.solo.SoloRuneDefinition
+import com.battleon.solo.SoloRuneEffectType
 
 
 object GameManager {
@@ -988,6 +990,130 @@ object GameManager {
             game = game,
             owner = owner
         ).isNotEmpty()
+    }
+
+    private fun canActivateRune(
+        game: GameState,
+        owner: ChoiceOwner,
+        runeId: String
+    ): Boolean {
+        if (!isAmbushPhase(game.phase)) {
+            return false
+        }
+
+        if (game.currentAmbushActor != owner) {
+            return false
+        }
+
+        val availableRuneIds = when (owner) {
+            ChoiceOwner.PLAYER -> game.playerAvailableRuneIds
+            ChoiceOwner.OPPONENT -> game.opponentAvailableRuneIds
+        }
+
+        if (runeId !in availableRuneIds) {
+            return false
+        }
+
+        val rune = SoloRuneCatalog.findById(runeId)
+            ?: return false
+
+        val currentWindow = getAmbushWindowForPhase(game.phase)
+            ?: return false
+
+        return currentWindow in rune.activationWindows
+    }
+
+    private fun consumeRune(
+        game: GameState,
+        owner: ChoiceOwner,
+        runeId: String
+    ): GameState {
+        return when (owner) {
+            ChoiceOwner.PLAYER -> game.copy(
+                playerAvailableRuneIds =
+                    game.playerAvailableRuneIds - runeId
+            )
+
+            ChoiceOwner.OPPONENT -> game.copy(
+                opponentAvailableRuneIds =
+                    game.opponentAvailableRuneIds - runeId
+            )
+        }
+    }
+
+    fun activateRune(
+        gameId: String,
+        owner: ChoiceOwner,
+        runeId: String
+    ): GameState? {
+        val game = games[gameId] ?: return null
+
+        if (!canActivateRune(
+                game = game,
+                owner = owner,
+                runeId = runeId
+            )
+        ) {
+            return game
+        }
+
+        val rune = SoloRuneCatalog.findById(runeId)
+            ?: return game
+
+        var updatedGame = applyRuneEffect(
+            game = game,
+            owner = owner,
+            rune = rune
+        )
+
+        updatedGame = consumeRune(
+            game = updatedGame,
+            owner = owner,
+            runeId = runeId
+        )
+
+        updatedGame = if (
+            !hasPassedCurrentAmbushWindow(updatedGame, owner) &&
+            hasAvailableAmbushAction(updatedGame, owner)
+        ) {
+            updatedGame.copy(
+                currentAmbushActor = owner,
+                infoMessage = null
+            )
+        } else {
+            moveToNextAmbushActorOrFinish(
+                game = updatedGame,
+                currentActor = owner
+            )
+        }
+
+        games[gameId] = updatedGame
+        return updatedGame
+    }
+
+    private fun applyRuneEffect(
+        game: GameState,
+        owner: ChoiceOwner,
+        rune: SoloRuneDefinition
+    ): GameState {
+        return when (rune.effectType) {
+
+            SoloRuneEffectType.CURRENT_CARD_POWER_BONUS -> {
+                when (owner) {
+                    ChoiceOwner.PLAYER -> game.copy(
+                        playerCurrentCardPowerBonus =
+                            game.playerCurrentCardPowerBonus + rune.value
+                    )
+
+                    ChoiceOwner.OPPONENT -> game.copy(
+                        opponentCurrentCardPowerBonus =
+                            game.opponentCurrentCardPowerBonus + rune.value
+                    )
+                }
+            }
+
+            else -> game
+        }
     }
 
     private fun isPvpMode(game: GameState): Boolean {
