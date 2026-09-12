@@ -366,6 +366,12 @@ data class GameState(
     // 18. MESSAGE D’INFO / DEBUG / ERREUR
     // Sert à renvoyer un message lisible au client
     // =========================================================
-    val infoMessage: String? = null
+    val infoMessage: String? = null,
+
+    // =========================================================
+    // 19. Ambush effects
+    // =========================================================
+    val playerCardEffectsBlockedByAmbush: Boolean = false,
+    val opponentCardEffectsBlockedByAmbush: Boolean = false,
 
 )

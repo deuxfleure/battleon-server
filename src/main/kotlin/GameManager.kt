@@ -876,6 +876,26 @@ object GameManager {
         }
     }
 
+    private fun resumeAmbushAfterPendingChoice(
+        game: GameState,
+        owner: ChoiceOwner
+    ): GameState {
+        return if (
+            !hasPassedCurrentAmbushWindow(game, owner) &&
+            hasAvailableAmbushAction(game, owner)
+        ) {
+            game.copy(
+                currentAmbushActor = owner,
+                infoMessage = null
+            )
+        } else {
+            moveToNextAmbushActorOrFinish(
+                game = game,
+                currentActor = owner
+            )
+        }
+    }
+
     private fun moveToNextAmbushActorOrFinish(
         game: GameState,
         currentActor: ChoiceOwner
@@ -1077,24 +1097,14 @@ object GameManager {
         )
 
         updatedGame = if (updatedGame.pendingChoice != null) {
-            // La rune a déclenché une interaction, par exemple un Scrutage.
-            // On conserve la main à l'acteur actuel jusqu'à résolution du choix.
-            updatedGame.copy(
-                currentAmbushActor = owner,
-                infoMessage = null
-            )
-        } else if (
-            !hasPassedCurrentAmbushWindow(updatedGame, owner) &&
-            hasAvailableAmbushAction(updatedGame, owner)
-        ) {
             updatedGame.copy(
                 currentAmbushActor = owner,
                 infoMessage = null
             )
         } else {
-            moveToNextAmbushActorOrFinish(
+            resumeAmbushAfterPendingChoice(
                 game = updatedGame,
-                currentActor = owner
+                owner = owner
             )
         }
 
@@ -1143,6 +1153,30 @@ object GameManager {
                     completionContext = ScryCompletionContext.AMBUSH,
                     canDiscardViewedCards = true
                 )
+            }
+
+            SoloRuneEffectType.GAIN_GOLD -> {
+                when (owner) {
+                    ChoiceOwner.PLAYER -> game.copy(
+                        playerGold = game.playerGold + rune.value
+                    )
+
+                    ChoiceOwner.OPPONENT -> game.copy(
+                        opponentGold = game.opponentGold + rune.value
+                    )
+                }
+            }
+
+            SoloRuneEffectType.BLOCK_OPPONENT_CARD_EFFECT -> {
+                when (owner) {
+                    ChoiceOwner.PLAYER -> game.copy(
+                        opponentCardEffectsBlockedByAmbush = true
+                    )
+
+                    ChoiceOwner.OPPONENT -> game.copy(
+                        playerCardEffectsBlockedByAmbush = true
+                    )
+                }
             }
 
 
@@ -2255,6 +2289,9 @@ object GameManager {
                         playerEffectBlockedBySentinelle = false,
                         opponentEffectBlockedBySentinelle = false,
 
+                        playerCardEffectsBlockedByAmbush = false,
+                        opponentCardEffectsBlockedByAmbush = false,
+
                         playerPostCombatSacrificeHandled = false,
                         opponentPostCombatSacrificeHandled = false,
 
@@ -2357,10 +2394,16 @@ object GameManager {
                     when (resolutionOrder) {
                         ResolutionOrder.PLAYER_FIRST -> {
                             if (!workingGame.playerEffectResolved) {
-                                if (doesOpponentSentinelleBlockPlayerEffect()) {
+                                val blockedBySentinelle =
+                                    doesOpponentSentinelleBlockPlayerEffect()
+
+                                val blockedByAmbush =
+                                    workingGame.playerCardEffectsBlockedByAmbush
+
+                                if (blockedBySentinelle || blockedByAmbush) {
                                     workingGame = workingGame.copy(
                                         playerEffectResolved = true,
-                                        playerEffectBlockedBySentinelle = true,
+                                        playerEffectBlockedBySentinelle = blockedBySentinelle,
                                         infoMessage = null
                                     )
                                 } else {
@@ -2376,15 +2419,23 @@ object GameManager {
                                         }
                                     }
 
-                                    workingGame = workingGame.copy(playerEffectResolved = true)
+                                    workingGame = workingGame.copy(
+                                        playerEffectResolved = true
+                                    )
                                 }
                             }
 
                             if (!workingGame.opponentEffectResolved) {
-                                if (doesPlayerSentinelleBlockOpponentEffect()) {
+                                val blockedBySentinelle =
+                                    doesPlayerSentinelleBlockOpponentEffect()
+
+                                val blockedByAmbush =
+                                    workingGame.opponentCardEffectsBlockedByAmbush
+
+                                if (blockedBySentinelle || blockedByAmbush) {
                                     workingGame = workingGame.copy(
                                         opponentEffectResolved = true,
-                                        opponentEffectBlockedBySentinelle = true,
+                                        opponentEffectBlockedBySentinelle = blockedBySentinelle,
                                         infoMessage = null
                                     )
                                 } else {
@@ -2400,17 +2451,25 @@ object GameManager {
                                         }
                                     }
 
-                                    workingGame = workingGame.copy(opponentEffectResolved = true)
+                                    workingGame = workingGame.copy(
+                                        opponentEffectResolved = true
+                                    )
                                 }
                             }
                         }
 
                         ResolutionOrder.OPPONENT_FIRST -> {
                             if (!workingGame.opponentEffectResolved) {
-                                if (doesPlayerSentinelleBlockOpponentEffect()) {
+                                val blockedBySentinelle =
+                                    doesPlayerSentinelleBlockOpponentEffect()
+
+                                val blockedByAmbush =
+                                    workingGame.opponentCardEffectsBlockedByAmbush
+
+                                if (blockedBySentinelle || blockedByAmbush) {
                                     workingGame = workingGame.copy(
                                         opponentEffectResolved = true,
-                                        opponentEffectBlockedBySentinelle = true,
+                                        opponentEffectBlockedBySentinelle = blockedBySentinelle,
                                         infoMessage = null
                                     )
                                 } else {
@@ -2431,10 +2490,16 @@ object GameManager {
                             }
 
                             if (!workingGame.playerEffectResolved) {
-                                if (doesOpponentSentinelleBlockPlayerEffect()) {
+                                val blockedBySentinelle =
+                                    doesOpponentSentinelleBlockPlayerEffect()
+
+                                val blockedByAmbush =
+                                    workingGame.playerCardEffectsBlockedByAmbush
+
+                                if (blockedBySentinelle || blockedByAmbush) {
                                     workingGame = workingGame.copy(
                                         playerEffectResolved = true,
-                                        playerEffectBlockedBySentinelle = true,
+                                        playerEffectBlockedBySentinelle = blockedBySentinelle,
                                         infoMessage = null
                                     )
                                 } else {
@@ -2884,9 +2949,31 @@ object GameManager {
     // 9. CHOIX INTERACTIFS
     // =========================================================
 
-    fun resolvePendingChoice(gameId: String, choice: String): GameState? {
+    fun resolvePendingChoice(
+        gameId: String,
+        choice: String
+    ): GameState? {
         val game = games[gameId] ?: return null
-        val updatedGame = CardEffectManager.resolvePendingChoice(game, choice)
+
+        val activeScryBeforeResolution = game.activeScryState
+
+        var updatedGame = CardEffectManager.resolvePendingChoice(
+            game = game,
+            choice = choice
+        )
+
+        val ambushScryJustFinished =
+            activeScryBeforeResolution?.completionContext == ScryCompletionContext.AMBUSH &&
+                    updatedGame.activeScryState == null &&
+                    updatedGame.pendingChoice == null
+
+        if (ambushScryJustFinished) {
+            updatedGame = resumeAmbushAfterPendingChoice(
+                game = updatedGame,
+                owner = activeScryBeforeResolution.resolver
+            )
+        }
+
         games[gameId] = updatedGame
         return updatedGame
     }
