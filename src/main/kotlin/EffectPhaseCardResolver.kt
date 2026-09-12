@@ -53,7 +53,7 @@ object EffectPhaseCardResolver {
 
                 CardEffectManager.startScry(
                     game = gameWithGold,
-                    sourceCardId = CardId.REVENDEUR,
+                    sourceId = CardId.REVENDEUR.name,
                     resolver = owner,
                     target = owner,
                     amount = 1,
@@ -119,7 +119,7 @@ object EffectPhaseCardResolver {
             CardId.DEVINDELUMIERE -> {
                 CardEffectManager.startScry(
                     game = game,
-                    sourceCardId = CardId.DEVINDELUMIERE,
+                    sourceId = CardId.DEVINDELUMIERE.name,
                     resolver = owner,
                     target = owner,
                     amount = 2,
@@ -130,7 +130,7 @@ object EffectPhaseCardResolver {
             CardId.DEVINDESTENEBRES -> {
                 CardEffectManager.startScry(
                     game = game,
-                    sourceCardId = CardId.DEVINDESTENEBRES,
+                    sourceId = CardId.DEVINDESTENEBRES.name,
                     resolver = owner,
                     target = if (ownerIsPlayer) ChoiceOwner.OPPONENT else ChoiceOwner.PLAYER,
                     amount = 2,

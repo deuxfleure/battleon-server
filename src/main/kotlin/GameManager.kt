@@ -1076,7 +1076,14 @@ object GameManager {
             runeId = runeId
         )
 
-        updatedGame = if (
+        updatedGame = if (updatedGame.pendingChoice != null) {
+            // La rune a déclenché une interaction, par exemple un Scrutage.
+            // On conserve la main à l'acteur actuel jusqu'à résolution du choix.
+            updatedGame.copy(
+                currentAmbushActor = owner,
+                infoMessage = null
+            )
+        } else if (
             !hasPassedCurrentAmbushWindow(updatedGame, owner) &&
             hasAvailableAmbushAction(updatedGame, owner)
         ) {
@@ -1115,6 +1122,29 @@ object GameManager {
                     )
                 }
             }
+
+            SoloRuneEffectType.GAIN_GOLD_AND_SCRY -> {
+                val gameWithGold = when (owner) {
+                    ChoiceOwner.PLAYER -> game.copy(
+                        playerGold = game.playerGold + 1
+                    )
+
+                    ChoiceOwner.OPPONENT -> game.copy(
+                        opponentGold = game.opponentGold + 1
+                    )
+                }
+
+                CardEffectManager.startScry(
+                    game = gameWithGold,
+                    sourceId = rune.id,
+                    resolver = owner,
+                    target = owner,
+                    amount = rune.value,
+                    completionContext = ScryCompletionContext.AMBUSH,
+                    canDiscardViewedCards = true
+                )
+            }
+
 
             else -> game
         }

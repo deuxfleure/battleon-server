@@ -25,6 +25,12 @@ enum class TurnPhase {
 }
 
 @Serializable
+enum class ScryCompletionContext {
+    CARD_EFFECT,
+    AMBUSH
+}
+
+@Serializable
 data class TokenStack(
     val tokenId: String,
     val amount: Int
@@ -82,6 +88,8 @@ data class ScryState(
 
     // Nombre de cartes que l'on voulait regarder à l'origine
     val amount: Int,
+
+    val completionContext: ScryCompletionContext = ScryCompletionContext.CARD_EFFECT,
 
     // Est-ce que les cartes scrutées peuvent être défaussées ?
     // true = Scruter / Scruter sombre

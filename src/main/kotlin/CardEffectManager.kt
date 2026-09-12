@@ -104,10 +104,11 @@ object CardEffectManager {
 
     fun startScry(
         game: GameState,
-        sourceCardId: CardId,
+        sourceId: String,
         resolver: ChoiceOwner,
         target: ChoiceOwner,
         amount: Int,
+        completionContext: ScryCompletionContext = ScryCompletionContext.CARD_EFFECT,
         canDiscardViewedCards: Boolean = true
     ): GameState {
 
@@ -151,10 +152,11 @@ object CardEffectManager {
         }
 
         val newScryState = ScryState(
-            sourceCardId = sourceCardId.name,
+            sourceCardId = sourceId,
             resolver = resolver,
             target = target,
             amount = amount,
+            completionContext = completionContext,
             canDiscardViewedCards = canDiscardViewedCards,
             revealedCards = revealedCards,
             cardsToReturnOnTop = emptyList(),
@@ -183,6 +185,9 @@ object CardEffectManager {
 
         val resolverIsPlayer = scryState.resolver == ChoiceOwner.PLAYER
 
+        val resolvesCardEffect =
+            scryState.completionContext == ScryCompletionContext.CARD_EFFECT
+
         return if (scryState.target == ChoiceOwner.PLAYER) {
             game.copy(
                 // cardsToReturnOnTop garde l'ordre des clics sur "Reposer".
@@ -193,8 +198,13 @@ object CardEffectManager {
                 activeScryState = null,
                 pendingChoice = null,
 
-                playerEffectResolved = if (resolverIsPlayer) true else game.playerEffectResolved,
-                opponentEffectResolved = if (!resolverIsPlayer) true else game.opponentEffectResolved,
+                playerEffectResolved =
+                    if (resolvesCardEffect && resolverIsPlayer) true
+                    else game.playerEffectResolved,
+
+                opponentEffectResolved =
+                    if (resolvesCardEffect && !resolverIsPlayer) true
+                    else game.opponentEffectResolved,
 
                 infoMessage = null
             )
@@ -205,8 +215,13 @@ object CardEffectManager {
                 activeScryState = null,
                 pendingChoice = null,
 
-                playerEffectResolved = if (resolverIsPlayer) true else game.playerEffectResolved,
-                opponentEffectResolved = if (!resolverIsPlayer) true else game.opponentEffectResolved,
+                playerEffectResolved =
+                    if (resolvesCardEffect && resolverIsPlayer) true
+                    else game.playerEffectResolved,
+
+                opponentEffectResolved =
+                    if (resolvesCardEffect && !resolverIsPlayer) true
+                    else game.opponentEffectResolved,
 
                 infoMessage = null
             )
