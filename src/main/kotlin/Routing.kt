@@ -414,12 +414,20 @@ fun Application.configureRouting() {
                     return@post
                 }
 
+                val runeLoadout = SoloProgressService.getRuneLoadout(userId)
+
+                val serverSelectedRuneIds = listOfNotNull(
+                    runeLoadout.majorRuneId,
+                    runeLoadout.minorLeftRuneId,
+                    runeLoadout.minorRightRuneId
+                )
+
                 val gameState = GameManager.createSoloMissionGame(
                     playerUserId = userId,
                     playerName = me.displayName,
                     missionId = request.missionId,
                     difficulty = difficulty,
-                    selectedRuneIds = request.selectedRuneIds,
+                    selectedRuneIds = serverSelectedRuneIds,
                     selectedCardIds = request.selectedCardIds
                 )
 

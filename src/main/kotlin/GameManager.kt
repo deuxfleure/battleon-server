@@ -997,6 +997,10 @@ object GameManager {
         owner: ChoiceOwner,
         runeId: String
     ): Boolean {
+        if (game.mode != "SOLO" && game.mode != "TRAINING") {
+            return false
+        }
+
         if (!isAmbushPhase(game.phase)) {
             return false
         }
