@@ -10,6 +10,9 @@ import com.battleon.solo.SoloMissionDifficulty
 import com.battleon.solo.SoloMissionGameConfig
 import com.battleon.solo.SoloProgressService
 import com.battleon.solo.SoloAiRouter
+import com.battleon.solo.AmbushWindow
+import com.battleon.solo.SoloRuneCatalog
+
 
 object GameManager {
 
@@ -809,6 +812,49 @@ object GameManager {
     // =========================================================
     // 5. HELPERS GÉNÉRAUX
     // =========================================================
+
+    private fun getAmbushWindowForPhase(
+        phase: TurnPhase
+    ): AmbushWindow? {
+        return when (phase) {
+            TurnPhase.AMBUSH_BEFORE_REVEAL ->
+                AmbushWindow.BEFORE_REVEAL
+
+            TurnPhase.AMBUSH_BEFORE_EFFECTS ->
+                AmbushWindow.BEFORE_EFFECTS
+
+            TurnPhase.AMBUSH_BEFORE_COMBAT ->
+                AmbushWindow.BEFORE_COMBAT
+
+            TurnPhase.AMBUSH_BEFORE_POST_COMBAT ->
+                AmbushWindow.BEFORE_POST_COMBAT
+
+            TurnPhase.AMBUSH_BEFORE_SHOP ->
+                AmbushWindow.BEFORE_SHOP
+
+            else -> null
+        }
+    }
+
+    private fun getAvailablePlayerRuneIdsForCurrentWindow(
+        game: GameState
+    ): List<String> {
+        val currentWindow = getAmbushWindowForPhase(game.phase)
+            ?: return emptyList()
+
+        return game.playerAvailableRuneIds.filter { runeId ->
+            val rune = SoloRuneCatalog.findById(runeId)
+                ?: return@filter false
+
+            currentWindow in rune.activationWindows
+        }
+    }
+
+    private fun hasAvailablePlayerAmbushAction(
+        game: GameState
+    ): Boolean {
+        return getAvailablePlayerRuneIdsForCurrentWindow(game).isNotEmpty()
+    }
 
     private fun isPvpMode(game: GameState): Boolean {
         return game.mode == "DUEL" || game.mode == "SEASON" || game.mode == "RANKED"
@@ -2523,7 +2569,9 @@ object GameManager {
             TurnPhase.AMBUSH_BEFORE_EFFECTS,
             TurnPhase.AMBUSH_BEFORE_COMBAT,
             TurnPhase.AMBUSH_BEFORE_POST_COMBAT,
-            TurnPhase.AMBUSH_BEFORE_SHOP,
+            TurnPhase.AMBUSH_BEFORE_SHOP ->
+                hasAvailablePlayerAmbushAction(game)
+
             TurnPhase.REVEAL,
             TurnPhase.EFFECTS,
             TurnPhase.COMBAT,
