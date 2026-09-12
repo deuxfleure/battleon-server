@@ -2599,8 +2599,41 @@ object GameManager {
                         attackerHasBrute = opponentHasBrute
                     )
 
-                    newOpponentHp = maxOf(0, newOpponentHp - playerDamageDealt)
-                    newPlayerHp = maxOf(0, newPlayerHp - opponentDamageDealt)
+                    val playerHasBurn =
+                        TokenManager.hasToken(
+                            game = game,
+                            target = ChoiceOwner.PLAYER,
+                            tokenId = TokenManager.TokenIds.BURN
+                        )
+
+                    val opponentHasBurn =
+                        TokenManager.hasToken(
+                            game = game,
+                            target = ChoiceOwner.OPPONENT,
+                            tokenId = TokenManager.TokenIds.BURN
+                        )
+
+                    val playerLostCombat =
+                        opponentEffectivePower > playerEffectivePower
+
+                    val opponentLostCombat =
+                        playerEffectivePower > opponentEffectivePower
+
+                    val burnDamageToPlayer =
+                        if (playerHasBurn && playerLostCombat) 1 else 0
+
+                    val burnDamageToOpponent =
+                        if (opponentHasBurn && opponentLostCombat) 1 else 0
+
+                    newOpponentHp = maxOf(
+                        0,
+                        newOpponentHp - playerDamageDealt - burnDamageToOpponent
+                    )
+
+                    newPlayerHp = maxOf(
+                        0,
+                        newPlayerHp - opponentDamageDealt - burnDamageToPlayer
+                    )
 
                     updatedGame = game.copy(
                         playerHp = newPlayerHp,
@@ -2614,6 +2647,40 @@ object GameManager {
                         phase = TurnPhase.AMBUSH_BEFORE_POST_COMBAT,
                         infoMessage = null
                     )
+
+                    if (playerHasBurn && !playerLostCombat) {
+                        updatedGame = TokenManager.removeAllToken(
+                            game = updatedGame,
+                            target = ChoiceOwner.PLAYER,
+                            tokenId = TokenManager.TokenIds.BURN
+                        )
+                    }
+
+                    if (opponentHasBurn && !opponentLostCombat) {
+                        updatedGame = TokenManager.removeAllToken(
+                            game = updatedGame,
+                            target = ChoiceOwner.OPPONENT,
+                            tokenId = TokenManager.TokenIds.BURN
+                        )
+                    }
+
+                    if (burnDamageToPlayer > 0) {
+                        updatedGame = GameLogManager.tokenTriggered(
+                            game = updatedGame,
+                            owner = ChoiceOwner.PLAYER,
+                            tokenId = TokenManager.TokenIds.BURN,
+                            value = burnDamageToPlayer
+                        )
+                    }
+
+                    if (burnDamageToOpponent > 0) {
+                        updatedGame = GameLogManager.tokenTriggered(
+                            game = updatedGame,
+                            owner = ChoiceOwner.OPPONENT,
+                            tokenId = TokenManager.TokenIds.BURN,
+                            value = burnDamageToOpponent
+                        )
+                    }
 
                     updatedGame = if (playerDamageDealt > 0) {
                         GameLogManager.combatDamage(

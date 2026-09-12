@@ -68,4 +68,61 @@ object GameLogManager {
             )
         )
     }
+
+    fun tokenGained(
+        game: GameState,
+        owner: ChoiceOwner,
+        tokenId: String,
+        amount: Int
+    ): GameState {
+        return add(
+            game = game,
+            key = "TOKEN_GAINED",
+            params = mapOf(
+                "owner" to owner.name,
+                "tokenId" to tokenId,
+                "amount" to amount.toString()
+            )
+        )
+    }
+
+    fun tokenRemoved(
+        game: GameState,
+        owner: ChoiceOwner,
+        tokenId: String,
+        amount: Int
+    ): GameState {
+        return add(
+            game = game,
+            key = "TOKEN_REMOVED",
+            params = mapOf(
+                "owner" to owner.name,
+                "tokenId" to tokenId,
+                "amount" to amount.toString()
+            )
+        )
+    }
+
+    fun tokenTriggered(
+        game: GameState,
+        owner: ChoiceOwner,
+        tokenId: String,
+        value: Int? = null
+    ): GameState {
+        val params = mutableMapOf(
+            "owner" to owner.name,
+            "tokenId" to tokenId
+        )
+
+        if (value != null) {
+            params["value"] = value.toString()
+        }
+
+        return add(
+            game = game,
+            key = "TOKEN_TRIGGERED",
+            params = params
+        )
+    }
+
 }

@@ -249,15 +249,26 @@ object CardEffectManager {
         game: GameState,
         target: ChoiceOwner
     ): GameState {
-        // Placeholder :
-        // plus tard, cette fonction ajoutera un jeton Brûlure
-        // au joueur ciblé.
-        //
-        // target peut être :
-        // - ChoiceOwner.PLAYER
-        // - ChoiceOwner.OPPONENT
+        return TokenManager.addToken(
+            game = game,
+            target = target,
+            tokenId = TokenManager.TokenIds.BURN,
+            amount = 1,
+            maxAmount = 1
+        )
+    }
 
-        return game
+    fun addDiseaseToken(
+        game: GameState,
+        target: ChoiceOwner
+    ): GameState {
+        return TokenManager.addToken(
+            game = game,
+            target = target,
+            tokenId = TokenManager.TokenIds.DISEASE,
+            amount = 1,
+            maxAmount = 1
+        )
     }
 
     fun addPoisonToken(
@@ -265,15 +276,12 @@ object CardEffectManager {
         target: ChoiceOwner,
         amount: Int = 1
     ): GameState {
-        // Placeholder :
-        // plus tard, cette fonction ajoutera des jetons Poison
-        // au joueur ciblé.
-        //
-        // Différence avec Brûlure :
-        // - Brûlure sera probablement unique
-        // - Poison pourra s'empiler avec amount
-
-        return game
+        return TokenManager.addToken(
+            game = game,
+            target = target,
+            tokenId = TokenManager.TokenIds.POISON,
+            amount = amount
+        )
     }
 
     fun createRandomSkeletonCard(): Card {
