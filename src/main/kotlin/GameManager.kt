@@ -2489,8 +2489,8 @@ object GameManager {
                                 }
                             }
 
-                            if (!workingGame.playerEffectResolved) {
-                                val blockedBySentinelle =
+                            if (!workingGame.playerEffectResolved) {asdf
+                                val blockedBySentinelle =a
                                     doesOpponentSentinelleBlockPlayerEffect()
 
                                 val blockedByAmbush =
