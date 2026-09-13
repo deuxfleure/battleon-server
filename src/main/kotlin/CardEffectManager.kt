@@ -176,6 +176,25 @@ object CardEffectManager {
                         infoMessage = null
                     )
                 }
+
+                ScryCompletionContext.POST_COMBAT -> {
+                    if (resolver == ChoiceOwner.PLAYER) {
+                        workingGame.copy(
+                            playerPostCombatSacrificeHandled = true,
+                            activeScryState = null,
+                            pendingChoice = null,
+                            infoMessage = null
+                        )
+                    } else {
+                        workingGame.copy(
+                            opponentPostCombatSacrificeHandled = true,
+                            activeScryState = null,
+                            pendingChoice = null,
+                            infoMessage = null
+                        )
+                    }
+                }
+
             }
         }
 
@@ -212,6 +231,9 @@ object CardEffectManager {
         val resolvesCardEffect =
             scryState.completionContext == ScryCompletionContext.CARD_EFFECT
 
+        val resolvesPostCombat =
+            scryState.completionContext == ScryCompletionContext.POST_COMBAT
+
         return if (scryState.target == ChoiceOwner.PLAYER) {
             game.copy(
                 // cardsToReturnOnTop garde l'ordre des clics sur "Reposer".
@@ -230,6 +252,14 @@ object CardEffectManager {
                     if (resolvesCardEffect && !resolverIsPlayer) true
                     else game.opponentEffectResolved,
 
+                playerPostCombatSacrificeHandled =
+                    if (resolvesPostCombat && resolverIsPlayer) true
+                    else game.playerPostCombatSacrificeHandled,
+
+                opponentPostCombatSacrificeHandled =
+                    if (resolvesPostCombat && !resolverIsPlayer) true
+                    else game.opponentPostCombatSacrificeHandled,
+
                 infoMessage = null
             )
         } else {
@@ -246,6 +276,14 @@ object CardEffectManager {
                 opponentEffectResolved =
                     if (resolvesCardEffect && !resolverIsPlayer) true
                     else game.opponentEffectResolved,
+
+                playerPostCombatSacrificeHandled =
+                    if (resolvesPostCombat && resolverIsPlayer) true
+                    else game.playerPostCombatSacrificeHandled,
+
+                opponentPostCombatSacrificeHandled =
+                    if (resolvesPostCombat && !resolverIsPlayer) true
+                    else game.opponentPostCombatSacrificeHandled,
 
                 infoMessage = null
             )

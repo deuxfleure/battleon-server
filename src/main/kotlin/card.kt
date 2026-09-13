@@ -93,6 +93,18 @@ enum class CardId {
 }
 
 @Serializable
+enum class TacticalEntryType {
+    AMBUSH,
+    PREPARATION
+}
+
+@Serializable
+data class TacticalCard(
+    val card: Card,
+    val entryType: TacticalEntryType
+)
+
+@Serializable
 data class Card(
     val id: CardId,
     val power: Int,

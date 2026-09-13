@@ -127,6 +127,17 @@ object EffectPhaseCardResolver {
                 )
             }
 
+            CardId.REPRESAILLES -> {
+                CardEffectManager.addDiseaseToken(
+                    game = game,
+                    target = if (ownerIsPlayer) {
+                        ChoiceOwner.OPPONENT
+                    } else {
+                        ChoiceOwner.PLAYER
+                    }
+                )
+            }
+
             CardId.DEVINDESTENEBRES -> {
                 CardEffectManager.startScry(
                     game = game,

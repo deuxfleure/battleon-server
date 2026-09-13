@@ -119,6 +119,13 @@ object PostCombatEffectResolver {
                     playerNextCardDamageBonus = updatedGame.playerNextCardDamageBonus + 1
                 )
             }
+
+            if (playerLostCombat && playerCard.id == CardId.COSTAUD) {
+                updatedGame = updatedGame.copy(
+                    opponentNextCardPowerBonus = updatedGame.opponentNextCardPowerBonus - 2
+                )
+            }
+
             if (playerLostCombat && playerCard.id == CardId.EPINENOIRE) {
                 updatedGame = updatedGame.copy(
                     opponentHp = maxOf(0, updatedGame.opponentHp - 1)
@@ -155,6 +162,28 @@ object PostCombatEffectResolver {
                         opponentDisplayedTurnCard = null
                     )
                 }
+            }
+
+            if (
+                playerLostCombat &&
+                playerCard.id == CardId.REPRESAILLES &&
+                !updatedGame.playerPostCombatSacrificeHandled
+            ) {
+                updatedGame = CardEffectManager.addPoisonToken(
+                    game = updatedGame,
+                    target = ChoiceOwner.OPPONENT,
+                    amount = 1
+                )
+
+                return CardEffectManager.startScry(
+                    game = updatedGame,
+                    sourceId = CardId.REPRESAILLES.name,
+                    resolver = ChoiceOwner.PLAYER,
+                    target = ChoiceOwner.OPPONENT,
+                    amount = 1,
+                    completionContext = ScryCompletionContext.POST_COMBAT,
+                    canDiscardViewedCards = true
+                )
             }
 
             if (playerCard.id == CardId.PORTEURDEGIDEDECHU) {
@@ -259,6 +288,13 @@ object PostCombatEffectResolver {
                     opponentNextCardDamageBonus = updatedGame.opponentNextCardDamageBonus + 1
                 )
             }
+
+            if (opponentLostCombat && opponentCard.id == CardId.COSTAUD) {
+                updatedGame = updatedGame.copy(
+                    playerNextCardPowerBonus = updatedGame.playerNextCardPowerBonus - 2
+                )
+            }
+
             if (opponentLostCombat && opponentCard.id == CardId.EPINENOIRE) {
                 updatedGame = updatedGame.copy(
                     playerHp = maxOf(0, updatedGame.playerHp - 1)
@@ -296,6 +332,29 @@ object PostCombatEffectResolver {
                     )
                 }
             }
+
+            if (
+                opponentLostCombat &&
+                opponentCard.id == CardId.REPRESAILLES &&
+                !updatedGame.opponentPostCombatSacrificeHandled
+            ) {
+                updatedGame = CardEffectManager.addPoisonToken(
+                    game = updatedGame,
+                    target = ChoiceOwner.PLAYER,
+                    amount = 1
+                )
+
+                return CardEffectManager.startScry(
+                    game = updatedGame,
+                    sourceId = CardId.REPRESAILLES.name,
+                    resolver = ChoiceOwner.OPPONENT,
+                    target = ChoiceOwner.PLAYER,
+                    amount = 1,
+                    completionContext = ScryCompletionContext.POST_COMBAT,
+                    canDiscardViewedCards = true
+                )
+            }
+
 
             if (opponentCard.id == CardId.PORTEURDEGIDEDECHU) {
                 if (opponentLostCombat) {

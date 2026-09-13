@@ -27,7 +27,8 @@ enum class TurnPhase {
 @Serializable
 enum class ScryCompletionContext {
     CARD_EFFECT,
-    AMBUSH
+    AMBUSH,
+    POST_COMBAT
 }
 
 @Serializable
@@ -189,8 +190,8 @@ data class GameState(
     val playerDiscard: List<Card>,
     val opponentDiscard: List<Card>,
 
-    val playerAmbush: List<Card> = emptyList(),
-    val opponentAmbush: List<Card> = emptyList(),
+    val playerAmbush: List<TacticalCard> = emptyList(),
+    val opponentAmbush: List<TacticalCard> = emptyList(),
 
     // =========================================================
     // 6.b RUNES ENCORE DISPONIBLES DANS CETTE PARTIE
