@@ -743,8 +743,8 @@ object GameManager {
             playerAvailableRuneIds = config.selectedRuneIds,
             opponentAvailableRuneIds = emptyList(),
 
-            playerTokens = emptyList(),
-            opponentTokens = emptyList(),
+            playerTokens = config.playerStartingTokens,
+            opponentTokens = config.opponentStartingTokens,
 
             playerNextCardPowerBonus = 0,
             opponentNextCardPowerBonus = 0,

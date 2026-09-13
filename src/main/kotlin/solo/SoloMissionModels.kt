@@ -2,6 +2,7 @@ package com.battleon.solo
 
 import com.battleon.CardId
 import kotlinx.serialization.Serializable
+import com.battleon.TokenStack
 
 
 enum class SoloMissionDifficulty {
@@ -35,6 +36,9 @@ data class SoloMissionGameConfig(
 
     val playerGold: Int = 1,
     val opponentGold: Int = 1,
+
+    val playerStartingTokens: List<TokenStack> = emptyList(),
+    val opponentStartingTokens: List<TokenStack> = emptyList(),
 
     val playerStartingDeck: List<CardId>,
     val opponentStartingDeck: List<CardId>,
