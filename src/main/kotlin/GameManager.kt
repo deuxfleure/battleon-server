@@ -3149,12 +3149,96 @@ object GameManager {
     // =========================================================
     // 9. CHOIX INTERACTIFS
     // =========================================================
+    private fun resolveRunePendingChoice(
+        game: GameState,
+        choice: String
+    ): GameState? {
+        val pendingChoice = game.pendingChoice ?: return null
+
+        if (pendingChoice.type != "RUNE_DESTROY_OPPONENT_AMBUSH") {
+            return null
+        }
+
+        val owner = pendingChoice.owner
+        val targetIsPlayer = owner == ChoiceOwner.OPPONENT
+
+        // Sécurité serveur :
+        // la destruction doit toujours respecter la règle des 5 cartes.
+        if (!CardEffectManager.canDestroyOneCardWithFiveCardRule(
+                game = game,
+                isPlayer = targetIsPlayer
+            )
+        ) {
+            return game.copy(
+                pendingChoice = null,
+                infoMessage = "Règle des 5 cartes"
+            )
+        }
+
+        if (!choice.startsWith("AMBUSH:")) {
+            return game.copy(
+                infoMessage = "Choix invalide"
+            )
+        }
+
+        val index = choice
+            .removePrefix("AMBUSH:")
+            .toIntOrNull()
+            ?: return game.copy(
+                infoMessage = "Choix invalide"
+            )
+
+        val targetAmbush = if (targetIsPlayer) {
+            game.playerAmbush
+        } else {
+            game.opponentAmbush
+        }
+
+        if (index !in targetAmbush.indices) {
+            return game.copy(
+                infoMessage = "Choix invalide"
+            )
+        }
+
+        val updatedGame = if (targetIsPlayer) {
+            game.copy(
+                playerAmbush = game.playerAmbush.filterIndexed { i, _ ->
+                    i != index
+                },
+                pendingChoice = null,
+                infoMessage = null
+            )
+        } else {
+            game.copy(
+                opponentAmbush = game.opponentAmbush.filterIndexed { i, _ ->
+                    i != index
+                },
+                pendingChoice = null,
+                infoMessage = null
+            )
+        }
+
+        return resumeAmbushAfterPendingChoice(
+            game = updatedGame,
+            owner = owner
+        )
+    }
 
     fun resolvePendingChoice(
         gameId: String,
         choice: String
     ): GameState? {
         val game = games[gameId] ?: return null
+
+        val runeResolvedGame = resolveRunePendingChoice(
+            game = game,
+            choice = choice
+        )
+
+        if (runeResolvedGame != null) {
+            games[gameId] = runeResolvedGame
+            return runeResolvedGame
+        }
 
         val activeScryBeforeResolution = game.activeScryState
 
