@@ -112,41 +112,69 @@ object CardEffectManager {
         canDiscardViewedCards: Boolean = true
     ): GameState {
 
-        var playerDeck = game.playerDeck
-        var opponentDeck = game.opponentDeck
-        var playerDiscard = game.playerDiscard
-        var opponentDiscard = game.opponentDiscard
-        var playerGold = game.playerGold
-        var opponentGold = game.opponentGold
-
+        var workingGame = game
         val revealedCards = mutableListOf<Card>()
 
         repeat(amount) {
-            if (target == ChoiceOwner.PLAYER) {
-                // Si le deck est vide, on mélange la défausse dans le deck et on gagne +1 or
-                if (playerDeck.isEmpty() && playerDiscard.isNotEmpty()) {
-                    playerDeck = playerDiscard.shuffled()
-                    playerDiscard = emptyList()
-                    playerGold += 1
+
+            workingGame = DeckManager.reshuffleDiscardIntoDeckIfNeeded(
+                game = workingGame,
+                target = target
+            )
+
+            when (target) {
+                ChoiceOwner.PLAYER -> {
+                    val nextCard = workingGame.playerDeck.firstOrNull()
+
+                    if (nextCard != null) {
+                        revealedCards += nextCard
+
+                        workingGame = workingGame.copy(
+                            playerDeck = workingGame.playerDeck.drop(1)
+                        )
+                    }
                 }
 
-                val nextCard = playerDeck.firstOrNull()
-                if (nextCard != null) {
-                    revealedCards += nextCard
-                    playerDeck = playerDeck.drop(1)
+                ChoiceOwner.OPPONENT -> {
+                    val nextCard = workingGame.opponentDeck.firstOrNull()
+
+                    if (nextCard != null) {
+                        revealedCards += nextCard
+
+                        workingGame = workingGame.copy(
+                            opponentDeck = workingGame.opponentDeck.drop(1)
+                        )
+                    }
                 }
-            } else {
-                // Même logique sur le deck adverse
-                if (opponentDeck.isEmpty() && opponentDiscard.isNotEmpty()) {
-                    opponentDeck = opponentDiscard.shuffled()
-                    opponentDiscard = emptyList()
-                    opponentGold += 1
+            }
+        }
+
+        if (revealedCards.isEmpty()) {
+            return when (completionContext) {
+                ScryCompletionContext.CARD_EFFECT -> {
+                    if (resolver == ChoiceOwner.PLAYER) {
+                        workingGame.copy(
+                            playerEffectResolved = true,
+                            activeScryState = null,
+                            pendingChoice = null,
+                            infoMessage = null
+                        )
+                    } else {
+                        workingGame.copy(
+                            opponentEffectResolved = true,
+                            activeScryState = null,
+                            pendingChoice = null,
+                            infoMessage = null
+                        )
+                    }
                 }
 
-                val nextCard = opponentDeck.firstOrNull()
-                if (nextCard != null) {
-                    revealedCards += nextCard
-                    opponentDeck = opponentDeck.drop(1)
+                ScryCompletionContext.AMBUSH -> {
+                    workingGame.copy(
+                        activeScryState = null,
+                        pendingChoice = null,
+                        infoMessage = null
+                    )
                 }
             }
         }
@@ -164,19 +192,15 @@ object CardEffectManager {
             selectedCardIndex = null
         )
 
-        val intermediateGame = game.copy(
-            playerDeck = playerDeck,
-            opponentDeck = opponentDeck,
-            playerDiscard = playerDiscard,
-            opponentDiscard = opponentDiscard,
-            playerGold = playerGold,
-            opponentGold = opponentGold,
+        val intermediateGame = workingGame.copy(
             activeScryState = newScryState,
             infoMessage = null
         )
 
         return intermediateGame.copy(
-            pendingChoice = buildScrySelectCardPendingChoice(intermediateGame)
+            pendingChoice = buildScrySelectCardPendingChoice(
+                intermediateGame
+            )
         )
     }
 
@@ -298,34 +322,42 @@ object CardEffectManager {
         game: GameState,
         targetIsPlayer: Boolean
     ): GameState {
-        var workingDeck = if (targetIsPlayer) game.playerDeck else game.opponentDeck
-        var workingDiscard = if (targetIsPlayer) game.playerDiscard else game.opponentDiscard
-        val originalGold = if (targetIsPlayer) game.playerGold else game.opponentGold
 
-        var gainedGoldFromReshuffle = false
-
-        if (workingDeck.isEmpty() && workingDiscard.isNotEmpty()) {
-            workingDeck = workingDiscard.shuffled()
-            workingDiscard = emptyList()
-            gainedGoldFromReshuffle = true
+        val target = if (targetIsPlayer) {
+            ChoiceOwner.PLAYER
+        } else {
+            ChoiceOwner.OPPONENT
         }
 
-        val discardedCard = workingDeck.firstOrNull()
-        val finalDeck = if (discardedCard != null) workingDeck.drop(1) else workingDeck
-        val finalDiscard = if (discardedCard != null) workingDiscard + discardedCard else workingDiscard
-        val finalGold = if (gainedGoldFromReshuffle) originalGold + 1 else originalGold
+        val recycledGame = DeckManager.reshuffleDiscardIntoDeckIfNeeded(
+            game = game,
+            target = target
+        )
+
+        val deck = if (targetIsPlayer) {
+            recycledGame.playerDeck
+        } else {
+            recycledGame.opponentDeck
+        }
+
+        val discard = if (targetIsPlayer) {
+            recycledGame.playerDiscard
+        } else {
+            recycledGame.opponentDiscard
+        }
+
+        val discardedCard = deck.firstOrNull()
+            ?: return recycledGame
 
         return if (targetIsPlayer) {
-            game.copy(
-                playerDeck = finalDeck,
-                playerDiscard = finalDiscard,
-                playerGold = finalGold
+            recycledGame.copy(
+                playerDeck = deck.drop(1),
+                playerDiscard = discard + discardedCard
             )
         } else {
-            game.copy(
-                opponentDeck = finalDeck,
-                opponentDiscard = finalDiscard,
-                opponentGold = finalGold
+            recycledGame.copy(
+                opponentDeck = deck.drop(1),
+                opponentDiscard = discard + discardedCard
             )
         }
     }
@@ -611,24 +643,20 @@ object CardEffectManager {
     ): GameState {
         val ownerIsPlayer = owner == ChoiceOwner.PLAYER
 
-        var playerDeck = game.playerDeck
-        var opponentDeck = game.opponentDeck
-        var playerDiscard = game.playerDiscard
-        var opponentDiscard = game.opponentDiscard
-        var playerGold = game.playerGold
-        var opponentGold = game.opponentGold
+        var recycledGame = DeckManager.reshuffleDiscardIntoDeckIfNeeded(
+            game = game,
+            target = ChoiceOwner.PLAYER
+        )
 
-        if (playerDeck.isEmpty() && playerDiscard.isNotEmpty()) {
-            playerDeck = playerDiscard.shuffled()
-            playerDiscard = emptyList()
-            playerGold += 1
-        }
+        recycledGame = DeckManager.reshuffleDiscardIntoDeckIfNeeded(
+            game = recycledGame,
+            target = ChoiceOwner.OPPONENT
+        )
 
-        if (opponentDeck.isEmpty() && opponentDiscard.isNotEmpty()) {
-            opponentDeck = opponentDiscard.shuffled()
-            opponentDiscard = emptyList()
-            opponentGold += 1
-        }
+        val playerDeck = recycledGame.playerDeck
+        val opponentDeck = recycledGame.opponentDeck
+        val playerDiscard = recycledGame.playerDiscard
+        val opponentDiscard = recycledGame.opponentDiscard
 
         val ownTopCard = if (ownerIsPlayer) {
             playerDeck.firstOrNull()
@@ -643,7 +671,7 @@ object CardEffectManager {
         }
 
         val canDestroyOwnTopCard = canDestroyOneCardWithFiveCardRule(
-            game = game.copy(
+            game = recycledGame.copy(
                 playerDeck = playerDeck,
                 opponentDeck = opponentDeck,
                 playerDiscard = playerDiscard,
@@ -664,13 +692,11 @@ object CardEffectManager {
             "Subterfuge : nombre de cartes insuffisant pour détruire votre carte. Vous devez défausser la carte adverse."
         }
 
-        return game.copy(
+        return recycledGame.copy(
             playerDeck = playerDeck,
             opponentDeck = opponentDeck,
             playerDiscard = playerDiscard,
             opponentDiscard = opponentDiscard,
-            playerGold = playerGold,
-            opponentGold = opponentGold,
             pendingChoice = PendingChoice(
                 type = "CHAMANE_SUBTERFUGE",
                 cardId = CardId.CHAMANE.name,
