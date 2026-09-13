@@ -11,7 +11,9 @@ enum class SoloMissionDifficulty {
 }
 
 enum class SoloAiType {
-    STANDARD
+    STANDARD,
+    BARBARE_VIKING,
+    MIRROR_PLAYER_PURCHASES
 }
 
 data class SoloMissionReward(

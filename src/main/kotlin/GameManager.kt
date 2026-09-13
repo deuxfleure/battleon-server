@@ -713,6 +713,7 @@ object GameManager {
             mode = "SOLO",
             soloMissionId = config.missionId,
             soloDifficulty = config.difficulty.name,
+            soloAiType = config.aiType.name,
 
             turnNumber = 0,
             phase = TurnPhase.PRE_START,

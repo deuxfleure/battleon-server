@@ -8,10 +8,31 @@ object SoloAiRouter {
         game: GameState,
         standardShopIntent: (GameState) -> GameState
     ): GameState {
-        return when (game.soloMissionId) {
-            "c1_m01" -> standardShopIntent(game)
+        val aiType = game.soloAiType
+            ?.let { value ->
+                runCatching {
+                    SoloAiType.valueOf(value)
+                }.getOrNull()
+            }
+            ?: SoloAiType.STANDARD
 
-            else -> standardShopIntent(game)
+        return when (aiType) {
+
+            SoloAiType.STANDARD -> {
+                standardShopIntent(game)
+            }
+
+            SoloAiType.BARBARE_VIKING -> {
+                // TODO : stratégie spécifique Barbare Viking.
+                // En attendant, comportement identique à l'IA standard.
+                standardShopIntent(game)
+            }
+
+            SoloAiType.MIRROR_PLAYER_PURCHASES -> {
+                // TODO : stratégie "mêmes achats que le joueur".
+                // En attendant, comportement identique à l'IA standard.
+                standardShopIntent(game)
+            }
         }
     }
 }
