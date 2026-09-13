@@ -43,11 +43,8 @@ fun applyCardEffect(
         }
 
         CardId.HEALER -> {
-            if (effectOwnerIsPlayer) {
-                newPlayerHp += 1
-            } else {
-                newOpponentHp += 1
-            }
+            // défini dans EffectPhaseCardResolver + TokenManager
+            // gagne 1 PV, sauf si le propriétaire a Maladie
         }
 
         CardId.CURSED -> {

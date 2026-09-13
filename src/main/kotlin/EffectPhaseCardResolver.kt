@@ -168,6 +168,14 @@ object EffectPhaseCardResolver {
                 )
             }
 
+            CardId.HEALER -> {
+                TokenManager.heal(
+                    game = game,
+                    target = owner,
+                    amount = 1
+                )
+            }
+
             else -> {
                 val effectResult = applyCardEffect(
                     effectOwnerIsPlayer = ownerIsPlayer,

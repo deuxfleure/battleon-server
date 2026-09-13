@@ -159,8 +159,10 @@ object PostCombatEffectResolver {
 
             if (playerCard.id == CardId.PORTEURDEGIDEDECHU) {
                 if (playerLostCombat) {
-                    updatedGame = updatedGame.copy(
-                        playerHp = updatedGame.playerHp + 1
+                    updatedGame = TokenManager.heal(
+                        game = updatedGame,
+                        target = ChoiceOwner.PLAYER,
+                        amount = 1
                     )
                 }
 
@@ -297,8 +299,10 @@ object PostCombatEffectResolver {
 
             if (opponentCard.id == CardId.PORTEURDEGIDEDECHU) {
                 if (opponentLostCombat) {
-                    updatedGame = updatedGame.copy(
-                        opponentHp = updatedGame.opponentHp + 1
+                    updatedGame = TokenManager.heal(
+                        game = updatedGame,
+                        target = ChoiceOwner.OPPONENT,
+                        amount = 1
                     )
                 }
 

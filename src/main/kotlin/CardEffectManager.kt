@@ -1033,16 +1033,20 @@ object CardEffectManager {
                 when (choice) {
 
                     "HEAL_SELF" -> {
+                        val healedGame = TokenManager.heal(
+                            game = game,
+                            target = pendingChoice.owner,
+                            amount = 1
+                        )
+
                         if (ownerIsPlayer) {
-                            game.copy(
-                                playerHp = game.playerHp + 1,
+                            healedGame.copy(
                                 pendingChoice = null,
                                 playerEffectResolved = true,
                                 infoMessage = null
                             )
                         } else {
-                            game.copy(
-                                opponentHp = game.opponentHp + 1,
+                            healedGame.copy(
                                 pendingChoice = null,
                                 opponentEffectResolved = true,
                                 infoMessage = null
@@ -1538,11 +1542,11 @@ object CardEffectManager {
                                 }
 
                                 CardId.DEVINDELUMIERE.name -> {
-                                    if (ownerIsPlayer) {
-                                        game.copy(playerHp = game.playerHp + 1)
-                                    } else {
-                                        game.copy(opponentHp = game.opponentHp + 1)
-                                    }
+                                    TokenManager.heal(
+                                        game = game,
+                                        target = pendingChoice.owner,
+                                        amount = 1
+                                    )
                                 }
 
                                 CardId.DEVINDESTENEBRES.name -> {
@@ -1763,18 +1767,30 @@ object CardEffectManager {
 
                             val healAmount = destroyedCard.power / 2
 
-                            if (ownerIsPlayer) {
+                            val gameAfterDestroy = if (ownerIsPlayer) {
                                 game.copy(
-                                    playerDiscard = newDiscard,
-                                    playerHp = game.playerHp + healAmount,
+                                    playerDiscard = newDiscard
+                                )
+                            } else {
+                                game.copy(
+                                    opponentDiscard = newDiscard
+                                )
+                            }
+
+                            val healedGame = TokenManager.heal(
+                                game = gameAfterDestroy,
+                                target = pendingChoice.owner,
+                                amount = healAmount
+                            )
+
+                            if (ownerIsPlayer) {
+                                healedGame.copy(
                                     pendingChoice = null,
                                     playerEffectResolved = true,
                                     infoMessage = null
                                 )
                             } else {
-                                game.copy(
-                                    opponentDiscard = newDiscard,
-                                    opponentHp = game.opponentHp + healAmount,
+                                healedGame.copy(
                                     pendingChoice = null,
                                     opponentEffectResolved = true,
                                     infoMessage = null

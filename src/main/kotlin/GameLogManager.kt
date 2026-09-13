@@ -125,4 +125,36 @@ object GameLogManager {
         )
     }
 
+    fun heal(
+        game: GameState,
+        owner: ChoiceOwner,
+        amount: Int
+    ): GameState {
+        return add(
+            game = game,
+            key = "HEAL",
+            params = mapOf(
+                "owner" to owner.name,
+                "amount" to amount.toString()
+            )
+        )
+    }
+
+    fun healBlocked(
+        game: GameState,
+        owner: ChoiceOwner,
+        amount: Int,
+        tokenId: String
+    ): GameState {
+        return add(
+            game = game,
+            key = "HEAL_BLOCKED",
+            params = mapOf(
+                "owner" to owner.name,
+                "amount" to amount.toString(),
+                "tokenId" to tokenId
+            )
+        )
+    }
+
 }

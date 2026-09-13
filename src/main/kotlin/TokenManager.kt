@@ -207,10 +207,15 @@ object TokenManager {
                 tokenId = TokenIds.DISEASE
             )
         ) {
-            return game
+            return GameLogManager.healBlocked(
+                game = game,
+                owner = target,
+                amount = amount,
+                tokenId = TokenIds.DISEASE
+            )
         }
 
-        return when (target) {
+        val healedGame = when (target) {
             ChoiceOwner.PLAYER -> game.copy(
                 playerHp = game.playerHp + amount
             )
@@ -219,6 +224,12 @@ object TokenManager {
                 opponentHp = game.opponentHp + amount
             )
         }
+
+        return GameLogManager.heal(
+            game = healedGame,
+            owner = target,
+            amount = amount
+        )
     }
 
     fun onDiscardReshuffledIntoDeck(

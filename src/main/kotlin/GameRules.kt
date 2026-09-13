@@ -88,11 +88,11 @@ fun determineResolutionOrder(
         return ResolutionOrder.OPPONENT_FIRST
     }
 
-    // 4. plus d'or agit d'abord
-    if (playerGold > opponentGold) {
+    // 4. moins d'or agit d'abord
+    if (playerGold < opponentGold) {
         return ResolutionOrder.PLAYER_FIRST
     }
-    if (opponentGold > playerGold) {
+    if (opponentGold < playerGold) {
         return ResolutionOrder.OPPONENT_FIRST
     }
 

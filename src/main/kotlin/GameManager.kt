@@ -1179,6 +1179,14 @@ object GameManager {
                 }
             }
 
+            SoloRuneEffectType.HEAL -> {
+                TokenManager.heal(
+                    game = game,
+                    target = owner,
+                    amount = rune.value
+                )
+            }
+
 
             else -> game
         }
@@ -2189,20 +2197,30 @@ object GameManager {
                 game.lastPlayerCard?.let { playerDiscard = playerDiscard + it }
                 game.lastOpponentCard?.let { opponentDiscard = opponentDiscard + it }
 
-                var newPlayerGold = game.playerGold
-                var newOpponentGold = game.opponentGold
+                var recycleGame = game.copy(
+                    playerDeck = playerDeck,
+                    opponentDeck = opponentDeck,
+                    playerDiscard = playerDiscard,
+                    opponentDiscard = opponentDiscard
+                )
 
-                if (playerDeck.isEmpty() && playerDiscard.isNotEmpty()) {
-                    playerDeck = playerDiscard.shuffled()
-                    playerDiscard = emptyList()
-                    newPlayerGold += 1
-                }
+                recycleGame = DeckManager.reshuffleDiscardIntoDeckIfNeeded(
+                    game = recycleGame,
+                    target = ChoiceOwner.PLAYER
+                )
 
-                if (opponentDeck.isEmpty() && opponentDiscard.isNotEmpty()) {
-                    opponentDeck = opponentDiscard.shuffled()
-                    opponentDiscard = emptyList()
-                    newOpponentGold += 1
-                }
+                recycleGame = DeckManager.reshuffleDiscardIntoDeckIfNeeded(
+                    game = recycleGame,
+                    target = ChoiceOwner.OPPONENT
+                )
+
+                playerDeck = recycleGame.playerDeck
+                opponentDeck = recycleGame.opponentDeck
+                playerDiscard = recycleGame.playerDiscard
+                opponentDiscard = recycleGame.opponentDiscard
+
+                val newPlayerGold = recycleGame.playerGold
+                val newOpponentGold = recycleGame.opponentGold
 
                 val playerCard = playerDeck.firstOrNull()
                 val opponentCard = opponentDeck.firstOrNull()
@@ -2232,7 +2250,7 @@ object GameManager {
 
 
                 updatedGame = if (playerCard == null || opponentCard == null) {
-                    game.copy(
+                    recycleGame.copy(
                         playerDeck = playerDeck,
                         opponentDeck = opponentDeck,
                         playerDiscard = playerDiscard,
@@ -2246,7 +2264,7 @@ object GameManager {
                         infoMessage = "Impossible de révéler les cartes"
                     )
                 } else {
-                    game.copy(
+                    recycleGame.copy(
                         playerDeck = playerDeck.drop(1),
                         opponentDeck = opponentDeck.drop(1),
                         playerDiscard = playerDiscard,
