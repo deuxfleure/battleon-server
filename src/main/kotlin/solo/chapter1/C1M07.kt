@@ -20,7 +20,7 @@ object C1M07 : SoloMissionDefinition {
         return SoloMissionGameConfig(
             missionId = id,
             difficulty = SoloMissionDifficulty.CAMPAIGN,
-            opponentNameKey = "opponent.c1_m07.cultists",
+            opponentNameKey = "opponent.c1_m07.normal",
             aiType = SoloAiType.STANDARD,
 
             playerHp = 20,
@@ -79,7 +79,7 @@ object C1M07 : SoloMissionDefinition {
             selectedCardIds = selectedCardIds
         ).copy(
             difficulty = SoloMissionDifficulty.HARD,
-            opponentNameKey = "opponent.c1_m07.cultists_hard"
+            opponentNameKey = "opponent.c1_m07.hard"
         )
     }
 }

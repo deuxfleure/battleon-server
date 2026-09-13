@@ -20,7 +20,7 @@ object C2M23 : SoloMissionDefinition {
         return SoloMissionGameConfig(
             missionId = id,
             difficulty = SoloMissionDifficulty.CAMPAIGN,
-            opponentNameKey = "opponent.c2_m23.standard",
+            opponentNameKey = "opponent.c2_m23.normal",
             aiType = SoloAiType.STANDARD,
 
             playerHp = 20,
@@ -78,7 +78,7 @@ object C2M23 : SoloMissionDefinition {
             selectedCardIds = selectedCardIds
         ).copy(
             difficulty = SoloMissionDifficulty.HARD,
-            opponentNameKey = "opponent.c2_m23.standard_hard"
+            opponentNameKey = "opponent.c2_m23.hard"
         )
     }
 }
