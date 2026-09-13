@@ -1187,6 +1187,22 @@ object GameManager {
                 )
             }
 
+            SoloRuneEffectType.GIVE_BURN_AND_DISEASE -> {
+                val target = oppositeOwner(owner)
+
+                var updatedGame = CardEffectManager.addBurnToken(
+                    game = game,
+                    target = target
+                )
+
+                updatedGame = CardEffectManager.addDiseaseToken(
+                    game = updatedGame,
+                    target = target
+                )
+
+                updatedGame
+            }
+
 
             else -> game
         }
