@@ -150,6 +150,39 @@ object EffectPhaseCardResolver {
                 }
             }
 
+            CardId.SQUELETTE_MALEDICTION -> {
+                when (
+                    listOf(
+                        TokenManager.TokenIds.DISEASE,
+                        TokenManager.TokenIds.BURN,
+                        TokenManager.TokenIds.POISON
+                    ).random()
+                ) {
+                    TokenManager.TokenIds.DISEASE -> {
+                        CardEffectManager.addDiseaseToken(
+                            game = game,
+                            target = owner
+                        )
+                    }
+
+                    TokenManager.TokenIds.BURN -> {
+                        CardEffectManager.addBurnToken(
+                            game = game,
+                            target = owner
+                        )
+                    }
+
+                    TokenManager.TokenIds.POISON -> {
+                        CardEffectManager.addPoisonToken(
+                            game = game,
+                            target = owner
+                        )
+                    }
+
+                    else -> game
+                }
+            }
+
             CardId.MAITREDESCARNAGES -> {
                 game.copy(
                     pendingChoice = CardEffectManager.buildMasterOfCarnagesPendingChoice(

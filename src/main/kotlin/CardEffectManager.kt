@@ -1265,48 +1265,27 @@ object CardEffectManager {
                             )
                         }
 
+                        val targetOwner = if (ownerIsPlayer) {
+                            ChoiceOwner.PLAYER
+                        } else {
+                            ChoiceOwner.OPPONENT
+                        }
+
+                        val recycledGame = DeckManager.reshuffleDiscardIntoDeckIfNeeded(
+                            game = game,
+                            target = targetOwner
+                        )
+
                         val updatedGame = if (ownerIsPlayer) {
 
-                            var deck = game.playerDeck
-                            var discard = game.playerDiscard
-                            var gold = game.playerGold
-
-                            if (deck.isEmpty() && discard.isNotEmpty()) {
-                                deck = discard.shuffled()
-                                discard = emptyList()
-                                gold += 1
-                            }
-
-                            if (deck.isNotEmpty()) {
-                                deck = deck.drop(1)
-                            }
-
-                            game.copy(
-                                playerDeck = deck,
-                                playerDiscard = discard,
-                                playerGold = gold
+                            recycledGame.copy(
+                                playerDeck = recycledGame.playerDeck.drop(1)
                             )
 
                         } else {
 
-                            var deck = game.opponentDeck
-                            var discard = game.opponentDiscard
-                            var gold = game.opponentGold
-
-                            if (deck.isEmpty() && discard.isNotEmpty()) {
-                                deck = discard.shuffled()
-                                discard = emptyList()
-                                gold += 1
-                            }
-
-                            if (deck.isNotEmpty()) {
-                                deck = deck.drop(1)
-                            }
-
-                            game.copy(
-                                opponentDeck = deck,
-                                opponentDiscard = discard,
-                                opponentGold = gold
+                            recycledGame.copy(
+                                opponentDeck = recycledGame.opponentDeck.drop(1)
                             )
                         }
 
@@ -1968,25 +1947,26 @@ object CardEffectManager {
                     "REPLACE" -> {
                         if (ownerIsPlayer) {
                             val oldOpponentCard = game.lastOpponentCard
-                                ?: return game.copy(infoMessage = "Aucune carte adverse à remplacer")
+                                ?: return game.copy(
+                                    infoMessage = "Aucune carte adverse à remplacer"
+                                )
 
-                            var opponentDeck = game.opponentDeck
-                            var opponentDiscard = game.opponentDiscard + oldOpponentCard
-                            var newOpponentGold = game.opponentGold
+                            var workingGame = game.copy(
+                                opponentDiscard = game.opponentDiscard + oldOpponentCard
+                            )
 
-                            if (opponentDeck.isEmpty() && opponentDiscard.isNotEmpty()) {
-                                opponentDeck = opponentDiscard.shuffled()
-                                opponentDiscard = emptyList()
-                                newOpponentGold += 1
-                            }
+                            workingGame = DeckManager.reshuffleDiscardIntoDeckIfNeeded(
+                                game = workingGame,
+                                target = ChoiceOwner.OPPONENT
+                            )
 
-                            val newOpponentCard = opponentDeck.firstOrNull()
-                                ?: return game.copy(infoMessage = "Impossible de révéler une nouvelle carte")
+                            val newOpponentCard = workingGame.opponentDeck.firstOrNull()
+                                ?: return workingGame.copy(
+                                    infoMessage = "Impossible de révéler une nouvelle carte"
+                                )
 
-                            game.copy(
-                                opponentDeck = opponentDeck.drop(1),
-                                opponentDiscard = opponentDiscard,
-                                opponentGold = newOpponentGold,
+                            workingGame.copy(
+                                opponentDeck = workingGame.opponentDeck.drop(1),
                                 lastOpponentCard = newOpponentCard,
                                 opponentDisplayedTurnCard = newOpponentCard,
 
@@ -1998,27 +1978,29 @@ object CardEffectManager {
                                 playerEffectResolved = true,
                                 infoMessage = null
                             )
+
                         } else {
                             val oldPlayerCard = game.lastPlayerCard
-                                ?: return game.copy(infoMessage = "Aucune carte adverse à remplacer")
+                                ?: return game.copy(
+                                    infoMessage = "Aucune carte adverse à remplacer"
+                                )
 
-                            var playerDeck = game.playerDeck
-                            var playerDiscard = game.playerDiscard + oldPlayerCard
-                            var newPlayerGold = game.playerGold
+                            var workingGame = game.copy(
+                                playerDiscard = game.playerDiscard + oldPlayerCard
+                            )
 
-                            if (playerDeck.isEmpty() && playerDiscard.isNotEmpty()) {
-                                playerDeck = playerDiscard.shuffled()
-                                playerDiscard = emptyList()
-                                newPlayerGold += 1
-                            }
+                            workingGame = DeckManager.reshuffleDiscardIntoDeckIfNeeded(
+                                game = workingGame,
+                                target = ChoiceOwner.PLAYER
+                            )
 
-                            val newPlayerCard = playerDeck.firstOrNull()
-                                ?: return game.copy(infoMessage = "Impossible de révéler une nouvelle carte")
+                            val newPlayerCard = workingGame.playerDeck.firstOrNull()
+                                ?: return workingGame.copy(
+                                    infoMessage = "Impossible de révéler une nouvelle carte"
+                                )
 
-                            game.copy(
-                                playerDeck = playerDeck.drop(1),
-                                playerDiscard = playerDiscard,
-                                playerGold = newPlayerGold,
+                            workingGame.copy(
+                                playerDeck = workingGame.playerDeck.drop(1),
                                 lastPlayerCard = newPlayerCard,
                                 playerDisplayedTurnCard = newPlayerCard,
 

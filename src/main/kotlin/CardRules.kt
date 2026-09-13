@@ -208,8 +208,8 @@ fun applyCardEffect(
         }
 
         CardId.SQUELETTE_MALEDICTION -> {
-            // aucun effet implémenté actuellement
-            // placeholder mécanique en attente
+            // tire Maladie / Brûlure / Poison
+            // applique le jeton au propriétaire de la carte
         }
 
         CardId.SQUELETTE_FAIBLESSE -> {
