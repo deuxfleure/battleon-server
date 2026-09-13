@@ -1044,7 +1044,43 @@ object GameManager {
         val currentWindow = getAmbushWindowForPhase(game.phase)
             ?: return false
 
-        return currentWindow in rune.activationWindows
+        if (currentWindow !in rune.activationWindows) {
+            return false
+        }
+
+// Rune majeure IV : destruction d'une carte Embuscade / Préparation adverse.
+//
+// Règle des 5 cartes :
+// l'adversaire doit posséder au moins 6 cartes avant la destruction.
+//
+// Les fragments de rune ne sont PAS des cartes :
+// ils ne sont ni comptés dans cette règle, ni considérés comme des cibles.
+        if (rune.effectType == SoloRuneEffectType.DESTROY_OPPONENT_AMBUSH_OR_PREPARATION) {
+
+            val targetIsPlayer = owner == ChoiceOwner.OPPONENT
+
+            val targetAmbush = if (targetIsPlayer) {
+                game.playerAmbush
+            } else {
+                game.opponentAmbush
+            }
+
+            // Il faut au moins une vraie carte à détruire.
+            if (targetAmbush.isEmpty()) {
+                return false
+            }
+
+            // Après destruction, l'adversaire doit conserver au moins 5 cartes.
+            if (!CardEffectManager.canDestroyOneCardWithFiveCardRule(
+                    game = game,
+                    isPlayer = targetIsPlayer
+                )
+            ) {
+                return false
+            }
+        }
+
+        return true
     }
 
     private fun consumeRune(
@@ -1201,6 +1237,70 @@ object GameManager {
                 )
 
                 updatedGame
+            }
+
+            SoloRuneEffectType.OPPONENT_LOSE_GOLD_AND_DARK_SCRY -> {
+                val target = oppositeOwner(owner)
+
+                // L'adversaire perd 1 Or.
+                // On ne descend jamais sous 0.
+                val gameAfterGoldLoss = when (target) {
+                    ChoiceOwner.PLAYER -> game.copy(
+                        playerGold = maxOf(0, game.playerGold - 1)
+                    )
+
+                    ChoiceOwner.OPPONENT -> game.copy(
+                        opponentGold = maxOf(0, game.opponentGold - 1)
+                    )
+                }
+
+                // Scrutage sombre :
+                // le propriétaire de la rune prend les décisions,
+                // mais regarde/manipule les cartes du deck adverse.
+                CardEffectManager.startScry(
+                    game = gameAfterGoldLoss,
+                    sourceId = rune.id,
+                    resolver = owner,
+                    target = target,
+                    amount = rune.value,
+                    completionContext = ScryCompletionContext.AMBUSH,
+                    canDiscardViewedCards = true
+                )
+            }
+
+            SoloRuneEffectType.DESTROY_OPPONENT_AMBUSH_OR_PREPARATION -> {
+                val targetIsPlayer = owner == ChoiceOwner.OPPONENT
+
+                val targetAmbush = if (targetIsPlayer) {
+                    game.playerAmbush
+                } else {
+                    game.opponentAmbush
+                }
+
+                // Sécurité : la rune ne devrait normalement jamais arriver ici
+                // si la règle des 5 cartes n'est pas respectée.
+                if (!CardEffectManager.canDestroyOneCardWithFiveCardRule(
+                        game = game,
+                        isPlayer = targetIsPlayer
+                    )
+                ) {
+                    game
+                } else if (targetAmbush.isEmpty()) {
+                    game
+                } else {
+                    game.copy(
+                        pendingChoice = PendingChoice(
+                            type = "RUNE_DESTROY_OPPONENT_AMBUSH",
+                            cardId = rune.id,
+                            options = targetAmbush.indices.map { index ->
+                                "AMBUSH:$index"
+                            },
+                            message = "Choisissez une carte Embuscade ou Préparation adverse à détruire.",
+                            owner = owner
+                        ),
+                        infoMessage = null
+                    )
+                }
             }
 
 
