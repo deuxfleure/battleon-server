@@ -839,6 +839,8 @@ object GameManager {
         }
     }
 
+
+
     private fun startAmbushWindow(game: GameState): GameState {
         val playerFirst = determineAmbushPriorityPlayerFirst(game)
 
@@ -916,12 +918,10 @@ object GameManager {
         }
     }
 
-    fun passAmbushWindow(
-        gameId: String,
+    private fun passAmbushWindowInternal(
+        game: GameState,
         owner: ChoiceOwner
-    ): GameState? {
-        val game = games[gameId] ?: return null
-
+    ): GameState {
         if (!isAmbushPhase(game.phase)) {
             return game
         }
@@ -948,9 +948,21 @@ object GameManager {
             }
         }
 
-        val updatedGame = moveToNextAmbushActorOrFinish(
+        return moveToNextAmbushActorOrFinish(
             game = afterPass,
             currentActor = owner
+        )
+    }
+
+    fun passAmbushWindow(
+        gameId: String,
+        owner: ChoiceOwner
+    ): GameState? {
+        val game = games[gameId] ?: return null
+
+        val updatedGame = passAmbushWindowInternal(
+            game = game,
+            owner = owner
         )
 
         games[gameId] = updatedGame
