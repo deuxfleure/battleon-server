@@ -646,6 +646,159 @@ fun Application.configureRouting() {
                 call.respond(updatedGame)
             }
 
+            post("/duel/{gameId}/ambush/tactical/{index}/activate") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal!!.payload.getClaim("userId").asInt()
+
+                val gameId = call.parameters["gameId"]
+                val tacticalCardIndex = call.parameters["index"]?.toIntOrNull()
+
+                if (gameId.isNullOrBlank()) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Missing gameId")
+                    )
+                    return@post
+                }
+
+                if (tacticalCardIndex == null) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Invalid tactical card index")
+                    )
+                    return@post
+                }
+
+                val existingGame = GameManager.getGame(gameId)
+
+                if (existingGame == null) {
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        mapOf("error" to "Game not found")
+                    )
+                    return@post
+                }
+
+                val owner = when {
+                    existingGame.mode == "TRAINING" ->
+                        ChoiceOwner.PLAYER
+
+                    existingGame.playerUserId == userId ->
+                        ChoiceOwner.PLAYER
+
+                    existingGame.opponentUserId == userId ->
+                        ChoiceOwner.OPPONENT
+
+                    else -> {
+                        call.respond(
+                            HttpStatusCode.Forbidden,
+                            mapOf("error" to "User is not part of this game")
+                        )
+                        return@post
+                    }
+                }
+
+                val updatedGame = GameManager.activateTacticalCard(
+                    gameId = gameId,
+                    owner = owner,
+                    tacticalCardIndex = tacticalCardIndex
+                )
+
+                if (updatedGame == null) {
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        mapOf("error" to "Game not found")
+                    )
+                    return@post
+                }
+
+                call.respond(updatedGame)
+            }
+
+            post("/duel/{gameId}/ambush/tactical/{index}/auto-skip/{enabled}") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal!!.payload.getClaim("userId").asInt()
+
+                val gameId = call.parameters["gameId"]
+                val tacticalCardIndex = call.parameters["index"]?.toIntOrNull()
+
+                val autoSkip = when (call.parameters["enabled"]) {
+                    "true" -> true
+                    "false" -> false
+                    else -> null
+                }
+
+                if (gameId.isNullOrBlank()) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Missing gameId")
+                    )
+                    return@post
+                }
+
+                if (tacticalCardIndex == null) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Invalid tactical card index")
+                    )
+                    return@post
+                }
+
+                if (autoSkip == null) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Invalid autoSkip value")
+                    )
+                    return@post
+                }
+
+                val existingGame = GameManager.getGame(gameId)
+
+                if (existingGame == null) {
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        mapOf("error" to "Game not found")
+                    )
+                    return@post
+                }
+
+                val owner = when {
+                    existingGame.mode == "TRAINING" ->
+                        ChoiceOwner.PLAYER
+
+                    existingGame.playerUserId == userId ->
+                        ChoiceOwner.PLAYER
+
+                    existingGame.opponentUserId == userId ->
+                        ChoiceOwner.OPPONENT
+
+                    else -> {
+                        call.respond(
+                            HttpStatusCode.Forbidden,
+                            mapOf("error" to "User is not part of this game")
+                        )
+                        return@post
+                    }
+                }
+
+                val updatedGame = GameManager.setTacticalCardAutoSkip(
+                    gameId = gameId,
+                    owner = owner,
+                    tacticalCardIndex = tacticalCardIndex,
+                    autoSkip = autoSkip
+                )
+
+                if (updatedGame == null) {
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        mapOf("error" to "Game not found")
+                    )
+                    return@post
+                }
+
+                call.respond(updatedGame)
+            }
+
             post("/duel/{gameId}/ambush/pass") {
                 val principal = call.principal<JWTPrincipal>()
                 val userId = principal!!.payload.getClaim("userId").asInt()
