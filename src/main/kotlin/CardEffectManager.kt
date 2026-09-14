@@ -458,6 +458,22 @@ object CardEffectManager {
         return ambassadriceCount * 2
     }
 
+    fun countMusicienCollectorBonus(
+        game: GameState,
+        isPlayer: Boolean
+    ): Int {
+        val tacticalCards = if (isPlayer) {
+            game.playerAmbush
+        } else {
+            game.opponentAmbush
+        }
+
+        return tacticalCards.count { tacticalCard ->
+            tacticalCard.entryType == TacticalEntryType.AMBUSH &&
+                    tacticalCard.card.id == CardId.MUSICIEN
+        }
+    }
+
     fun getEffectivePower(
         game: GameState,
         card: Card,
@@ -481,6 +497,15 @@ object CardEffectManager {
 
         if (card.faction == CardFaction.DEMON) {
             totalPower += frenzyBonus
+        }
+
+        // MUSICIEN — tant qu'il est en Embuscade,
+        // les Collecteurs du propriétaire gagnent +1 Force par Musicien.
+        if (card.id == CardId.COLLECTOR) {
+            totalPower += countMusicienCollectorBonus(
+                game = game,
+                isPlayer = isPlayer
+            )
         }
 
         return maxOf(1, totalPower)

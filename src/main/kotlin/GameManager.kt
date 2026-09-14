@@ -1003,14 +1003,67 @@ object GameManager {
         }
     }
 
+    private fun getAvailableTacticalCardIndices(
+        game: GameState,
+        owner: ChoiceOwner
+    ): List<Int> {
+        if (!isAmbushPhase(game.phase)) {
+            return emptyList()
+        }
+
+        val tacticalCards = when (owner) {
+            ChoiceOwner.PLAYER -> game.playerAmbush
+            ChoiceOwner.OPPONENT -> game.opponentAmbush
+        }
+
+        return tacticalCards.indices.filter { index ->
+            val tacticalCard = tacticalCards[index]
+
+            when (tacticalCard.card.id) {
+
+                CardId.MUSICIEN -> {
+                    tacticalCard.entryType == TacticalEntryType.AMBUSH
+                }
+
+                else -> false
+            }
+        }
+    }
+
+    private fun getPromptableTacticalCardIndices(
+        game: GameState,
+        owner: ChoiceOwner
+    ): List<Int> {
+        val tacticalCards = when (owner) {
+            ChoiceOwner.PLAYER -> game.playerAmbush
+            ChoiceOwner.OPPONENT -> game.opponentAmbush
+        }
+
+        return getAvailableTacticalCardIndices(
+            game = game,
+            owner = owner
+        ).filter { index ->
+            !tacticalCards[index].autoSkip
+        }
+    }
+
     private fun hasAvailableAmbushAction(
         game: GameState,
         owner: ChoiceOwner
     ): Boolean {
-        return getAvailableRuneIdsForCurrentWindow(
-            game = game,
-            owner = owner
-        ).isNotEmpty()
+        val hasRuneAction =
+            getAvailableRuneIdsForCurrentWindow(
+                game = game,
+                owner = owner
+            ).isNotEmpty()
+
+        val hasPromptableTacticalCardAction =
+            getPromptableTacticalCardIndices(
+                game = game,
+                owner = owner
+            ).isNotEmpty()
+
+        return hasRuneAction || hasPromptableTacticalCardAction
     }
 
     private fun canActivateRune(
@@ -1084,6 +1137,34 @@ object GameManager {
         return true
     }
 
+    private fun canActivateTacticalCard(
+        game: GameState,
+        owner: ChoiceOwner,
+        tacticalCardIndex: Int
+    ): Boolean {
+        if (!isAmbushPhase(game.phase)) {
+            return false
+        }
+
+        if (game.currentAmbushActor != owner) {
+            return false
+        }
+
+        val tacticalCards = when (owner) {
+            ChoiceOwner.PLAYER -> game.playerAmbush
+            ChoiceOwner.OPPONENT -> game.opponentAmbush
+        }
+
+        if (tacticalCardIndex !in tacticalCards.indices) {
+            return false
+        }
+
+        return tacticalCardIndex in getAvailableTacticalCardIndices(
+            game = game,
+            owner = owner
+        )
+    }
+
     private fun consumeRune(
         game: GameState,
         owner: ChoiceOwner,
@@ -1144,6 +1225,108 @@ object GameManager {
                 owner = owner
             )
         }
+
+        games[gameId] = updatedGame
+        return updatedGame
+    }
+
+    fun setTacticalCardAutoSkip(
+        gameId: String,
+        owner: ChoiceOwner,
+        tacticalCardIndex: Int,
+        autoSkip: Boolean
+    ): GameState? {
+        val game = games[gameId] ?: return null
+
+        val tacticalCards = when (owner) {
+            ChoiceOwner.PLAYER -> game.playerAmbush
+            ChoiceOwner.OPPONENT -> game.opponentAmbush
+        }
+
+        if (tacticalCardIndex !in tacticalCards.indices) {
+            return game
+        }
+
+        val updatedCards = tacticalCards.mapIndexed { index, tacticalCard ->
+            if (index == tacticalCardIndex) {
+                tacticalCard.copy(autoSkip = autoSkip)
+            } else {
+                tacticalCard
+            }
+        }
+
+        val updatedGame = when (owner) {
+            ChoiceOwner.PLAYER -> {
+                game.copy(playerAmbush = updatedCards)
+            }
+
+            ChoiceOwner.OPPONENT -> {
+                game.copy(opponentAmbush = updatedCards)
+            }
+        }
+
+        games[gameId] = updatedGame
+        return updatedGame
+    }
+
+    fun activateTacticalCard(
+        gameId: String,
+        owner: ChoiceOwner,
+        tacticalCardIndex: Int
+    ): GameState? {
+        val game = games[gameId] ?: return null
+
+        if (!canActivateTacticalCard(
+                game = game,
+                owner = owner,
+                tacticalCardIndex = tacticalCardIndex
+            )
+        ) {
+            return game
+        }
+
+        val tacticalCards = when (owner) {
+            ChoiceOwner.PLAYER -> game.playerAmbush
+            ChoiceOwner.OPPONENT -> game.opponentAmbush
+        }
+
+        val tacticalCard = tacticalCards[tacticalCardIndex]
+
+        var updatedGame = when (tacticalCard.card.id) {
+
+            CardId.MUSICIEN -> {
+                when (owner) {
+                    ChoiceOwner.PLAYER -> {
+                        game.copy(
+                            playerGold = game.playerGold + 1,
+                            playerAmbush = game.playerAmbush.filterIndexed { index, _ ->
+                                index != tacticalCardIndex
+                            },
+                            playerDiscard = game.playerDiscard + tacticalCard.card,
+                            infoMessage = null
+                        )
+                    }
+
+                    ChoiceOwner.OPPONENT -> {
+                        game.copy(
+                            opponentGold = game.opponentGold + 1,
+                            opponentAmbush = game.opponentAmbush.filterIndexed { index, _ ->
+                                index != tacticalCardIndex
+                            },
+                            opponentDiscard = game.opponentDiscard + tacticalCard.card,
+                            infoMessage = null
+                        )
+                    }
+                }
+            }
+
+            else -> game
+        }
+
+        updatedGame = resumeAmbushAfterPendingChoice(
+            game = updatedGame,
+            owner = owner
+        )
 
         games[gameId] = updatedGame
         return updatedGame
