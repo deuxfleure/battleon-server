@@ -860,7 +860,7 @@ object GameManager {
             infoMessage = null
         )
 
-        return when {
+        val startedGame = when {
             hasAvailableAmbushAction(initializedGame, firstOwner) -> {
                 initializedGame.copy(
                     currentAmbushActor = firstOwner
@@ -877,6 +877,8 @@ object GameManager {
                 advancePastAmbushWindow(initializedGame)
             }
         }
+
+        return resolveAiAmbushActionsIfNeeded(startedGame)
     }
 
     private fun resumeAmbushAfterPendingChoice(
@@ -952,6 +954,23 @@ object GameManager {
             game = afterPass,
             currentActor = owner
         )
+    }
+    private fun resolveAiAmbushActionsIfNeeded(
+        game: GameState
+    ): GameState {
+        var workingGame = game
+
+        while (
+            isAiControlledOpponent(workingGame) &&
+            workingGame.currentAmbushActor == ChoiceOwner.OPPONENT
+        ) {
+            workingGame = passAmbushWindowInternal(
+                game = workingGame,
+                owner = ChoiceOwner.OPPONENT
+            )
+        }
+
+        return workingGame
     }
 
     fun passAmbushWindow(
