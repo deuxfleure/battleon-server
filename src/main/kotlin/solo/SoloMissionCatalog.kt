@@ -20,6 +20,16 @@ import com.battleon.solo.chapter1.C1M17
 import com.battleon.solo.chapter1.C1M18
 import com.battleon.solo.chapter1.C1M19
 import com.battleon.solo.chapter1.C1M20
+import com.battleon.solo.chapter2.C2M21
+import com.battleon.solo.chapter2.C2M22
+import com.battleon.solo.chapter2.C2M23
+import com.battleon.solo.chapter2.C2M24
+import com.battleon.solo.chapter2.C2M25
+import com.battleon.solo.chapter2.C2M26
+import com.battleon.solo.chapter2.C2M27
+import com.battleon.solo.chapter2.C2M28
+import com.battleon.solo.chapter2.C2M29
+import com.battleon.solo.chapter2.C2M30
 
 object SoloMissionCatalog {
 
@@ -44,6 +54,18 @@ object SoloMissionCatalog {
         C1M18,
         C1M19,
         C1M20,
+
+        C2M21,
+        C2M22,
+        C2M23,
+        C2M24,
+        C2M25,
+        C2M26,
+        C2M27,
+        C2M28,
+        C2M29,
+        C2M30,
+
         ).associateBy { it.id }
 
     fun findMission(
