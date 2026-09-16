@@ -820,10 +820,22 @@ object GameManager {
         game: GameState,
         phase: TurnPhase
     ): GameState {
+        val now = System.currentTimeMillis()
+
         return game.copy(
             phase = phase,
-            phaseEnteredAtMillis = System.currentTimeMillis(),
+
+            // Nouveau cycle temporel.
+            phaseEnteredAtMillis = now,
             phaseResolutionRequested = false,
+            phaseDeadlineAtMillis = null,
+            phasePauseUsed = false,
+
+            // Les validations "Next" appartiennent uniquement
+            // à la phase pendant laquelle elles ont été données.
+            playerAdvanceReady = false,
+            opponentAdvanceReady = false,
+
             infoMessage = null
         )
     }
