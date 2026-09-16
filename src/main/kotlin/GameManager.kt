@@ -2716,10 +2716,11 @@ object GameManager {
                 }
 
                 updatedGame = if (readyGame.playerReady && readyGame.opponentReady) {
-                    readyGame.copy(
-                        turnNumber = 1,
-                        phase = TurnPhase.AMBUSH_BEFORE_REVEAL,
-                        infoMessage = null
+                    enterPhase(
+                        game = readyGame.copy(
+                            turnNumber = 1
+                        ),
+                        phase = TurnPhase.AMBUSH_BEFORE_REVEAL
                     )
                 } else {
                     readyGame.copy(
@@ -3639,7 +3640,7 @@ object GameManager {
                     game.opponentDiscard
                 }
 
-                updatedGame = clearShopStateForNewRound(
+                val cleanedGame = clearShopStateForNewRound(
                     game.copy(
                         turnNumber = game.turnNumber + 1,
                         playerReady = false,
@@ -3650,15 +3651,20 @@ object GameManager {
                         lastOpponentCard = null,
                         playerDisplayedTurnCard = null,
                         opponentDisplayedTurnCard = null,
-                        delayedEffects = game.delayedEffects.filter { it.timing != DelayedEffectTiming.END_TURN },
+                        delayedEffects = game.delayedEffects.filter {
+                            it.timing != DelayedEffectTiming.END_TURN
+                        },
                         pendingChoice = null,
                         playerAmbassadriceTurnStartHp = null,
                         opponentAmbassadriceTurnStartHp = null,
-                        infoMessage = null,
                         combatDamageToPlayer = 0,
-                        combatDamageToOpponent = 0,
-                        phase = TurnPhase.AMBUSH_BEFORE_REVEAL
+                        combatDamageToOpponent = 0
                     )
+                )
+
+                updatedGame = enterPhase(
+                    game = cleanedGame,
+                    phase = TurnPhase.AMBUSH_BEFORE_REVEAL
                 )
             }
 
