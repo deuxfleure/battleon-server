@@ -3950,16 +3950,6 @@ object GameManager {
             game = next
         }
 
-            println(
-                "[PHASE_TIMER] BEFORE WHILE | " +
-                        "phase=${game.phase} | " +
-                        "deadline=${game.phaseDeadlineAtMillis} | " +
-                        "now=${System.currentTimeMillis()} | " +
-                        "decision=${isPlayerDecisionPoint(game)} | " +
-                        "waiting=${isWaitingForPhaseDeadline(game)} | " +
-                        "actor=${game.currentAmbushActor}"
-            )
-
         while (!isPlayerDecisionPoint(game)) {
 
             // Une phase chronométrée est actuellement ouverte :
@@ -3968,13 +3958,6 @@ object GameManager {
             if (isWaitingForPhaseDeadline(game)) {
                 break
             }
-
-            println(
-                "[PHASE_TIMER] ADVANCING | " +
-                        "phase=${game.phase} | " +
-                        "deadline=${game.phaseDeadlineAtMillis} | " +
-                        "now=${System.currentTimeMillis()}"
-            )
 
             val next = advanceTrainingGame(gameId) ?: return null
             game = next

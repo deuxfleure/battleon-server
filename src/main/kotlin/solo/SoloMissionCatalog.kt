@@ -56,7 +56,7 @@ object SoloMissionCatalog {
         C1M20,
 
         C2M21,
-        C2M22,
+        //C2M22,
         C2M23,
         C2M24,
         C2M25,
