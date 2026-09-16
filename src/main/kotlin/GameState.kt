@@ -128,6 +128,13 @@ data class GameState(
     // =========================================================
     val turnNumber: Int = 0,
     val phase: TurnPhase = TurnPhase.PRE_START,
+    // Cycle générique des phases.
+    //
+    // phaseEnteredAtMillis indique quand le moteur est entré dans la phase actuelle.
+    // phaseResolutionRequested indique que la fenêtre d'observation / interruption
+    // est terminée et que la phase peut maintenant être résolue.
+    val phaseEnteredAtMillis: Long? = null,
+    val phaseResolutionRequested: Boolean = false,
 
     val isFinished: Boolean = false,
     val result: String? = null,

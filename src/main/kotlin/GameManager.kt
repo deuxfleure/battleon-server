@@ -816,6 +816,18 @@ object GameManager {
     // 5. HELPERS GÉNÉRAUX
     // =========================================================
 
+    private fun enterPhase(
+        game: GameState,
+        phase: TurnPhase
+    ): GameState {
+        return game.copy(
+            phase = phase,
+            phaseEnteredAtMillis = System.currentTimeMillis(),
+            phaseResolutionRequested = false,
+            infoMessage = null
+        )
+    }
+
     private fun getAmbushWindowForPhase(
         phase: TurnPhase
     ): AmbushWindow? {
@@ -1664,30 +1676,30 @@ object GameManager {
 
         return when (game.phase) {
             TurnPhase.AMBUSH_BEFORE_REVEAL -> {
-                clearedGame.copy(
-                    phase = TurnPhase.REVEAL,
-                    infoMessage = null
+                enterPhase(
+                    game = clearedGame,
+                    phase = TurnPhase.REVEAL
                 )
             }
 
             TurnPhase.AMBUSH_BEFORE_EFFECTS -> {
-                clearedGame.copy(
-                    phase = TurnPhase.EFFECTS,
-                    infoMessage = null
+                enterPhase(
+                    game = clearedGame,
+                    phase = TurnPhase.EFFECTS
                 )
             }
 
             TurnPhase.AMBUSH_BEFORE_COMBAT -> {
-                clearedGame.copy(
-                    phase = TurnPhase.COMBAT,
-                    infoMessage = null
+                enterPhase(
+                    game = clearedGame,
+                    phase = TurnPhase.COMBAT
                 )
             }
 
             TurnPhase.AMBUSH_BEFORE_POST_COMBAT -> {
-                clearedGame.copy(
-                    phase = TurnPhase.POST_COMBAT,
-                    infoMessage = null
+                enterPhase(
+                    game = clearedGame,
+                    phase = TurnPhase.POST_COMBAT
                 )
             }
 
