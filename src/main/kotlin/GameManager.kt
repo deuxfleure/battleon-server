@@ -817,6 +817,8 @@ object GameManager {
     // =========================================================
 
     private const val MIN_PHASE_DISPLAY_MILLIS = 2_000L
+    private const val EMPTY_AMBUSH_DISPLAY_MILLIS = 500L
+    private const val AMBUSH_DECISION_TIMEOUT_MILLIS = 20_000L
 
     private const val PVP_DECISION_TIMEOUT_MILLIS = 20_000L
     private const val PVP_SHOP_TIMEOUT_MILLIS = 20_000L
@@ -839,7 +841,12 @@ object GameManager {
             phase == TurnPhase.SHOP_RESOLUTION && isPvpMode(game) ->
                 now + PVP_SHOP_TIMEOUT_MILLIS
 
-            // Toutes les autres phases normales :
+            // Une fenêtre Ambush existe toujours brièvement,
+            // même lorsqu'aucune action n'y sera disponible.
+            isAmbushPhase(phase) ->
+                now + EMPTY_AMBUSH_DISPLAY_MILLIS
+
+            // Phases normales :
             // 2 secondes avant résolution automatique.
             else ->
                 now + MIN_PHASE_DISPLAY_MILLIS
@@ -892,13 +899,9 @@ object GameManager {
         game: GameState,
         owner: ChoiceOwner
     ): Boolean {
-        // Tique peut être activée uniquement après la révélation
-        // et avant la résolution du combat.
-        if (
-            game.phase != TurnPhase.AMBUSH_BEFORE_EFFECTS &&
-            game.phase != TurnPhase.EFFECTS &&
-            game.phase != TurnPhase.AMBUSH_BEFORE_COMBAT
-        ) {
+        // Tique peut être activée uniquement pendant la fenêtre
+        // précédant la résolution des effets de la phase EFFECTS.
+        if (game.phase != TurnPhase.EFFECTS) {
             return false
         }
 
@@ -3676,7 +3679,11 @@ object GameManager {
             TurnPhase.AMBUSH_BEFORE_COMBAT,
             TurnPhase.AMBUSH_BEFORE_POST_COMBAT,
             TurnPhase.AMBUSH_BEFORE_SHOP -> {
-                updatedGame = if (game.ambushPriorityPlayerFirst == null) {
+
+                updatedGame = if (!canResolveCurrentPhase(game)) {
+                    // La fenêtre reste visible au minimum 0,5 seconde.
+                    game
+                } else if (game.ambushPriorityPlayerFirst == null) {
                     startAmbushWindow(game)
                 } else {
                     game
