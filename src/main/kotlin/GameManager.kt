@@ -872,6 +872,11 @@ object GameManager {
         return System.currentTimeMillis() >= deadline
     }
 
+    private fun isWaitingForPhaseDeadline(game: GameState): Boolean {
+        val deadline = game.phaseDeadlineAtMillis ?: return false
+        return System.currentTimeMillis() < deadline
+    }
+
     private fun giveAmbushPriorityTo(
         game: GameState,
         owner: ChoiceOwner
@@ -3930,6 +3935,14 @@ object GameManager {
         }
 
         while (!isPlayerDecisionPoint(game)) {
+
+            // Une phase chronométrée est actuellement ouverte :
+            // le serveur attend simplement sa deadline au lieu
+            // d'appeler le moteur en boucle inutilement.
+            if (isWaitingForPhaseDeadline(game)) {
+                break
+            }
+
             val next = advanceTrainingGame(gameId) ?: return null
             game = next
 
