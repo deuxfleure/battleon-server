@@ -16,6 +16,7 @@ object CardCatalog {
         Card(CardId.ARAIGNEESOLDAT, 3, 0, CardFaction.BEAST, purchaseLimit = null, false, false, true),
         Card(CardId.NOURRICEARAIGNEE, 2, 0, CardFaction.BEAST, purchaseLimit = null, false, false, true),
         Card(CardId.OEUFDARAIGNEE, 0, 0, CardFaction.BEAST, purchaseLimit = null, false, false, true),
+        Card(CardId.GOLEMDOCRE,8,0, CardFaction.MERCENARY, purchaseLimit = null, false, false, false),
 
         Card(CardId.AGILE, 4, 4,CardFaction.BEAST, purchaseLimit = null,false,false,false),
         Card(CardId.ARAIGNEEGEANTE, 3, 5,CardFaction.BEAST, purchaseLimit = null,false,false,true),
@@ -115,6 +116,7 @@ object CardCatalog {
         CardId.ARAIGNEESOLDAT,
         CardId.NOURRICEARAIGNEE,
         CardId.OEUFDARAIGNEE,
+        CardId.GOLEMDOCRE,
 
         // =====================================================
         // MERCENAIRES (UNIQUEMENT MODE SAISON)
