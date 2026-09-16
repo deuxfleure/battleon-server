@@ -36,6 +36,57 @@ object PostCombatEffectResolver {
 
         val drawCombat = opponentPower == playerPower
 
+        // =====================================================
+        // TIQUE — soin différé après le combat
+        //
+        // L'activation depuis la défausse a déjà :
+        // - détruit Tique
+        // - consommé tous les jetons Sang
+        // - ajouté leur quantité à la Force de la carte active
+        //
+        // Le soin dépend maintenant de la différence de Force finale.
+        // Le flag est immédiatement consommé pour éviter un second soin
+        // si POST_COMBAT est résolu plusieurs fois.
+        // =====================================================
+
+        if (updatedGame.playerTiqueHealPending) {
+            val healAmount = maxOf(
+                0,
+                playerPower - opponentPower
+            )
+
+            updatedGame = updatedGame.copy(
+                playerTiqueHealPending = false
+            )
+
+            if (healAmount > 0) {
+                updatedGame = TokenManager.heal(
+                    game = updatedGame,
+                    target = ChoiceOwner.PLAYER,
+                    amount = healAmount
+                )
+            }
+        }
+
+        if (updatedGame.opponentTiqueHealPending) {
+            val healAmount = maxOf(
+                0,
+                opponentPower - playerPower
+            )
+
+            updatedGame = updatedGame.copy(
+                opponentTiqueHealPending = false
+            )
+
+            if (healAmount > 0) {
+                updatedGame = TokenManager.heal(
+                    game = updatedGame,
+                    target = ChoiceOwner.OPPONENT,
+                    amount = healAmount
+                )
+            }
+        }
+
         //=============================================
         //======== ------ COTER Joueur ---- ===========
         //=============================================

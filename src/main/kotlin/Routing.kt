@@ -580,6 +580,76 @@ fun Application.configureRouting() {
                 call.respond(updatedGame)
             }
 
+            post("/duel/{gameId}/discard/tique/activate") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal
+                    ?.payload
+                    ?.getClaim("userId")
+                    ?.asInt()
+
+                if (userId == null) {
+                    call.respond(
+                        HttpStatusCode.Unauthorized,
+                        mapOf("error" to "Utilisateur non authentifié")
+                    )
+                    return@post
+                }
+
+                val gameId = call.parameters["gameId"]
+
+                if (gameId == null) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "gameId manquant")
+                    )
+                    return@post
+                }
+
+                val existingGame = GameManager.getGame(gameId)
+
+                if (existingGame == null) {
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        mapOf("error" to "Partie introuvable")
+                    )
+                    return@post
+                }
+
+                val owner = when {
+                    existingGame.mode == "TRAINING" ->
+                        ChoiceOwner.PLAYER
+
+                    existingGame.playerUserId == userId ->
+                        ChoiceOwner.PLAYER
+
+                    existingGame.opponentUserId == userId ->
+                        ChoiceOwner.OPPONENT
+
+                    else -> {
+                        call.respond(
+                            HttpStatusCode.Forbidden,
+                            mapOf("error" to "Vous ne participez pas à cette partie")
+                        )
+                        return@post
+                    }
+                }
+
+                val updatedGame = GameManager.activateTiqueFromDiscard(
+                    gameId = gameId,
+                    owner = owner
+                )
+
+                if (updatedGame == null) {
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        mapOf("error" to "Partie introuvable")
+                    )
+                    return@post
+                }
+
+                call.respond(updatedGame)
+            }
+
             post("/duel/{gameId}/ambush/rune/{runeId}/activate") {
                 val principal = call.principal<JWTPrincipal>()
                 val userId = principal!!.payload.getClaim("userId").asInt()
