@@ -184,11 +184,18 @@ fun applyCardEffect(
             // perd : gagne 1 PV
             // gagne : Bretteur 1 (défausse la première carte du deck adverse)
         }
-        CardId.PYROMANCIEN -> {
+        CardId.PYROMANCIEN,
+        CardId.JONGLEURDEJANTE -> {
+            val explosiveDamage = when (cardId) {
+                CardId.PYROMANCIEN -> 1
+                CardId.JONGLEURDEJANTE -> 2
+                else -> 0
+            }
+
             if (effectOwnerIsPlayer) {
-                newOpponentHp = maxOf(0, newOpponentHp - 1)
+                newOpponentHp = maxOf(0, newOpponentHp - explosiveDamage)
             } else {
-                newPlayerHp = maxOf(0, newPlayerHp - 1)
+                newPlayerHp = maxOf(0, newPlayerHp - explosiveDamage)
             }
         }
         CardId.ROIDEMON -> {
