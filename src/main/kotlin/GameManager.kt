@@ -3897,14 +3897,19 @@ object GameManager {
         var game = games[gameId] ?: return null
         var safetyCounter = 0
 
-        if (
-            isAmbushPhase(game.phase) &&
-            isPlayerDecisionPoint(game)
-        ) {
-            return game
-        }
+            if (
+                isAmbushPhase(game.phase) &&
+                isPlayerDecisionPoint(game) &&
+                !canResolveCurrentPhase(game)
+            ) {
+                return game
+            }
 
-        if (isPvpMode(game) && isPlayerDecisionPoint(game)) {
+            if (
+                isPvpMode(game) &&
+                isPlayerDecisionPoint(game) &&
+                !isAmbushPhase(game.phase)
+            ) {
             val markedGame = if (isPlayer) {
                 game.copy(
                     playerAdvanceReady = true,
