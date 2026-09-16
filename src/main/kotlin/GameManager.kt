@@ -24,6 +24,12 @@ object GameManager {
 
     private val games = ConcurrentHashMap<String, GameState>()
 
+    private val gameLocks = ConcurrentHashMap<String, Any>()
+
+    private fun getGameLock(gameId: String): Any {
+        return gameLocks.computeIfAbsent(gameId) { Any() }
+    }
+
     //délai de timeout
     private const val FORFEIT_TIMEOUT_MILLIS = 120_000L
 
@@ -3887,6 +3893,7 @@ object GameManager {
         gameId: String,
         isPlayer: Boolean = true
     ): GameState? {
+        synchronized(getGameLock(gameId)) {
         var game = games[gameId] ?: return null
         var safetyCounter = 0
 
@@ -3954,6 +3961,7 @@ object GameManager {
         }
 
         return game
+        }
     }
 
     //===========================================================
