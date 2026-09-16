@@ -464,6 +464,7 @@ fun Application.configureRouting() {
                     )
                     return@get
                 }
+
                 val checkedGameState = GameManager.applyConnectionTimeoutIfNeeded(
                     gameId = gameId,
                     checkingUserId = userId
@@ -474,12 +475,8 @@ fun Application.configureRouting() {
                 }
 
                 call.respond(checkedGameState)
-
-                if (gameState.isFinished) {
-                    MatchmakingManager.clearMatchedGameForGame(gameState)
-                }
-                call.respond(gameState)
             }
+
             post("/duel/{gameId}/advance") {
                 val principal = call.principal<JWTPrincipal>()
                 val userId = principal!!.payload.getClaim("userId").asInt()
