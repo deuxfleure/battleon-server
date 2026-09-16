@@ -362,7 +362,7 @@ fun Application.configureRouting() {
                     ownedCardIds = ownedCardIds
                 )
 
-                call.respond(gameState)
+                call.respond(gameState.withServerNow())
             }
 
 
@@ -390,7 +390,7 @@ fun Application.configureRouting() {
                     forcedCardId = request.cardId
                 )
 
-                call.respond(gameState)
+                call.respond(gameState.withServerNow())
             }
 
             post("/duel/solo/start") {
@@ -444,7 +444,7 @@ fun Application.configureRouting() {
                     return@post
                 }
 
-                call.respond(gameState)
+                call.respond(gameState.withServerNow())
             }
 
             get("/duel/{gameId}/state") {
@@ -479,7 +479,7 @@ fun Application.configureRouting() {
                     MatchmakingManager.clearMatchedGameForGame(checkedGameState)
                 }
 
-                call.respond(checkedGameState)
+                call.respond(checkedGameState.withServerNow())
             }
 
             post("/duel/{gameId}/advance") {
@@ -579,7 +579,7 @@ fun Application.configureRouting() {
                     return@post
                 }
 
-                call.respond(updatedGame)
+                call.respond(updatedGame.withServerNow())
             }
 
             post("/duel/{gameId}/discard/tique/activate") {
@@ -649,7 +649,7 @@ fun Application.configureRouting() {
                     return@post
                 }
 
-                call.respond(updatedGame)
+                call.respond(updatedGame.withServerNow())
             }
 
             post("/duel/{gameId}/ambush/rune/{runeId}/activate") {
@@ -715,7 +715,7 @@ fun Application.configureRouting() {
                     return@post
                 }
 
-                call.respond(updatedGame)
+                call.respond(updatedGame.withServerNow())
             }
 
             post("/duel/{gameId}/ambush/tactical/{index}/activate") {
@@ -784,7 +784,7 @@ fun Application.configureRouting() {
                     return@post
                 }
 
-                call.respond(updatedGame)
+                call.respond(updatedGame.withServerNow())
             }
 
             post("/duel/{gameId}/ambush/tactical/{index}/auto-skip/{enabled}") {
@@ -868,7 +868,7 @@ fun Application.configureRouting() {
                     return@post
                 }
 
-                call.respond(updatedGame)
+                call.respond(updatedGame.withServerNow())
             }
 
             post("/duel/{gameId}/ambush/pass") {
@@ -927,7 +927,7 @@ fun Application.configureRouting() {
                     return@post
                 }
 
-                call.respond(updatedGame)
+                call.respond(updatedGame.withServerNow())
             }
 
             post("/duel/{gameId}/shop/buy/{cardId}") {
@@ -1015,7 +1015,7 @@ fun Application.configureRouting() {
                     return@post
                 }
 
-                call.respond(updatedGame)
+                call.respond(updatedGame.withServerNow())
             }
 
             post("/duel/{gameId}/shop/pass") {
@@ -1074,7 +1074,7 @@ fun Application.configureRouting() {
                     return@post
                 }
 
-                call.respond(updatedGame)
+                call.respond(updatedGame.withServerNow())
             }
 
             post("/duel/{gameId}/forfeit") {
@@ -1108,7 +1108,7 @@ fun Application.configureRouting() {
                     MatchmakingManager.clearMatchedGameForGame(updatedGame)
                 }
 
-                call.respond(updatedGame)
+                call.respond(updatedGame.withServerNow())
             }
 
             post("/duel/{gameId}/heartbeat") {
@@ -1138,7 +1138,7 @@ fun Application.configureRouting() {
                     return@post
                 }
 
-                call.respond(updatedGame)
+                call.respond(updatedGame.withServerNow())
             }
 
             // test a supprimé quand propre
