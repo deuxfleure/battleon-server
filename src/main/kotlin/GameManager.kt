@@ -2070,6 +2070,35 @@ object GameManager {
         }
     }
 
+    private fun applyAutomaticPurchaseEffects(
+        game: GameState,
+        purchasedCard: Card,
+        owner: ChoiceOwner
+    ): GameState {
+        return when (purchasedCard.id) {
+
+            CardId.JONGLEURDEJANTE -> {
+                val cannonball = CardCatalog.getCard(CardId.BOULETDECANON)
+
+                when (owner) {
+                    ChoiceOwner.PLAYER -> {
+                        game.copy(
+                            playerDiscard = game.playerDiscard + cannonball
+                        )
+                    }
+
+                    ChoiceOwner.OPPONENT -> {
+                        game.copy(
+                            opponentDiscard = game.opponentDiscard + cannonball
+                        )
+                    }
+                }
+            }
+
+            else -> game
+        }
+    }
+
     private fun tryResolvePendingPurchase(
         game: GameState,
         isPlayer: Boolean,
@@ -2237,12 +2266,22 @@ object GameManager {
             cardId = entry.card.id.name
         )
 
-        val owner = if (isPlayer) ChoiceOwner.PLAYER else ChoiceOwner.OPPONENT
+        val owner = if (isPlayer) {
+            ChoiceOwner.PLAYER
+        } else {
+            ChoiceOwner.OPPONENT
+        }
+
+        val afterAutomaticPurchaseEffects = applyAutomaticPurchaseEffects(
+            game = afterPurchase,
+            purchasedCard = entry.card,
+            owner = owner
+        )
 
         val discardAfterPurchase = if (isPlayer) {
-            afterPurchase.playerDiscard
+            afterAutomaticPurchaseEffects.playerDiscard
         } else {
-            afterPurchase.opponentDiscard
+            afterAutomaticPurchaseEffects.opponentDiscard
         }
 
         val hasValidDestroyTarget = discardAfterPurchase.any { it.id != CardId.SENTINELLE }
@@ -2251,15 +2290,15 @@ object GameManager {
             entry.card.id == CardId.SENTINELLE &&
             hasValidDestroyTarget
         ) {
-            afterPurchase.copy(
+            afterAutomaticPurchaseEffects.copy(
                 pendingChoice = CardEffectManager.buildSentinelleBuyDestroyPendingChoice(
-                    game = afterPurchase,
+                    game = afterAutomaticPurchaseEffects,
                     owner = owner
                 ),
                 infoMessage = null
             )
         } else {
-            afterPurchase
+            afterAutomaticPurchaseEffects
         }
     }
 

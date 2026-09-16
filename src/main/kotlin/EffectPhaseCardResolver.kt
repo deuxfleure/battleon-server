@@ -138,6 +138,13 @@ object EffectPhaseCardResolver {
                 )
             }
 
+            CardId.FIDELE -> {
+                CardEffectManager.applyFideleEffect(
+                    game = game,
+                    owner = owner
+                )
+            }
+
             CardId.DEVINDESTENEBRES -> {
                 CardEffectManager.startScry(
                     game = game,

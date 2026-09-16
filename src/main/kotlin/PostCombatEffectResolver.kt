@@ -101,7 +101,8 @@ object PostCombatEffectResolver {
                 (
                         playerCard.id == CardId.DEVINDELUMIERE ||
                                 playerCard.id == CardId.DEVINDESTENEBRES ||
-                                playerCard.id == CardId.AGILE
+                                playerCard.id == CardId.AGILE ||
+                                playerCard.id == CardId.GARDEVAUDOU
                         )
             ) {
                 return updatedGame.copy(
@@ -270,7 +271,8 @@ object PostCombatEffectResolver {
                 (
                         opponentCard.id == CardId.DEVINDELUMIERE ||
                                 opponentCard.id == CardId.DEVINDESTENEBRES ||
-                                opponentCard.id == CardId.AGILE
+                                opponentCard.id == CardId.AGILE ||
+                                opponentCard.id == CardId.GARDEVAUDOU
                         )
             ) {
                 return updatedGame.copy(

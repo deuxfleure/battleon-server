@@ -543,6 +543,37 @@ object CardEffectManager {
         return baseDamage + nextCardDamageBonus
     }
 
+    fun applyFideleEffect(
+        game: GameState,
+        owner: ChoiceOwner
+    ): GameState {
+        val ownerIsPlayer = owner == ChoiceOwner.PLAYER
+
+        val ownerHp = if (ownerIsPlayer) {
+            game.playerHp
+        } else {
+            game.opponentHp
+        }
+
+        val opponentHp = if (ownerIsPlayer) {
+            game.opponentHp
+        } else {
+            game.playerHp
+        }
+
+        val goldGain = if (ownerHp < opponentHp) 2 else 1
+
+        return if (ownerIsPlayer) {
+            game.copy(
+                playerGold = game.playerGold + goldGain
+            )
+        } else {
+            game.copy(
+                opponentGold = game.opponentGold + goldGain
+            )
+        }
+    }
+
     // =========================================================
     // 4. PENDING CHOICES — CONSTRUCTION
     // =========================================================
@@ -786,6 +817,9 @@ object CardEffectManager {
 
             CardId.AGILE ->
                 "Sacrifier L'Agile après le combat pour gagner 2 Or ?"
+
+            CardId.GARDEVAUDOU ->
+                "Sacrifier Le Garde Vaudou après le combat pour gagner 3 Or ?"
 
             else ->
                 "Voulez-vous sacrifier cette carte après le combat ?"
@@ -1622,6 +1656,18 @@ object CardEffectManager {
                                         game.copy(opponentHp = maxOf(0, game.opponentHp - 1))
                                     } else {
                                         game.copy(playerHp = maxOf(0, game.playerHp - 1))
+                                    }
+                                }
+
+                                CardId.GARDEVAUDOU.name -> {
+                                    if (ownerIsPlayer) {
+                                        game.copy(
+                                            playerGold = game.playerGold + 3
+                                        )
+                                    } else {
+                                        game.copy(
+                                            opponentGold = game.opponentGold + 3
+                                        )
                                     }
                                 }
 
