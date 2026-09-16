@@ -140,6 +140,11 @@ data class GameState(
     // null = aucune limite de temps active.
     val phaseDeadlineAtMillis: Long? = null,
 
+    // Heure serveur au moment où cet état est envoyé au client.
+    // Utilisée uniquement pour calculer localement le temps restant
+    // sans supposer que l'horloge Android est synchronisée avec le serveur.
+    val serverNowAtMillis: Long? = null,
+
     // Indique qu'une prolongation de 10 secondes a déjà été
     // demandée pendant la phase actuelle.
     // Remis à false à chaque nouvelle phase.

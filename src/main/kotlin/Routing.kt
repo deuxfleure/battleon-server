@@ -17,8 +17,13 @@ import com.battleon.solo.SoloRuneLoadoutUpdateResult
 
 
 // !!!!!!!!!!!!!!!!!!!! A METTRE A JOUR A CHAQUE NOUVELLE VERSION !!!!!!!!!!!!!!!!!!!!!!!!!!!!
-private const val MIN_SUPPORTED_APP_VERSION_CODE = 19
+private const val MIN_SUPPORTED_APP_VERSION_CODE = 21
 
+private fun GameState.withServerNow(): GameState {
+    return copy(
+        serverNowAtMillis = System.currentTimeMillis()
+    )
+}
 fun Application.configureRouting() {
     routing {
         get("/") {
@@ -524,7 +529,7 @@ fun Application.configureRouting() {
                     MatchmakingManager.clearMatchedGameForGame(updatedGame)
                 }
 
-                call.respond(updatedGame)
+                call.respond(updatedGame.withServerNow())
             }
 
 
