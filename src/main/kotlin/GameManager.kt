@@ -847,8 +847,9 @@ object GameManager {
             phase == TurnPhase.SHOP_RESOLUTION && isPvpMode(game) ->
                 now + PVP_SHOP_TIMEOUT_MILLIS
 
-            // Une fenêtre Ambush existe toujours brièvement,
-            // même lorsqu'aucune action n'y sera disponible.
+            // Une Ambush commence avec sa durée minimale.
+            // Si une vraie action existe, startAmbushWindow()
+            // remplacera immédiatement cette deadline par 20 secondes.
             isAmbushPhase(phase) ->
                 now + EMPTY_AMBUSH_DISPLAY_MILLIS
 
@@ -858,7 +859,7 @@ object GameManager {
                 now + MIN_PHASE_DISPLAY_MILLIS
         }
 
-        return game.copy(
+        val enteredGame = game.copy(
             phase = phase,
 
             phaseEnteredAtMillis = now,
@@ -871,6 +872,12 @@ object GameManager {
 
             infoMessage = null
         )
+
+        return if (isAmbushPhase(phase)) {
+            startAmbushWindow(enteredGame)
+        } else {
+            enteredGame
+        }
     }
 
     private fun canResolveCurrentPhase(game: GameState): Boolean {
@@ -1069,7 +1076,10 @@ object GameManager {
             }
 
             else -> {
-                advancePastAmbushWindow(initializedGame)
+                // Aucune action réelle disponible.
+                // On reste dans la fenêtre Ambush jusqu'à la deadline
+                // minimale de 500 ms définie par enterPhase().
+                initializedGame
             }
         }
 
@@ -3708,22 +3718,15 @@ object GameManager {
             TurnPhase.AMBUSH_BEFORE_SHOP -> {
 
                 updatedGame = when {
-                    // Le délai actuel n'est pas encore écoulé :
-                    // - 0,5 s avant l'ouverture initiale
-                    // - ou 20 s lorsqu'un joueur possède la priorité.
+                    // La fenêtre est toujours ouverte :
+                    // - 0,5 s si aucune action n'existe
+                    // - 20 s si un joueur possède la priorité.
                     !canResolveCurrentPhase(game) -> {
                         game
                     }
 
-                    // La fenêtre n'a pas encore été initialisée.
-                    // Après les 0,5 s, on cherche les vraies actions disponibles.
-                    game.ambushPriorityPlayerFirst == null -> {
-                        startAmbushWindow(game)
-                    }
-
-                    // La fenêtre est initialisée et un joueur avait la priorité.
-                    // Sa deadline de 20 s vient d'expirer :
-                    // cela équivaut à un Pass.
+                    // Une vraie action était disponible mais son délai
+                    // de décision vient d'expirer : cela équivaut à Pass.
                     game.currentAmbushActor != null -> {
                         passAmbushWindowInternal(
                             game = game,
@@ -3731,7 +3734,8 @@ object GameManager {
                         )
                     }
 
-                    // Sécurité : aucun acteur n'a la main.
+                    // Aucune action n'était disponible :
+                    // les 0,5 s d'affichage viennent de s'écouler.
                     else -> {
                         advancePastAmbushWindow(game)
                     }
