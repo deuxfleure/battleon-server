@@ -2815,7 +2815,8 @@ object GameManager {
                         infoMessage = "Impossible de révéler les cartes"
                     )
                 } else {
-                    recycleGame.copy(
+                    enterPhase(
+                        game = recycleGame.copy(
                         playerDeck = playerDeck.drop(1),
                         opponentDeck = opponentDeck.drop(1),
                         playerDiscard = playerDiscard,
@@ -2861,11 +2862,10 @@ object GameManager {
                         playerCardEffectsBlockedByAmbush = false,
                         opponentCardEffectsBlockedByAmbush = false,
 
-                        playerPostCombatSacrificeHandled = false,
-                        opponentPostCombatSacrificeHandled = false,
-
-                        phase = TurnPhase.AMBUSH_BEFORE_EFFECTS,
-                        infoMessage = null
+                            playerPostCombatSacrificeHandled = false,
+                            opponentPostCombatSacrificeHandled = false
+                        ),
+                        phase = TurnPhase.AMBUSH_BEFORE_EFFECTS
                     )
                 }
 
@@ -3095,9 +3095,9 @@ object GameManager {
                         workingGame.opponentEffectResolved &&
                         workingGame.pendingChoice == null
                     ) {
-                        workingGame.copy(
-                            phase = TurnPhase.AMBUSH_BEFORE_COMBAT,
-                            infoMessage = null
+                        enterPhase(
+                            game = workingGame,
+                            phase = TurnPhase.AMBUSH_BEFORE_COMBAT
                         )
                     } else {
                         workingGame
@@ -3204,17 +3204,17 @@ object GameManager {
                         newPlayerHp - opponentDamageDealt - burnDamageToPlayer
                     )
 
-                    updatedGame = game.copy(
-                        playerHp = newPlayerHp,
-                        opponentHp = newOpponentHp,
-                        combatDamageToPlayer = opponentDamageDealt,
-                        combatDamageToOpponent = playerDamageDealt,
+                    updatedGame = enterPhase(
+                        game = game.copy(
+                            playerHp = newPlayerHp,
+                            opponentHp = newOpponentHp,
+                            combatDamageToPlayer = opponentDamageDealt,
+                            combatDamageToOpponent = playerDamageDealt,
 
-                        playerEffectivePower = playerEffectivePower,
-                        opponentEffectivePower = opponentEffectivePower,
-
-                        phase = TurnPhase.AMBUSH_BEFORE_POST_COMBAT,
-                        infoMessage = null
+                            playerEffectivePower = playerEffectivePower,
+                            opponentEffectivePower = opponentEffectivePower
+                        ),
+                        phase = TurnPhase.AMBUSH_BEFORE_POST_COMBAT
                     )
 
                     if (playerHasBurn && !playerLostCombat) {
@@ -3521,11 +3521,12 @@ object GameManager {
                                 }
                             )
 
-                            cleanedGame.copy(
-                                isFinished = false,
-                                result = null,
-                                phase = TurnPhase.AMBUSH_BEFORE_SHOP,
-                                infoMessage = null
+                            enterPhase(
+                                game = cleanedGame.copy(
+                                    isFinished = false,
+                                    result = null
+                                ),
+                                phase = TurnPhase.AMBUSH_BEFORE_SHOP
                             )
                         }
                     }
