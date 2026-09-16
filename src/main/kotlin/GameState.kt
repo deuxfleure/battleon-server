@@ -136,6 +136,15 @@ data class GameState(
     val phaseEnteredAtMillis: Long? = null,
     val phaseResolutionRequested: Boolean = false,
 
+    // Deadline serveur de la phase / action temporisée actuelle.
+    // null = aucune limite de temps active.
+    val phaseDeadlineAtMillis: Long? = null,
+
+    // Indique qu'une prolongation de 10 secondes a déjà été
+    // demandée pendant la phase actuelle.
+    // Remis à false à chaque nouvelle phase.
+    val phasePauseUsed: Boolean = false,
+
     val isFinished: Boolean = false,
     val result: String? = null,
     val resultRecorded: Boolean = false,
