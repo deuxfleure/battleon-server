@@ -816,23 +816,43 @@ object GameManager {
     // 5. HELPERS GÉNÉRAUX
     // =========================================================
 
+    private const val MIN_PHASE_DISPLAY_MILLIS = 2_000L
+
+    private const val PVP_DECISION_TIMEOUT_MILLIS = 20_000L
+    private const val PVP_SHOP_TIMEOUT_MILLIS = 20_000L
+    private const val PVP_PRE_START_TIMEOUT_MILLIS = 90_000L
+
+    private const val PVP_PAUSE_EXTENSION_MILLIS = 10_000L
+
     private fun enterPhase(
         game: GameState,
         phase: TurnPhase
     ): GameState {
         val now = System.currentTimeMillis()
 
+        val deadlineAtMillis = when {
+            // PRE_START : 90 secondes en PvP.
+            phase == TurnPhase.PRE_START && isPvpMode(game) ->
+                now + PVP_PRE_START_TIMEOUT_MILLIS
+
+            // SHOP : 20 secondes en PvP.
+            phase == TurnPhase.SHOP_RESOLUTION && isPvpMode(game) ->
+                now + PVP_SHOP_TIMEOUT_MILLIS
+
+            // Toutes les autres phases normales :
+            // 2 secondes avant résolution automatique.
+            else ->
+                now + MIN_PHASE_DISPLAY_MILLIS
+        }
+
         return game.copy(
             phase = phase,
 
-            // Nouveau cycle temporel.
             phaseEnteredAtMillis = now,
             phaseResolutionRequested = false,
-            phaseDeadlineAtMillis = null,
+            phaseDeadlineAtMillis = deadlineAtMillis,
             phasePauseUsed = false,
 
-            // Les validations "Next" appartiennent uniquement
-            // à la phase pendant laquelle elles ont été données.
             playerAdvanceReady = false,
             opponentAdvanceReady = false,
 
