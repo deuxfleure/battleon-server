@@ -872,6 +872,20 @@ object GameManager {
         return System.currentTimeMillis() >= deadline
     }
 
+    private fun giveAmbushPriorityTo(
+        game: GameState,
+        owner: ChoiceOwner
+    ): GameState {
+        val now = System.currentTimeMillis()
+
+        return game.copy(
+            currentAmbushActor = owner,
+            phaseDeadlineAtMillis = now + AMBUSH_DECISION_TIMEOUT_MILLIS,
+            phasePauseUsed = false,
+            infoMessage = null
+        )
+    }
+
     private fun getAmbushWindowForPhase(
         phase: TurnPhase
     ): AmbushWindow? {
@@ -1030,14 +1044,16 @@ object GameManager {
 
         val startedGame = when {
             hasAvailableAmbushAction(initializedGame, firstOwner) -> {
-                initializedGame.copy(
-                    currentAmbushActor = firstOwner
+                giveAmbushPriorityTo(
+                    game = initializedGame,
+                    owner = firstOwner
                 )
             }
 
             hasAvailableAmbushAction(initializedGame, secondOwner) -> {
-                initializedGame.copy(
-                    currentAmbushActor = secondOwner
+                giveAmbushPriorityTo(
+                    game = initializedGame,
+                    owner = secondOwner
                 )
             }
 
@@ -1057,9 +1073,9 @@ object GameManager {
             !hasPassedCurrentAmbushWindow(game, owner) &&
             hasAvailableAmbushAction(game, owner)
         ) {
-            game.copy(
-                currentAmbushActor = owner,
-                infoMessage = null
+            giveAmbushPriorityTo(
+                game = game,
+                owner = owner
             )
         } else {
             moveToNextAmbushActorOrFinish(
@@ -1079,9 +1095,9 @@ object GameManager {
             !hasPassedCurrentAmbushWindow(game, otherActor) &&
             hasAvailableAmbushAction(game, otherActor)
         ) {
-            game.copy(
-                currentAmbushActor = otherActor,
-                infoMessage = null
+            giveAmbushPriorityTo(
+                game = game,
+                owner = otherActor
             )
         } else {
             advancePastAmbushWindow(game)
@@ -3680,13 +3696,34 @@ object GameManager {
             TurnPhase.AMBUSH_BEFORE_POST_COMBAT,
             TurnPhase.AMBUSH_BEFORE_SHOP -> {
 
-                updatedGame = if (!canResolveCurrentPhase(game)) {
-                    // La fenêtre reste visible au minimum 0,5 seconde.
-                    game
-                } else if (game.ambushPriorityPlayerFirst == null) {
-                    startAmbushWindow(game)
-                } else {
-                    game
+                updatedGame = when {
+                    // Le délai actuel n'est pas encore écoulé :
+                    // - 0,5 s avant l'ouverture initiale
+                    // - ou 20 s lorsqu'un joueur possède la priorité.
+                    !canResolveCurrentPhase(game) -> {
+                        game
+                    }
+
+                    // La fenêtre n'a pas encore été initialisée.
+                    // Après les 0,5 s, on cherche les vraies actions disponibles.
+                    game.ambushPriorityPlayerFirst == null -> {
+                        startAmbushWindow(game)
+                    }
+
+                    // La fenêtre est initialisée et un joueur avait la priorité.
+                    // Sa deadline de 20 s vient d'expirer :
+                    // cela équivaut à un Pass.
+                    game.currentAmbushActor != null -> {
+                        passAmbushWindowInternal(
+                            game = game,
+                            owner = game.currentAmbushActor
+                        )
+                    }
+
+                    // Sécurité : aucun acteur n'a la main.
+                    else -> {
+                        advancePastAmbushWindow(game)
+                    }
                 }
             }
 
