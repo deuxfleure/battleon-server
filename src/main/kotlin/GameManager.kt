@@ -860,6 +860,11 @@ object GameManager {
         )
     }
 
+    private fun canResolveCurrentPhase(game: GameState): Boolean {
+        val deadline = game.phaseDeadlineAtMillis ?: return true
+        return System.currentTimeMillis() >= deadline
+    }
+
     private fun getAmbushWindowForPhase(
         phase: TurnPhase
     ): AmbushWindow? {
@@ -2681,6 +2686,22 @@ object GameManager {
         }
 
         var updatedGame = game.copy(infoMessage = null)
+
+        val phaseRequiresTimedResolution = when (game.phase) {
+            TurnPhase.REVEAL,
+            TurnPhase.EFFECTS,
+            TurnPhase.COMBAT,
+            TurnPhase.POST_COMBAT -> true
+
+            else -> false
+        }
+
+        if (
+            phaseRequiresTimedResolution &&
+            !canResolveCurrentPhase(game)
+        ) {
+            return game
+        }
 
         when (game.phase) {
 
