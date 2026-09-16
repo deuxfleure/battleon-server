@@ -248,6 +248,12 @@ data class GameState(
     val playerCurrentCardHasBruteBonus: Boolean = false,
     val opponentCurrentCardHasBruteBonus: Boolean = false,
 
+    // Effet de Tique activé pour la carte actuellement révélée.
+    // Si true, après le combat le propriétaire est soigné de la différence
+    // positive entre sa Force finale et celle de l'adversaire.
+    val playerTiqueHealPending: Boolean = false,
+    val opponentTiqueHealPending: Boolean = false,
+
 // =========================================================
 // 8.b EFFETS DE PRÉDICTION SUR LA PROCHAINE RÉVÉLATION
 // Exemple : Le Maître des Carnages parie sur le nom de la

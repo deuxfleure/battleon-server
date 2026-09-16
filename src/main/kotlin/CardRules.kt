@@ -150,6 +150,14 @@ fun applyCardEffect(
             // défini dans CardEffectManager
         }
 
+        CardId.ECUMEDESMERS -> {
+            if (effectOwnerIsPlayer) {
+                newPlayerGold += 1
+            } else {
+                newOpponentGold += 1
+            }
+        }
+
         //----------- Demon --------------------------------
         CardId.DANSEUSEMACABRE -> {
             // défini dans CardEffectManager

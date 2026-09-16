@@ -46,6 +46,20 @@ object PostCombatEffectResolver {
                 )
             }
 
+            if (playerWonCombat && playerCard.id == CardId.ECUMEDESMERS) {
+                updatedGame = CardEffectManager.addBurnToken(
+                    game = updatedGame,
+                    target = ChoiceOwner.OPPONENT,
+                )
+            }
+
+            if (playerLostCombat && playerCard.id == CardId.TIQUE) {
+                updatedGame = CardEffectManager.addBloodToken(
+                    game = updatedGame,
+                    target = ChoiceOwner.PLAYER
+                )
+            }
+
             if (
                 !updatedGame.playerPostCombatSacrificeHandled &&
                 playerPower > opponentPower &&
@@ -205,6 +219,8 @@ object PostCombatEffectResolver {
                 }
             }
         }
+
+
         //=============================================
         //====== ------ COTER ADVERSAIRE ---- =========
         //=============================================
@@ -213,6 +229,20 @@ object PostCombatEffectResolver {
             if (opponentWonCombat && opponentCard.id == CardId.NECROMANCIEN) {
                 updatedGame = updatedGame.copy(
                     playerDiscard = updatedGame.playerDiscard + CardEffectManager.createRandomSkeletonCard()
+                )
+            }
+
+            if (opponentWonCombat && opponentCard.id == CardId.ECUMEDESMERS) {
+                updatedGame = CardEffectManager.addBurnToken(
+                    game = updatedGame,
+                    target = ChoiceOwner.PLAYER
+                )
+            }
+
+            if (opponentLostCombat && opponentCard.id == CardId.TIQUE) {
+                updatedGame = CardEffectManager.addBloodToken(
+                    game = updatedGame,
+                    target = ChoiceOwner.OPPONENT
                 )
             }
 

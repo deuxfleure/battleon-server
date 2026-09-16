@@ -346,6 +346,20 @@ object CardEffectManager {
         )
     }
 
+    fun addBloodToken(
+        game: GameState,
+        target: ChoiceOwner,
+        amount: Int = 1
+    ): GameState {
+        return TokenManager.addToken(
+            game = game,
+            target = target,
+            tokenId = TokenManager.TokenIds.BLOOD,
+            amount = amount,
+            maxAmount = 5
+        )
+    }
+
     fun createRandomSkeletonCard(): Card {
         val skeletonId = listOf(
             CardId.SQUELETTE_HANTE,

@@ -839,7 +839,123 @@ object GameManager {
         }
     }
 
+    private fun canActivateTiqueFromDiscard(
+        game: GameState,
+        owner: ChoiceOwner
+    ): Boolean {
+        // Tique peut être activée uniquement après la révélation
+        // et avant la résolution du combat.
+        if (
+            game.phase != TurnPhase.AMBUSH_BEFORE_EFFECTS &&
+            game.phase != TurnPhase.EFFECTS &&
+            game.phase != TurnPhase.AMBUSH_BEFORE_COMBAT
+        ) {
+            return false
+        }
 
+        // Une carte doit être actuellement révélée.
+        val currentCard = when (owner) {
+            ChoiceOwner.PLAYER -> game.lastPlayerCard
+            ChoiceOwner.OPPONENT -> game.lastOpponentCard
+        }
+
+        if (currentCard == null) {
+            return false
+        }
+
+        // Tique doit être présente dans la défausse du propriétaire.
+        val discard = when (owner) {
+            ChoiceOwner.PLAYER -> game.playerDiscard
+            ChoiceOwner.OPPONENT -> game.opponentDiscard
+        }
+
+        if (discard.none { it.id == CardId.TIQUE }) {
+            return false
+        }
+
+        // La destruction de Tique doit laisser au moins 5 cartes.
+        if (
+            !CardEffectManager.canDestroyOneCardWithFiveCardRule(
+                game = game,
+                isPlayer = owner == ChoiceOwner.PLAYER
+            )
+        ) {
+            return false
+        }
+
+        // Il faut au moins un jeton Sang.
+        return TokenManager.getTokenAmount(
+            game = game,
+            target = owner,
+            tokenId = TokenManager.TokenIds.BLOOD
+        ) > 0
+    }
+
+    fun activateTiqueFromDiscard(
+        gameId: String,
+        owner: ChoiceOwner
+    ): GameState? {
+        val game = games[gameId] ?: return null
+
+        if (!canActivateTiqueFromDiscard(game, owner)) {
+            return game
+        }
+
+        val bloodAmount = TokenManager.getTokenAmount(
+            game = game,
+            target = owner,
+            tokenId = TokenManager.TokenIds.BLOOD
+        )
+
+        // Détruit exactement une Tique de la défausse.
+        fun removeOneTique(discard: List<Card>): List<Card> {
+            val index = discard.indexOfFirst { it.id == CardId.TIQUE }
+
+            return if (index >= 0) {
+                discard.filterIndexed { i, _ -> i != index }
+            } else {
+                discard
+            }
+        }
+
+        var updatedGame = when (owner) {
+            ChoiceOwner.PLAYER -> {
+                game.copy(
+                    playerDiscard = removeOneTique(game.playerDiscard),
+
+                    playerCurrentCardPowerBonus =
+                        game.playerCurrentCardPowerBonus + bloodAmount,
+
+                    playerTiqueHealPending = true,
+
+                    infoMessage = null
+                )
+            }
+
+            ChoiceOwner.OPPONENT -> {
+                game.copy(
+                    opponentDiscard = removeOneTique(game.opponentDiscard),
+
+                    opponentCurrentCardPowerBonus =
+                        game.opponentCurrentCardPowerBonus + bloodAmount,
+
+                    opponentTiqueHealPending = true,
+
+                    infoMessage = null
+                )
+            }
+        }
+
+        // Tous les jetons Sang sont consommés.
+        updatedGame = TokenManager.removeAllToken(
+            game = updatedGame,
+            target = owner,
+            tokenId = TokenManager.TokenIds.BLOOD
+        )
+
+        games[gameId] = updatedGame
+        return updatedGame
+    }
 
     private fun startAmbushWindow(game: GameState): GameState {
         val playerFirst = determineAmbushPriorityPlayerFirst(game)
