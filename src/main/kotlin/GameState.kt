@@ -150,6 +150,15 @@ data class GameState(
     // Remis à false à chaque nouvelle phase.
     val phasePauseUsed: Boolean = false,
 
+    // Pause réelle utilisée en Solo / Training.
+    // Tant que true, aucune progression automatique ou manuelle
+    // vers la phase suivante n'est autorisée.
+    val phaseTimerPaused: Boolean = false,
+
+    // Temps qu'il restait sur la deadline au moment de la pause.
+    // Permet de reconstruire une nouvelle deadline au moment de Reprendre.
+    val phaseRemainingMillisWhenPaused: Long? = null,
+
     val isFinished: Boolean = false,
     val result: String? = null,
     val resultRecorded: Boolean = false,

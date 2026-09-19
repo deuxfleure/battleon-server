@@ -1797,6 +1797,58 @@ object GameManager {
         }
     }
 
+    fun togglePhasePause(
+        gameId: String
+    ): GameState? = withGameLock(gameId) {
+
+        val game = games[gameId] ?: return@withGameLock null
+
+        if (game.isFinished) {
+            return@withGameLock game
+        }
+
+        // La pause permanente n'existe qu'en Solo / Training.
+        if (game.mode != "SOLO" && game.mode != "TRAINING") {
+            return@withGameLock game
+        }
+
+        val now = System.currentTimeMillis()
+
+        val updatedGame = if (!game.phaseTimerPaused) {
+
+            // PAUSE
+            val remainingMillis = game.phaseDeadlineAtMillis
+                ?.let { deadline ->
+                    (deadline - now).coerceAtLeast(0L)
+                }
+
+            game.copy(
+                phaseTimerPaused = true,
+                phaseRemainingMillisWhenPaused = remainingMillis,
+                phaseDeadlineAtMillis = null,
+                infoMessage = "Partie en pause"
+            )
+
+        } else {
+
+            // REPRISE
+            val restoredDeadline = game.phaseRemainingMillisWhenPaused
+                ?.let { remaining ->
+                    now + remaining
+                }
+
+            game.copy(
+                phaseTimerPaused = false,
+                phaseRemainingMillisWhenPaused = null,
+                phaseDeadlineAtMillis = restoredDeadline,
+                infoMessage = null
+            )
+        }
+
+        games[gameId] = updatedGame
+        updatedGame
+    }
+
     fun heartbeat(
         gameId: String,
         userId: Int
@@ -2737,6 +2789,12 @@ object GameManager {
 
         if (game.isFinished) {
             return@withGameLock game
+        }
+
+        if (game.phaseTimerPaused) {
+            return@withGameLock game.copy(
+                infoMessage = "Reprenez la partie avant de continuer."
+            )
         }
 
         var updatedGame = game.copy(infoMessage = null)
@@ -3913,6 +3971,12 @@ object GameManager {
         isPlayer: Boolean = true
     ): GameState? = withGameLock(gameId) {
         var game = games[gameId] ?: return null
+
+        if (game.phaseTimerPaused) {
+            return game.copy(
+                infoMessage = "Reprenez la partie avant de continuer."
+            )
+        }
         var safetyCounter = 0
 
             if (
