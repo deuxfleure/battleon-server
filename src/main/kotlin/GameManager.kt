@@ -823,10 +823,6 @@ object GameManager {
         return games[gameId]
     }
 
-    fun updateGame(game: GameState) {
-        games[game.gameId] = game
-    }
-
     // =========================================================
     // 5. HELPERS GÉNÉRAUX
     // =========================================================
@@ -3109,7 +3105,7 @@ object GameManager {
                                         if (workingGame.pendingChoice != null) {
                                             updatedGame = workingGame
                                             games[gameId] = updatedGame
-                                            return updatedGame
+                                            return@withGameLock updatedGame
                                         }
                                     }
 
@@ -3139,7 +3135,7 @@ object GameManager {
                                         if (workingGame.pendingChoice != null) {
                                             updatedGame = workingGame
                                             games[gameId] = updatedGame
-                                            return updatedGame
+                                            return@withGameLock updatedGame
                                         }
                                     }
 
@@ -3915,8 +3911,7 @@ object GameManager {
     fun advanceUntilDecision(
         gameId: String,
         isPlayer: Boolean = true
-    ): GameState? {
-        synchronized(getGameLock(gameId)) {
+    ): GameState? = withGameLock(gameId) {
         var game = games[gameId] ?: return null
         var safetyCounter = 0
 
@@ -3988,8 +3983,7 @@ object GameManager {
             }
         }
 
-        return game
-        }
+        game
     }
 
     //===========================================================
