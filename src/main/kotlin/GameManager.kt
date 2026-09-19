@@ -30,6 +30,15 @@ object GameManager {
         return gameLocks.computeIfAbsent(gameId) { Any() }
     }
 
+    private inline fun <T> withGameLock(
+        gameId: String,
+        block: () -> T
+    ): T {
+        return synchronized(getGameLock(gameId)) {
+            block()
+        }
+    }
+
     //délai de timeout
     private const val FORFEIT_TIMEOUT_MILLIS = 120_000L
 
@@ -978,11 +987,12 @@ object GameManager {
     fun activateTiqueFromDiscard(
         gameId: String,
         owner: ChoiceOwner
-    ): GameState? {
-        val game = games[gameId] ?: return null
+    ): GameState? = withGameLock(gameId) {
+
+        val game = games[gameId] ?: return@withGameLock null
 
         if (!canActivateTiqueFromDiscard(game, owner)) {
-            return game
+            return@withGameLock game
         }
 
         val bloodAmount = TokenManager.getTokenAmount(
@@ -1030,7 +1040,6 @@ object GameManager {
             }
         }
 
-        // Tous les jetons Sang sont consommés.
         updatedGame = TokenManager.removeAllToken(
             game = updatedGame,
             target = owner,
@@ -1038,7 +1047,7 @@ object GameManager {
         )
 
         games[gameId] = updatedGame
-        return updatedGame
+        updatedGame
     }
 
     private fun startAmbushWindow(game: GameState): GameState {
