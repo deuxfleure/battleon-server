@@ -2578,14 +2578,14 @@ object GameManager {
         gameId: String,
         cardId: String,
         isPlayer: Boolean = true
-    ): GameState? {
-        val game = games[gameId] ?: return null
+    ): GameState? = withGameLock(gameId) {
+        val game = games[gameId] ?: return@withGameLock null
 
         val shopEntry = game.shopEntries.find { it.card.id.name == cardId }
         val card = shopEntry?.card
 
         if (card == null) {
-            return game.copy(
+            return@withGameLock game.copy(
                 infoMessage = "Carte introuvable dans le shop."
             )
         }
@@ -2604,7 +2604,7 @@ object GameManager {
             }
 
             games[gameId] = updatedGame
-            return updatedGame
+            return@withGameLock updatedGame
         }
         if (
             game.mode == "SEASON" &&
@@ -2627,7 +2627,7 @@ object GameManager {
             }
 
             games[gameId] = updatedGame
-            return updatedGame
+            return@withGameLock updatedGame
         }
 
         val updatedGame = if (isPlayer) {
@@ -2663,11 +2663,15 @@ object GameManager {
         }
 
         games[gameId] = updatedGame
-        return updatedGame
+        updatedGame
     }
 
-    fun passShop(gameId: String, isPlayer: Boolean): GameState? {
-        val game = games[gameId] ?: return null
+    fun passShop(
+        gameId: String,
+        isPlayer: Boolean
+    ): GameState? = withGameLock(gameId) {
+
+        val game = games[gameId] ?: return@withGameLock null
 
         val updatedGame = if (isPlayer) {
             game.copy(
@@ -2682,7 +2686,7 @@ object GameManager {
         }
 
         games[gameId] = updatedGame
-        return updatedGame
+        updatedGame
     }
 
 
@@ -3839,8 +3843,9 @@ object GameManager {
     fun resolvePendingChoice(
         gameId: String,
         choice: String
-    ): GameState? {
-        val game = games[gameId] ?: return null
+    ): GameState? = withGameLock(gameId) {
+
+        val game = games[gameId] ?: return@withGameLock null
 
         val runeResolvedGame = resolveRunePendingChoice(
             game = game,
@@ -3849,7 +3854,7 @@ object GameManager {
 
         if (runeResolvedGame != null) {
             games[gameId] = runeResolvedGame
-            return runeResolvedGame
+            return@withGameLock runeResolvedGame
         }
 
         val activeScryBeforeResolution = game.activeScryState
@@ -3872,7 +3877,7 @@ object GameManager {
         }
 
         games[gameId] = updatedGame
-        return updatedGame
+        updatedGame
     }
 
     // =========================================================
