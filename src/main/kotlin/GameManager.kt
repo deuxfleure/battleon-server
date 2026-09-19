@@ -1804,10 +1804,13 @@ object GameManager {
     fun heartbeat(
         gameId: String,
         userId: Int
-    ): GameState? {
-        val game = games[gameId] ?: return null
+    ): GameState? = withGameLock(gameId) {
 
-        if (game.isFinished) return game
+        val game = games[gameId] ?: return@withGameLock null
+
+        if (game.isFinished) {
+            return@withGameLock game
+        }
 
         val now = System.currentTimeMillis()
 
@@ -1826,7 +1829,7 @@ object GameManager {
         }
 
         games[gameId] = updatedGame
-        return updatedGame
+        updatedGame
     }
 
     private fun addLog(
@@ -1848,11 +1851,11 @@ object GameManager {
     fun applyConnectionTimeoutIfNeeded(
         gameId: String,
         checkingUserId: Int
-    ): GameState? {
-        val game = games[gameId] ?: return null
+    ): GameState? = withGameLock(gameId) {
+        val game = games[gameId] ?: return@withGameLock null
 
-        if (game.isFinished) return game
-        if (!shouldRecordCompetitiveResult(game)) return game
+        if (game.isFinished) return@withGameLock game
+        if (!shouldRecordCompetitiveResult(game)) return@withGameLock game
 
         val now = System.currentTimeMillis()
 
@@ -1860,7 +1863,9 @@ object GameManager {
         val isCheckingOpponent = checkingUserId == game.opponentUserId
 
         if (!isCheckingPlayer && !isCheckingOpponent) {
-            return game.copy(infoMessage = "Joueur non autorisé pour cette partie")
+            return@withGameLock game.copy(
+                infoMessage = "Joueur non autorisé pour cette partie"
+            )
         }
 
         val opponentLastSeen = if (isCheckingPlayer) {
@@ -1870,13 +1875,13 @@ object GameManager {
         }
 
         if (opponentLastSeen == null) {
-            return game
+            return@withGameLock game
         }
 
         val elapsed = now - opponentLastSeen
 
         if (elapsed < FORFEIT_TIMEOUT_MILLIS) {
-            return game
+            return@withGameLock game
         }
 
         val result = if (isCheckingPlayer) {
@@ -1897,7 +1902,7 @@ object GameManager {
         val recordedGame = recordDuelResultIfNeeded(finishedGame)
 
         games[gameId] = recordedGame
-        return recordedGame
+        recordedGame
     }
 
     private fun isAiControlledOpponent(game: GameState): Boolean {
@@ -3993,17 +3998,18 @@ object GameManager {
     fun forfeitGame(
         gameId: String,
         forfeitingUserId: Int
-    ): GameState? {
-        val game = games[gameId] ?: return null
+    ): GameState? = withGameLock(gameId) {
+
+        val game = games[gameId] ?: return@withGameLock null
 
         if (game.isFinished) {
-            return game
+            return@withGameLock game
         }
 
         val result = when (forfeitingUserId) {
-            game.playerUserId -> "LOSS" // player abandonne
-            game.opponentUserId -> "WIN" // opponent abandonne, donc player gagne
-            else -> "LOSS" // fallback (training)
+            game.playerUserId -> "LOSS"
+            game.opponentUserId -> "WIN"
+            else -> "LOSS"
         }
 
         val finishedGame = game.copy(
@@ -4018,6 +4024,6 @@ object GameManager {
         val recordedGame = recordDuelResultIfNeeded(finishedGame)
 
         games[gameId] = recordedGame
-        return recordedGame
+        recordedGame
     }
 }
