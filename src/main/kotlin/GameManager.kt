@@ -2736,11 +2736,11 @@ object GameManager {
     fun advanceTrainingGame(
         gameId: String,
         isPlayer: Boolean = true
-    ): GameState? {
-        var game = games[gameId] ?: return null
+    ): GameState? = withGameLock(gameId) {
+        var game = games[gameId] ?: return@withGameLock null
 
         if (game.isFinished) {
-            return game
+            return@withGameLock game
         }
 
         var updatedGame = game.copy(infoMessage = null)
@@ -2758,7 +2758,7 @@ object GameManager {
             phaseRequiresTimedResolution &&
             !canResolveCurrentPhase(game)
         ) {
-            return game
+            return@withGameLock game
         }
 
         when (game.phase) {
@@ -3043,7 +3043,7 @@ object GameManager {
                                         if (workingGame.pendingChoice != null) {
                                             updatedGame = workingGame
                                             games[gameId] = updatedGame
-                                            return updatedGame
+                                            return@withGameLock updatedGame
                                         }
                                     }
 
@@ -3075,7 +3075,7 @@ object GameManager {
                                         if (workingGame.pendingChoice != null) {
                                             updatedGame = workingGame
                                             games[gameId] = updatedGame
-                                            return updatedGame
+                                            return@withGameLock updatedGame
                                         }
                                     }
 
@@ -3359,7 +3359,7 @@ object GameManager {
                                 phase = TurnPhase.POST_COMBAT
                             )
                             games[gameId] = updatedGame
-                            return updatedGame
+                            return@withGameLock updatedGame
                         }
                     }
 
@@ -3637,7 +3637,7 @@ object GameManager {
                                     infoMessage = null
                                 )
                                 games[gameId] = updatedGame
-                                return updatedGame
+                                return@withGameLock updatedGame
                             }
                         }
 
@@ -3763,7 +3763,7 @@ object GameManager {
         }
 
         games[gameId] = updatedGame
-        return updatedGame
+        updatedGame
     }
 
 
