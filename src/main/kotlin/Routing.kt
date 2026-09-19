@@ -532,6 +532,59 @@ fun Application.configureRouting() {
                 call.respond(updatedGame.withServerNow())
             }
 
+            post("/duel/{gameId}/pause-toggle") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal!!.payload.getClaim("userId").asInt()
+
+                val gameId = call.parameters["gameId"]
+
+                if (gameId.isNullOrBlank()) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Missing gameId")
+                    )
+                    return@post
+                }
+
+                val existingGame = GameManager.getGame(gameId)
+
+                if (existingGame == null) {
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        mapOf("error" to "Game not found")
+                    )
+                    return@post
+                }
+
+                val isAuthorized = when {
+                    existingGame.mode == "TRAINING" -> true
+                    existingGame.playerUserId == userId -> true
+                    else -> false
+                }
+
+                if (!isAuthorized) {
+                    call.respond(
+                        HttpStatusCode.Forbidden,
+                        mapOf("error" to "User is not part of this game")
+                    )
+                    return@post
+                }
+
+                val updatedGame = GameManager.togglePhasePause(
+                    gameId = gameId
+                )
+
+                if (updatedGame == null) {
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        mapOf("error" to "Game not found")
+                    )
+                    return@post
+                }
+
+                call.respond(updatedGame.withServerNow())
+            }
+
 
             post("/duel/{gameId}/resolve-choice") {
                 val principal = call.principal<JWTPrincipal>()
