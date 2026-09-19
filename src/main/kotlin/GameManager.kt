@@ -3970,10 +3970,10 @@ object GameManager {
         gameId: String,
         isPlayer: Boolean = true
     ): GameState? = withGameLock(gameId) {
-        var game = games[gameId] ?: return null
+        var game = games[gameId] ?: return@withGameLock null
 
         if (game.phaseTimerPaused) {
-            return game.copy(
+            return@withGameLock game.copy(
                 infoMessage = "Reprenez la partie avant de continuer."
             )
         }
@@ -3984,7 +3984,7 @@ object GameManager {
                 isPlayerDecisionPoint(game) &&
                 !canResolveCurrentPhase(game)
             ) {
-                return game
+                return@withGameLock game
             }
 
             if (
@@ -4007,7 +4007,7 @@ object GameManager {
             // Si un seul des deux joueurs a validé, on s'arrête ici.
             if (!markedGame.playerAdvanceReady || !markedGame.opponentAdvanceReady) {
                 games[gameId] = markedGame
-                return markedGame
+                return@withGameLock markedGame
             }
 
             // Les deux joueurs ont validé : on réinitialise l'attente
@@ -4024,7 +4024,7 @@ object GameManager {
         }
 
         if (isPlayerDecisionPoint(game)) {
-            val next = advanceTrainingGame(gameId) ?: return null
+            val next = advanceTrainingGame(gameId) ?: return@withGameLock null
             game = next
         }
 
@@ -4037,7 +4037,7 @@ object GameManager {
                 break
             }
 
-            val next = advanceTrainingGame(gameId) ?: return null
+            val next = advanceTrainingGame(gameId) ?: return@withGameLock null
             game = next
 
             safetyCounter++
