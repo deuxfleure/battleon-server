@@ -1190,8 +1190,8 @@ object GameManager {
     fun passAmbushWindow(
         gameId: String,
         owner: ChoiceOwner
-    ): GameState? {
-        val game = games[gameId] ?: return null
+    ): GameState? = withGameLock(gameId) {
+        val game = games[gameId] ?: return@withGameLock null
 
         val updatedGame = passAmbushWindowInternal(
             game = game,
@@ -1199,7 +1199,7 @@ object GameManager {
         )
 
         games[gameId] = updatedGame
-        return updatedGame
+        updatedGame
     }
 
     private fun clearAmbushWindowState(game: GameState): GameState {
@@ -1432,8 +1432,8 @@ object GameManager {
         gameId: String,
         owner: ChoiceOwner,
         runeId: String
-    ): GameState? {
-        val game = games[gameId] ?: return null
+    ): GameState? = withGameLock(gameId) {
+        val game = games[gameId] ?: return@withGameLock null
 
         if (!canActivateRune(
                 game = game,
@@ -1441,11 +1441,11 @@ object GameManager {
                 runeId = runeId
             )
         ) {
-            return game
+            return@withGameLock game
         }
 
         val rune = SoloRuneCatalog.findById(runeId)
-            ?: return game
+            ?: return@withGameLock game
 
         var updatedGame = applyRuneEffect(
             game = game,
@@ -1472,7 +1472,7 @@ object GameManager {
         }
 
         games[gameId] = updatedGame
-        return updatedGame
+        updatedGame
     }
 
     fun setTacticalCardAutoSkip(
@@ -1480,8 +1480,8 @@ object GameManager {
         owner: ChoiceOwner,
         tacticalCardIndex: Int,
         autoSkip: Boolean
-    ): GameState? {
-        val game = games[gameId] ?: return null
+    ): GameState? = withGameLock(gameId) {
+        val game = games[gameId] ?: return@withGameLock null
 
         val tacticalCards = when (owner) {
             ChoiceOwner.PLAYER -> game.playerAmbush
@@ -1489,7 +1489,7 @@ object GameManager {
         }
 
         if (tacticalCardIndex !in tacticalCards.indices) {
-            return game
+            return@withGameLock game
         }
 
         val updatedCards = tacticalCards.mapIndexed { index, tacticalCard ->
@@ -1511,15 +1511,15 @@ object GameManager {
         }
 
         games[gameId] = updatedGame
-        return updatedGame
+        updatedGame
     }
 
     fun activateTacticalCard(
         gameId: String,
         owner: ChoiceOwner,
         tacticalCardIndex: Int
-    ): GameState? {
-        val game = games[gameId] ?: return null
+    ): GameState? = withGameLock(gameId) {
+        val game = games[gameId] ?: return@withGameLock null
 
         if (!canActivateTacticalCard(
                 game = game,
@@ -1527,7 +1527,7 @@ object GameManager {
                 tacticalCardIndex = tacticalCardIndex
             )
         ) {
-            return game
+            return@withGameLock game
         }
 
         val tacticalCards = when (owner) {
@@ -1574,7 +1574,7 @@ object GameManager {
         )
 
         games[gameId] = updatedGame
-        return updatedGame
+        updatedGame
     }
 
     private fun applyRuneEffect(
