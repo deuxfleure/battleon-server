@@ -37,6 +37,21 @@ object TokenManager {
         ) > 0
     }
 
+    private fun hasPaladinInPreparation(
+        game: GameState,
+        target: ChoiceOwner
+    ): Boolean {
+        val tacticalCards = when (target) {
+            ChoiceOwner.PLAYER -> game.playerAmbush
+            ChoiceOwner.OPPONENT -> game.opponentAmbush
+        }
+
+        return tacticalCards.any { tacticalCard ->
+            tacticalCard.entryType == TacticalEntryType.PREPARATION &&
+                    tacticalCard.card.id == CardId.PALADIN
+        }
+    }
+
     fun addToken(
         game: GameState,
         target: ChoiceOwner,
@@ -45,6 +60,21 @@ object TokenManager {
         maxAmount: Int? = null
     ): GameState {
         if (amount <= 0) {
+            return game
+        }
+
+        val isPaladinProtectedToken =
+            tokenId == TokenIds.BURN ||
+                    tokenId == TokenIds.DISEASE ||
+                    tokenId == TokenIds.POISON
+
+        if (
+            isPaladinProtectedToken &&
+            hasPaladinInPreparation(
+                game = game,
+                target = target
+            )
+        ) {
             return game
         }
 
