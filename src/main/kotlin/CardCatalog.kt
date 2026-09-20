@@ -87,7 +87,7 @@ object CardCatalog {
         Card(CardId.PERFIDE, 3, 3, CardFaction.DEMON, purchaseLimit = null, true, false, false,false),
         Card(CardId.OEIL, 2, 3, CardFaction.DEMON, purchaseLimit = null, false, false, false,false),
         Card(CardId.TRAPPEUR, 6, 3, CardFaction.HUMAN, purchaseLimit = 1, false, true, false,false),
-        Card(CardId.EMPOISONNEUSE, 2, 4, CardFaction.DEMON, purchaseLimit = null, true, false, false,false),
+        Card(CardId.EMPOISONNEUSE, 2, 4, CardFaction.DEMON, purchaseLimit = null, true, false, false,true),
 
         // =====================================================
         // MERCENAIRES SAISON

@@ -222,6 +222,9 @@ data class GameState(
     val playerAmbassadriceTurnStartHp: Int? = null,
     val opponentAmbassadriceTurnStartHp: Int? = null,
 
+    val playerPaladinProtectionActive: Boolean = false,
+    val opponentPaladinProtectionActive: Boolean = false,
+
     // =========================================================
     // 6. ZONES DE CARTES
     // =========================================================

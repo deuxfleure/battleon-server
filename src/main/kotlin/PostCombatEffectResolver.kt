@@ -103,6 +103,23 @@ object PostCombatEffectResolver {
                     target = ChoiceOwner.OPPONENT,
                 )
             }
+            // DISCIPLE DE LA FLAMME
+            if (playerCard.id == CardId.DISCIPLEDELAFLAMME) {
+
+                // S'il gagne, il inflige Brûlure.
+                if (playerWonCombat) {
+                    updatedGame = CardEffectManager.addBurnToken(
+                        game = updatedGame,
+                        target = ChoiceOwner.OPPONENT
+                    )
+                }
+
+                // Dans tous les cas, la prochaine carte inflige +1 dégât.
+                updatedGame = updatedGame.copy(
+                    playerNextCardDamageBonus =
+                        updatedGame.playerNextCardDamageBonus + 1
+                )
+            }
 
             if (playerLostCombat && playerCard.id == CardId.TIQUE) {
                 updatedGame = CardEffectManager.addBloodToken(
@@ -145,6 +162,24 @@ object PostCombatEffectResolver {
                     ),
                     infoMessage = null
                 )
+            }
+
+            // DÉVOREUR D'ESPOIRS
+            if (playerCard.id == CardId.DEVOREURDESPOIRS) {
+                if (playerLostCombat) {
+                    // S'il perd : l'adversaire perd 1 Or.
+                    updatedGame = updatedGame.copy(
+                        opponentGold = maxOf(0, updatedGame.opponentGold - 1)
+                    )
+                }
+
+                if (playerWonCombat) {
+                    // S'il gagne : la prochaine carte adverse perd 1 Force.
+                    updatedGame = updatedGame.copy(
+                        opponentNextCardPowerBonus =
+                            updatedGame.opponentNextCardPowerBonus - 1
+                    )
+                }
             }
 
             // GARDIEN DES ENFERS
@@ -290,6 +325,24 @@ object PostCombatEffectResolver {
                 )
             }
 
+            // DISCIPLE DE LA FLAMME
+            if (opponentCard.id == CardId.DISCIPLEDELAFLAMME) {
+
+                // S'il gagne, il inflige Brûlure.
+                if (opponentWonCombat) {
+                    updatedGame = CardEffectManager.addBurnToken(
+                        game = updatedGame,
+                        target = ChoiceOwner.PLAYER
+                    )
+                }
+
+                // Dans tous les cas, la prochaine carte inflige +1 dégât.
+                updatedGame = updatedGame.copy(
+                    opponentNextCardDamageBonus =
+                        updatedGame.opponentNextCardDamageBonus + 1
+                )
+            }
+
             if (opponentLostCombat && opponentCard.id == CardId.TIQUE) {
                 updatedGame = CardEffectManager.addBloodToken(
                     game = updatedGame,
@@ -309,6 +362,24 @@ object PostCombatEffectResolver {
                     ),
                     infoMessage = null
                 )
+            }
+
+            // DÉVOREUR D'ESPOIRS
+            if (opponentCard.id == CardId.DEVOREURDESPOIRS) {
+                if (opponentLostCombat) {
+                    // S'il perd : le joueur perd 1 Or.
+                    updatedGame = updatedGame.copy(
+                        playerGold = maxOf(0, updatedGame.playerGold - 1)
+                    )
+                }
+
+                if (opponentWonCombat) {
+                    // S'il gagne : la prochaine carte du joueur perd 1 Force.
+                    updatedGame = updatedGame.copy(
+                        playerNextCardPowerBonus =
+                            updatedGame.playerNextCardPowerBonus - 1
+                    )
+                }
             }
 
             // OEUF D'ARAIGNÉE — poison si perte

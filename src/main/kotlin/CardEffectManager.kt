@@ -553,6 +553,23 @@ object CardEffectManager {
             CardId.THERMOGUERRIER -> card.power + (ownerGold / 2)
             CardId.BARBAREVIKING -> card.power + countHumanLinkBonus(game, isPlayer)
             CardId.AMBASSADRICE -> card.power + countAmbassadricePowerBonus(game, isPlayer)
+
+            CardId.DISCIPLEDELAFLAMME -> {
+                val opponent = if (isPlayer) {
+                    ChoiceOwner.OPPONENT
+                } else {
+                    ChoiceOwner.PLAYER
+                }
+
+                val opponentHasBurn = TokenManager.hasToken(
+                    game = game,
+                    target = opponent,
+                    tokenId = TokenManager.TokenIds.BURN
+                )
+
+                card.power + if (opponentHasBurn) 2 else 0
+            }
+
             else -> card.power
         }
 
@@ -594,6 +611,7 @@ object CardEffectManager {
     ): Boolean {
         return when (card.id) {
             CardId.VIOLENT,
+            CardId.ENCHAINE,
             CardId.BARBAREVIKING -> true
             else -> nextCardHasBrute
         }

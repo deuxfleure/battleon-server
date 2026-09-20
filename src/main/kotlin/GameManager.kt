@@ -1270,6 +1270,14 @@ object GameManager {
                     tacticalCard.entryType == TacticalEntryType.PREPARATION
                 }
 
+                CardId.PALADIN -> {
+                    tacticalCard.entryType == TacticalEntryType.PREPARATION &&
+                            (
+                                    game.phase == TurnPhase.AMBUSH_BEFORE_COMBAT ||
+                                            game.phase == TurnPhase.AMBUSH_BEFORE_POST_COMBAT
+                                    )
+                }
+
                 CardId.FORCETRANQUILLE -> {
                     tacticalCard.entryType == TacticalEntryType.AMBUSH &&
                             (
@@ -1600,6 +1608,42 @@ object GameManager {
 
                             opponentDiscard =
                                 game.opponentDiscard + tacticalCard.card + spiderEgg,
+
+                            infoMessage = null
+                        )
+                    }
+                }
+            }
+
+            CardId.PALADIN -> {
+                when (owner) {
+                    ChoiceOwner.PLAYER -> {
+                        game.copy(
+                            playerAmbush =
+                                game.playerAmbush.filterIndexed { index, _ ->
+                                    index != tacticalCardIndex
+                                },
+
+                            playerDiscard =
+                                game.playerDiscard + tacticalCard.card,
+
+                            playerPaladinProtectionActive = true,
+
+                            infoMessage = null
+                        )
+                    }
+
+                    ChoiceOwner.OPPONENT -> {
+                        game.copy(
+                            opponentAmbush =
+                                game.opponentAmbush.filterIndexed { index, _ ->
+                                    index != tacticalCardIndex
+                                },
+
+                            opponentDiscard =
+                                game.opponentDiscard + tacticalCard.card,
+
+                            opponentPaladinProtectionActive = true,
 
                             infoMessage = null
                         )
@@ -2513,6 +2557,24 @@ object GameManager {
                     ChoiceOwner.OPPONENT -> {
                         game.copy(
                             opponentDiscard = game.opponentDiscard + cannonball
+                        )
+                    }
+                }
+            }
+
+            CardId.ARAIGNEEJUVENILE -> {
+                val spiderEgg = CardCatalog.getCard(CardId.OEUFDARAIGNEE)
+
+                when (owner) {
+                    ChoiceOwner.PLAYER -> {
+                        game.copy(
+                            playerDiscard = game.playerDiscard + spiderEgg
+                        )
+                    }
+
+                    ChoiceOwner.OPPONENT -> {
+                        game.copy(
+                            opponentDiscard = game.opponentDiscard + spiderEgg
                         )
                     }
                 }
@@ -3498,6 +3560,32 @@ object GameManager {
                         ),
                         phase = TurnPhase.AMBUSH_BEFORE_POST_COMBAT
                     )
+
+                    // =====================================================
+                    // ROI — soigne autant de PV que les dégâts qu'il inflige
+                    // =====================================================
+
+                    if (
+                        playerCard.id == CardId.ROI &&
+                        playerDamageDealt > 0
+                    ) {
+                        updatedGame = TokenManager.heal(
+                            game = updatedGame,
+                            target = ChoiceOwner.PLAYER,
+                            amount = playerDamageDealt
+                        )
+                    }
+
+                    if (
+                        opponentCard.id == CardId.ROI &&
+                        opponentDamageDealt > 0
+                    ) {
+                        updatedGame = TokenManager.heal(
+                            game = updatedGame,
+                            target = ChoiceOwner.OPPONENT,
+                            amount = opponentDamageDealt
+                        )
+                    }
 
                     if (playerHasBurn && !playerLostCombat) {
                         updatedGame = TokenManager.removeAllToken(
