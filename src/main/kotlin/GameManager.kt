@@ -1266,6 +1266,10 @@ object GameManager {
                     tacticalCard.entryType == TacticalEntryType.AMBUSH
                 }
 
+                CardId.REINEARAIGNEE -> {
+                    tacticalCard.entryType == TacticalEntryType.PREPARATION
+                }
+
                 CardId.FORCETRANQUILLE -> {
                     tacticalCard.entryType == TacticalEntryType.AMBUSH &&
                             (
@@ -1563,6 +1567,40 @@ object GameManager {
                                 index != tacticalCardIndex
                             },
                             opponentDiscard = game.opponentDiscard + tacticalCard.card,
+                            infoMessage = null
+                        )
+                    }
+                }
+            }
+
+            CardId.REINEARAIGNEE -> {
+                val spiderEgg = CardCatalog.getCard(CardId.OEUFDARAIGNEE)
+
+                when (owner) {
+                    ChoiceOwner.PLAYER -> {
+                        game.copy(
+                            playerAmbush =
+                                game.playerAmbush.filterIndexed { index, _ ->
+                                    index != tacticalCardIndex
+                                },
+
+                            playerDiscard =
+                                game.playerDiscard + tacticalCard.card + spiderEgg,
+
+                            infoMessage = null
+                        )
+                    }
+
+                    ChoiceOwner.OPPONENT -> {
+                        game.copy(
+                            opponentAmbush =
+                                game.opponentAmbush.filterIndexed { index, _ ->
+                                    index != tacticalCardIndex
+                                },
+
+                            opponentDiscard =
+                                game.opponentDiscard + tacticalCard.card + spiderEgg,
+
                             infoMessage = null
                         )
                     }
@@ -2293,6 +2331,49 @@ object GameManager {
         )
     }
 
+    private fun resolveUniqueOnReveal(
+        game: GameState,
+        revealedCards: List<Card>
+    ): GameState {
+        val uniqueRevealedCardIds = revealedCards
+            .filter { it.isUnique }
+            .map { it.id }
+            .toSet()
+
+        if (uniqueRevealedCardIds.isEmpty()) {
+            return game
+        }
+
+        val playerCardsToDiscard = game.playerAmbush
+            .filter { tacticalCard ->
+                tacticalCard.card.id in uniqueRevealedCardIds
+            }
+            .map { tacticalCard ->
+                tacticalCard.card
+            }
+
+        val opponentCardsToDiscard = game.opponentAmbush
+            .filter { tacticalCard ->
+                tacticalCard.card.id in uniqueRevealedCardIds
+            }
+            .map { tacticalCard ->
+                tacticalCard.card
+            }
+
+        return game.copy(
+            playerAmbush = game.playerAmbush.filterNot { tacticalCard ->
+                tacticalCard.card.id in uniqueRevealedCardIds
+            },
+
+            opponentAmbush = game.opponentAmbush.filterNot { tacticalCard ->
+                tacticalCard.card.id in uniqueRevealedCardIds
+            },
+
+            playerDiscard = game.playerDiscard + playerCardsToDiscard,
+            opponentDiscard = game.opponentDiscard + opponentCardsToDiscard
+        )
+    }
+
     private fun debugPower(game: GameState, label: String) {
         val playerCard = game.lastPlayerCard
         val opponentCard = game.lastOpponentCard
@@ -2963,6 +3044,19 @@ object GameManager {
 
                 val playerCard = playerDeck.firstOrNull()
                 val opponentCard = opponentDeck.firstOrNull()
+
+                if (playerCard != null || opponentCard != null) {
+                    recycleGame = resolveUniqueOnReveal(
+                        game = recycleGame,
+                        revealedCards = listOfNotNull(
+                            playerCard,
+                            opponentCard
+                        )
+                    )
+
+                    playerDiscard = recycleGame.playerDiscard
+                    opponentDiscard = recycleGame.opponentDiscard
+                }
 
                 // -------------------------------------------------
                 // EFFETS DE PRÉDICTION SUR LA PROCHAINE RÉVÉLATION

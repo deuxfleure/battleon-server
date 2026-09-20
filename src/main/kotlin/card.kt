@@ -116,5 +116,6 @@ data class Card(
     val purchaseLimit: Int? = null,
     val hasAmbush: Boolean = false,
     val hasPreparation: Boolean = false,
-    val isSpider: Boolean = false
+    val isSpider: Boolean = false,
+    val isUnique: Boolean = false
 )
