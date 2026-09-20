@@ -1807,12 +1807,41 @@ object GameManager {
             return@withGameLock game
         }
 
-        // La pause permanente n'existe qu'en Solo / Training.
+        val now = System.currentTimeMillis()
+
+// =====================================================
+// PvP : +10 secondes, une seule fois par phase
+// =====================================================
+        if (isPvpMode(game)) {
+
+            // Le bonus a déjà été utilisé pendant cette phase.
+            if (game.phasePauseUsed) {
+                return@withGameLock game
+            }
+
+            // Il faut une deadline active à prolonger.
+            val currentDeadline =
+                game.phaseDeadlineAtMillis
+                    ?: return@withGameLock game
+
+            val updatedGame = game.copy(
+                phaseDeadlineAtMillis =
+                    currentDeadline + PVP_PAUSE_EXTENSION_MILLIS,
+
+                phasePauseUsed = true,
+                infoMessage = null
+            )
+
+            games[gameId] = updatedGame
+            return@withGameLock updatedGame
+        }
+
+// =====================================================
+// Solo / Training : vraie pause / reprise
+// =====================================================
         if (game.mode != "SOLO" && game.mode != "TRAINING") {
             return@withGameLock game
         }
-
-        val now = System.currentTimeMillis()
 
         val updatedGame = if (!game.phaseTimerPaused) {
 
