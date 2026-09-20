@@ -3700,25 +3700,28 @@ object GameManager {
                         val opponentHasAmbassadriceInDiscard =
                             workingGame.opponentDiscard.any { it.id == CardId.AMBASSADRICE }
 
+                        val playerTurnStartHp = workingGame.playerAmbassadriceTurnStartHp
+                        val opponentTurnStartHp = workingGame.opponentAmbassadriceTurnStartHp
+
                         val protectedPlayerHp = if (
-                            playerHasAmbassadriceInDiscard &&
-                            workingGame.playerAmbassadriceTurnStartHp != null
+                            (playerHasAmbassadriceInDiscard || workingGame.playerPaladinProtectionActive) &&
+                            playerTurnStartHp != null
                         ) {
                             maxOf(
                                 workingGame.playerHp,
-                                workingGame.playerAmbassadriceTurnStartHp - 1
+                                playerTurnStartHp - 1
                             )
                         } else {
                             workingGame.playerHp
                         }
 
                         val protectedOpponentHp = if (
-                            opponentHasAmbassadriceInDiscard &&
-                            workingGame.opponentAmbassadriceTurnStartHp != null
+                            (opponentHasAmbassadriceInDiscard || workingGame.opponentPaladinProtectionActive) &&
+                            opponentTurnStartHp != null
                         ) {
                             maxOf(
                                 workingGame.opponentHp,
-                                workingGame.opponentAmbassadriceTurnStartHp - 1
+                                opponentTurnStartHp - 1
                             )
                         } else {
                             workingGame.opponentHp
@@ -4026,6 +4029,8 @@ object GameManager {
                         pendingChoice = null,
                         playerAmbassadriceTurnStartHp = null,
                         opponentAmbassadriceTurnStartHp = null,
+                        playerPaladinProtectionActive = false,
+                        opponentPaladinProtectionActive = false,
                         combatDamageToPlayer = 0,
                         combatDamageToOpponent = 0
                     )
