@@ -116,6 +116,32 @@ object EffectPhaseCardResolver {
                 )
             }
 
+            CardId.EVEQUE -> {
+                val healedGame = TokenManager.heal(
+                    game = game,
+                    target = owner,
+                    amount = 1
+                )
+
+                CardEffectManager.startScry(
+                    game = healedGame,
+                    sourceId = CardId.EVEQUE.name,
+                    resolver = owner,
+                    target = owner,
+                    amount = 1,
+                    canDiscardViewedCards = true,
+                    chainedScry = ChainedScry(
+                        target = if (ownerIsPlayer) {
+                            ChoiceOwner.OPPONENT
+                        } else {
+                            ChoiceOwner.PLAYER
+                        },
+                        amount = 1,
+                        canDiscardViewedCards = true
+                    )
+                )
+            }
+
             CardId.DEVINDELUMIERE -> {
                 CardEffectManager.startScry(
                     game = game,

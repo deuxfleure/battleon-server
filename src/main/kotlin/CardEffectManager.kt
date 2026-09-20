@@ -109,7 +109,8 @@ object CardEffectManager {
         target: ChoiceOwner,
         amount: Int,
         completionContext: ScryCompletionContext = ScryCompletionContext.CARD_EFFECT,
-        canDiscardViewedCards: Boolean = true
+        canDiscardViewedCards: Boolean = true,
+        chainedScry: ChainedScry? = null
     ): GameState {
 
         var workingGame = game
@@ -205,6 +206,7 @@ object CardEffectManager {
             amount = amount,
             completionContext = completionContext,
             canDiscardViewedCards = canDiscardViewedCards,
+            chainedScry = chainedScry,
             revealedCards = revealedCards,
             cardsToReturnOnTop = emptyList(),
             cardsToDiscard = emptyList(),
@@ -225,6 +227,42 @@ object CardEffectManager {
 
     fun finalizeScry(game: GameState): GameState {
         val scryState = game.activeScryState ?: return game
+
+        val chainedScry = scryState.chainedScry
+
+        if (chainedScry != null) {
+            val gameAfterCurrentScry = if (scryState.target == ChoiceOwner.PLAYER) {
+                game.copy(
+                    playerDeck =
+                        scryState.cardsToReturnOnTop.reversed() + game.playerDeck,
+                    playerDiscard =
+                        game.playerDiscard + scryState.cardsToDiscard,
+                    activeScryState = null,
+                    pendingChoice = null,
+                    infoMessage = null
+                )
+            } else {
+                game.copy(
+                    opponentDeck =
+                        scryState.cardsToReturnOnTop.reversed() + game.opponentDeck,
+                    opponentDiscard =
+                        game.opponentDiscard + scryState.cardsToDiscard,
+                    activeScryState = null,
+                    pendingChoice = null,
+                    infoMessage = null
+                )
+            }
+
+            return startScry(
+                game = gameAfterCurrentScry,
+                sourceId = scryState.sourceCardId,
+                resolver = scryState.resolver,
+                target = chainedScry.target,
+                amount = chainedScry.amount,
+                completionContext = scryState.completionContext,
+                canDiscardViewedCards = chainedScry.canDiscardViewedCards
+            )
+        }
 
         val resolverIsPlayer = scryState.resolver == ChoiceOwner.PLAYER
 

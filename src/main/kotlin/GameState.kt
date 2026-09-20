@@ -75,6 +75,13 @@ data class NextRevealPredictionEffect(
 )
 
 @Serializable
+data class ChainedScry(
+    val target: ChoiceOwner,
+    val amount: Int,
+    val canDiscardViewedCards: Boolean = true
+)
+
+@Serializable
 data class ScryState(
     // Carte source de l'effet
     val sourceCardId: String,
@@ -91,6 +98,10 @@ data class ScryState(
     val amount: Int,
 
     val completionContext: ScryCompletionContext = ScryCompletionContext.CARD_EFFECT,
+
+    // Scrutage à lancer immédiatement après celui-ci.
+    // null = le scrutage actuel termine normalement son contexte.
+    val chainedScry: ChainedScry? = null,
 
     // Est-ce que les cartes scrutées peuvent être défaussées ?
     // true = Scruter / Scruter sombre
