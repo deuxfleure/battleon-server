@@ -164,6 +164,18 @@ object EffectPhaseCardResolver {
                 )
             }
 
+            CardId.REINEARAIGNEE -> {
+                CardEffectManager.addPoisonToken(
+                    game = game,
+                    target = if (ownerIsPlayer) {
+                        ChoiceOwner.OPPONENT
+                    } else {
+                        ChoiceOwner.PLAYER
+                    },
+                    amount = 2
+                )
+            }
+
             CardId.FIDELE -> {
                 CardEffectManager.applyFideleEffect(
                     game = game,

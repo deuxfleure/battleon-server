@@ -526,6 +526,22 @@ object CardEffectManager {
         }
     }
 
+    fun countReineAraigneePowerBonus(
+        game: GameState,
+        isPlayer: Boolean
+    ): Int {
+        val tacticalCards = if (isPlayer) {
+            game.playerAmbush
+        } else {
+            game.opponentAmbush
+        }
+
+        return tacticalCards.count { tacticalCard ->
+            tacticalCard.entryType == TacticalEntryType.PREPARATION &&
+                    tacticalCard.card.id == CardId.REINEARAIGNEE
+        }
+    }
+
     fun getEffectivePower(
         game: GameState,
         card: Card,
@@ -555,6 +571,15 @@ object CardEffectManager {
         // les Collecteurs du propriétaire gagnent +1 Force par Musicien.
         if (card.id == CardId.COLLECTOR) {
             totalPower += countMusicienCollectorBonus(
+                game = game,
+                isPlayer = isPlayer
+            )
+        }
+
+        // REINE ARAIGNÉE — tant qu'elle est dans la zone tactique,
+        // les Araignées de son propriétaire gagnent +1 Force.
+        if (card.isSpider) {
+            totalPower += countReineAraigneePowerBonus(
                 game = game,
                 isPlayer = isPlayer
             )

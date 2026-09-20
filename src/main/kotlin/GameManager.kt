@@ -1266,6 +1266,14 @@ object GameManager {
                     tacticalCard.entryType == TacticalEntryType.AMBUSH
                 }
 
+                CardId.FORCETRANQUILLE -> {
+                    tacticalCard.entryType == TacticalEntryType.AMBUSH &&
+                            (
+                                    game.phase == TurnPhase.AMBUSH_BEFORE_EFFECTS ||
+                                            game.phase == TurnPhase.AMBUSH_BEFORE_COMBAT
+                                    )
+                }
+
                 else -> false
             }
         }
@@ -1555,6 +1563,44 @@ object GameManager {
                                 index != tacticalCardIndex
                             },
                             opponentDiscard = game.opponentDiscard + tacticalCard.card,
+                            infoMessage = null
+                        )
+                    }
+                }
+            }
+
+            CardId.FORCETRANQUILLE -> {
+                when (owner) {
+                    ChoiceOwner.PLAYER -> {
+                        game.copy(
+                            playerCurrentCardPowerBonus =
+                                game.playerCurrentCardPowerBonus + 2,
+
+                            playerAmbush =
+                                game.playerAmbush.filterIndexed { index, _ ->
+                                    index != tacticalCardIndex
+                                },
+
+                            playerDiscard =
+                                game.playerDiscard + tacticalCard.card,
+
+                            infoMessage = null
+                        )
+                    }
+
+                    ChoiceOwner.OPPONENT -> {
+                        game.copy(
+                            opponentCurrentCardPowerBonus =
+                                game.opponentCurrentCardPowerBonus + 2,
+
+                            opponentAmbush =
+                                game.opponentAmbush.filterIndexed { index, _ ->
+                                    index != tacticalCardIndex
+                                },
+
+                            opponentDiscard =
+                                game.opponentDiscard + tacticalCard.card,
+
                             infoMessage = null
                         )
                     }
