@@ -310,6 +310,169 @@ object TrainingAiPendingChoiceResolver {
         }
     }
 
+    private fun chooseAiEnrage(
+        game: GameState,
+        pendingChoice: PendingChoice
+    ): String {
+        val ownerIsPlayer = pendingChoice.owner == ChoiceOwner.PLAYER
+
+        val aiHp = if (ownerIsPlayer) game.playerHp else game.opponentHp
+        val enemyHp = if (ownerIsPlayer) game.opponentHp else game.playerHp
+        val aiGold = if (ownerIsPlayer) game.playerGold else game.opponentGold
+
+        val aiPower = if (ownerIsPlayer) {
+            game.playerEffectivePower
+        } else {
+            game.opponentEffectivePower
+        }
+
+        val enemyPower = if (ownerIsPlayer) {
+            game.opponentEffectivePower
+        } else {
+            game.playerEffectivePower
+        }
+
+        val aiCard = if (ownerIsPlayer) game.lastPlayerCard else game.lastOpponentCard
+
+        val hasBrute = aiCard != null && CardEffectManager.hasBrute(
+            card = aiCard,
+            nextCardHasBrute = if (ownerIsPlayer) {
+                game.playerCurrentCardHasBruteBonus
+            } else {
+                game.opponentCurrentCardHasBruteBonus
+            }
+        )
+
+        val currentCombatDamage = if (ownerIsPlayer) {
+            game.playerEnrageCombatDamage
+        } else {
+            game.opponentEnrageCombatDamage
+        }
+
+        val bonusDamage = if (ownerIsPlayer) {
+            game.playerCurrentCardDamageBonus
+        } else {
+            game.opponentCurrentCardDamageBonus
+        }
+
+        val winsCombat = aiPower > enemyPower
+
+        val available = pendingChoice.options
+
+        fun canBuy(option: String): Boolean = option in available
+
+        val combatDamage = if (!winsCombat) {
+            0
+        } else if (hasBrute) {
+            aiPower - enemyPower + bonusDamage
+        } else {
+            currentCombatDamage + bonusDamage
+        }
+
+        // -------------------------------------------------
+        // PRIORITÉ 1 — Chercher une victoire immédiate
+        // -------------------------------------------------
+
+        val fatalOptions = listOf(
+            "ENRAGE_COMBAT_3",
+            "ENRAGE_DIRECT_2",
+            "ENRAGE_DIRECT_1"
+        )
+
+        val costs = mapOf(
+            "ENRAGE_COMBAT_3" to 3,
+            "ENRAGE_DIRECT_2" to 3,
+            "ENRAGE_DIRECT_1" to 2
+        )
+
+        val availableFatalOptions = fatalOptions.filter { canBuy(it) }
+
+        val combinations = (0 until (1 shl availableFatalOptions.size)).map { mask ->
+            availableFatalOptions.filterIndexed { index, _ ->
+                mask and (1 shl index) != 0
+            }
+        }
+
+        val cheapestFatalCombination = combinations
+            .filter { combination ->
+                val cost = combination.sumOf { costs.getValue(it) }
+
+                if (cost > aiGold) {
+                    false
+                } else {
+                    val directDamage =
+                        (if ("ENRAGE_DIRECT_1" in combination) 1 else 0) +
+                                (if ("ENRAGE_DIRECT_2" in combination) 2 else 0)
+
+                    val finalCombatDamage = if (
+                        winsCombat &&
+                        !hasBrute &&
+                        "ENRAGE_COMBAT_3" in combination
+                    ) {
+                        3 + bonusDamage
+                    } else {
+                        combatDamage
+                    }
+
+                    finalCombatDamage + directDamage >= enemyHp
+                }
+            }
+            .minWithOrNull(
+                compareBy<List<String>>(
+                    { combination -> combination.sumOf { costs.getValue(it) } },
+                    { combination -> combination.size }
+                )
+            )
+
+        if (cheapestFatalCombination != null &&
+            cheapestFatalCombination.isNotEmpty()
+        ) {
+            return cheapestFatalCombination.first()
+        }
+
+        // -------------------------------------------------
+        // PRIORITÉ 2 — IA en avance et hors danger
+        // -------------------------------------------------
+
+        if (aiHp > 10 && aiHp >= enemyHp) {
+            return "ENRAGE_CLOSE"
+        }
+
+        // -------------------------------------------------
+        // PRIORITÉ 3 — IA derrière mais hors danger
+        // -------------------------------------------------
+
+        if (aiHp > 10) {
+            if (winsCombat && !hasBrute && canBuy("ENRAGE_COMBAT_3")) {
+                return "ENRAGE_COMBAT_3"
+            }
+
+            if (canBuy("ENRAGE_DIRECT_2")) {
+                return "ENRAGE_DIRECT_2"
+            }
+
+            return "ENRAGE_CLOSE"
+        }
+
+        // -------------------------------------------------
+        // PRIORITÉ 4 — IA en danger (10 PV ou moins)
+        // -------------------------------------------------
+
+        if (winsCombat && !hasBrute && canBuy("ENRAGE_COMBAT_3")) {
+            return "ENRAGE_COMBAT_3"
+        }
+
+        if (canBuy("ENRAGE_DIRECT_2")) {
+            return "ENRAGE_DIRECT_2"
+        }
+
+        if (canBuy("ENRAGE_DIRECT_1")) {
+            return "ENRAGE_DIRECT_1"
+        }
+
+        return "ENRAGE_CLOSE"
+    }
+
     fun chooseOption(
         game: GameState,
         pendingChoice: PendingChoice
@@ -410,6 +573,16 @@ object TrainingAiPendingChoiceResolver {
                         }
                     }
                 }
+            }
+
+            // -----------------------------------
+            // ENRAGÉ
+            // -----------------------------------
+            "ENRAGE_CHOICE" -> {
+                chooseAiEnrage(
+                    game = game,
+                    pendingChoice = pendingChoice
+                )
             }
 
             // -----------------------------------

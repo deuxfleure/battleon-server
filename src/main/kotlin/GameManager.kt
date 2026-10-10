@@ -3509,7 +3509,8 @@ object GameManager {
                         attackerPower = playerEffectivePower,
                         defenderPower = opponentEffectivePower,
                         nextCardDamageBonus = game.playerCurrentCardDamageBonus,
-                        attackerHasBrute = playerHasBrute
+                        attackerHasBrute = playerHasBrute,
+                        enrageCombatDamage = game.playerEnrageCombatDamage
                     )
 
                     val opponentDamageDealt = CardEffectManager.getCombatDamageDealt(
@@ -3518,7 +3519,8 @@ object GameManager {
                         attackerPower = opponentEffectivePower,
                         defenderPower = playerEffectivePower,
                         nextCardDamageBonus = game.opponentCurrentCardDamageBonus,
-                        attackerHasBrute = opponentHasBrute
+                        attackerHasBrute = opponentHasBrute,
+                        enrageCombatDamage = game.opponentEnrageCombatDamage
                     )
 
                     val playerHasBurn =
