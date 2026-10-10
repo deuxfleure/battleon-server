@@ -742,6 +742,54 @@ object CardEffectManager {
         )
     }
 
+    fun buildEnragePendingChoice(
+        game: GameState,
+        owner: ChoiceOwner
+    ): PendingChoice {
+        val ownerIsPlayer = owner == ChoiceOwner.PLAYER
+
+        val ownerGold = if (ownerIsPlayer) {
+            game.playerGold
+        } else {
+            game.opponentGold
+        }
+
+        val purchasedOptions = if (ownerIsPlayer) {
+            game.playerEnragePurchasedOptions
+        } else {
+            game.opponentEnragePurchasedOptions
+        }
+
+        val options = buildList {
+            if (ownerGold >= 2 && "ENRAGE_COMBAT_2" !in purchasedOptions) {
+                add("ENRAGE_COMBAT_2")
+            }
+
+            if (ownerGold >= 3 && "ENRAGE_COMBAT_3" !in purchasedOptions) {
+                add("ENRAGE_COMBAT_3")
+            }
+
+            if (ownerGold >= 2 && "ENRAGE_DIRECT_1" !in purchasedOptions) {
+                add("ENRAGE_DIRECT_1")
+            }
+
+            if (ownerGold >= 3 && "ENRAGE_DIRECT_2" !in purchasedOptions) {
+                add("ENRAGE_DIRECT_2")
+            }
+
+            add("ENRAGE_CLOSE")
+        }
+
+        return PendingChoice(
+            type = "ENRAGE_CHOICE",
+            cardId = CardId.ENRAGE.name,
+            options = options,
+            message = "Choisissez les améliorations de l'Enragé.",
+            owner = owner,
+            ownerGold = ownerGold
+        )
+    }
+
     fun buildExperienceLaboratoirePendingChoice(
         game: GameState,
         owner: ChoiceOwner
@@ -2224,6 +2272,110 @@ object CardEffectManager {
                             infoMessage = "Choix invalide"
                         )
                     }
+                }
+            }
+
+            // -------------------------------------------------
+// ENRAGÉ — ACHATS D'OPTIONS
+// -------------------------------------------------
+            "ENRAGE_CHOICE" -> {
+                val costs = mapOf(
+                    "ENRAGE_COMBAT_2" to 2,
+                    "ENRAGE_COMBAT_3" to 3,
+                    "ENRAGE_DIRECT_1" to 2,
+                    "ENRAGE_DIRECT_2" to 3
+                )
+
+                when {
+                    choice == "ENRAGE_CLOSE" -> {
+                        if (ownerIsPlayer) {
+                            game.copy(
+                                pendingChoice = null,
+                                playerEffectResolved = true,
+                                infoMessage = null
+                            )
+                        } else {
+                            game.copy(
+                                pendingChoice = null,
+                                opponentEffectResolved = true,
+                                infoMessage = null
+                            )
+                        }
+                    }
+
+                    choice in costs -> {
+                        val cost = costs.getValue(choice)
+
+                        val purchasedOptions = if (ownerIsPlayer) {
+                            game.playerEnragePurchasedOptions
+                        } else {
+                            game.opponentEnragePurchasedOptions
+                        }
+
+                        val gold = if (ownerIsPlayer) {
+                            game.playerGold
+                        } else {
+                            game.opponentGold
+                        }
+
+                        when {
+                            choice !in pendingChoice.options ||
+                                    choice in purchasedOptions -> {
+                                game.copy(infoMessage = "Option indisponible")
+                            }
+
+                            gold < cost -> {
+                                game.copy(infoMessage = "Or insuffisant")
+                            }
+
+                            else -> {
+                                val updatedOptions = purchasedOptions + choice
+
+                                val updatedGame = if (ownerIsPlayer) {
+                                    game.copy(
+                                        playerGold = gold - cost,
+                                        playerEnragePurchasedOptions = updatedOptions,
+                                        playerEnrageCombatDamage = when (choice) {
+                                            "ENRAGE_COMBAT_2" -> 2
+                                            "ENRAGE_COMBAT_3" -> 3
+                                            else -> game.playerEnrageCombatDamage
+                                        },
+                                        opponentHp = when (choice) {
+                                            "ENRAGE_DIRECT_1" -> maxOf(0, game.opponentHp - 1)
+                                            "ENRAGE_DIRECT_2" -> maxOf(0, game.opponentHp - 2)
+                                            else -> game.opponentHp
+                                        },
+                                        infoMessage = null
+                                    )
+                                } else {
+                                    game.copy(
+                                        opponentGold = gold - cost,
+                                        opponentEnragePurchasedOptions = updatedOptions,
+                                        opponentEnrageCombatDamage = when (choice) {
+                                            "ENRAGE_COMBAT_2" -> 2
+                                            "ENRAGE_COMBAT_3" -> 3
+                                            else -> game.opponentEnrageCombatDamage
+                                        },
+                                        playerHp = when (choice) {
+                                            "ENRAGE_DIRECT_1" -> maxOf(0, game.playerHp - 1)
+                                            "ENRAGE_DIRECT_2" -> maxOf(0, game.playerHp - 2)
+                                            else -> game.playerHp
+                                        },
+                                        infoMessage = null
+                                    )
+                                }
+
+                                updatedGame.copy(
+                                    pendingChoice = buildEnragePendingChoice(
+                                        game = updatedGame,
+                                        owner = pendingChoice.owner
+                                    )
+                                )
+                            }
+                        }
+                    }
+
+                    else -> game.copy(infoMessage = "Choix invalide")
                 }
             }
 

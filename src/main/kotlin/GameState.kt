@@ -292,6 +292,16 @@ data class GameState(
     val playerCurrentCardHasBruteBonus: Boolean = false,
     val opponentCurrentCardHasBruteBonus: Boolean = false,
 
+    // ENRAGÉ — options achetées pour la carte révélée.
+    // Chaque option ne peut être achetée qu'une fois par sortie.
+    val playerEnragePurchasedOptions: Set<String> = emptySet(),
+    val opponentEnragePurchasedOptions: Set<String> = emptySet(),
+
+    // Dégâts de combat de base de l'Enragé.
+    // 1 par défaut ; le dernier achat à 2 ou 3 dégâts fait foi.
+    val playerEnrageCombatDamage: Int = 1,
+    val opponentEnrageCombatDamage: Int = 1,
+
     // Effet de Tique activé pour la carte actuellement révélée.
     // Si true, après le combat le propriétaire est soigné de la différence
     // positive entre sa Force finale et celle de l'adversaire.
