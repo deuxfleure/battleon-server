@@ -623,16 +623,17 @@ object CardEffectManager {
         attackerPower: Int,
         defenderPower: Int,
         nextCardDamageBonus: Int,
-        attackerHasBrute: Boolean
+        attackerHasBrute: Boolean,
+        enrageCombatDamage: Int = 1
     ): Int {
         if (attackerPower <= defenderPower) {
             return 0
         }
 
-        val baseDamage = if (attackerHasBrute) {
-            attackerPower - defenderPower
-        } else {
-            1
+        val baseDamage = when {
+            attackerHasBrute -> attackerPower - defenderPower
+            attacker.id == CardId.ENRAGE -> enrageCombatDamage
+            else -> 1
         }
 
         return baseDamage + nextCardDamageBonus
