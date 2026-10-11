@@ -22,8 +22,7 @@ object TrainingAiShopManager {
 
     private fun isTemporarilyForbiddenForTrainingAi(cardId: CardId): Boolean {
         return when (cardId) {
-            CardId.AGILE,
-            CardId.ARAIGNEEGEANTE -> true
+            CardId.AGILE -> true
 
             else -> false
         }
