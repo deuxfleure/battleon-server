@@ -3228,7 +3228,12 @@ object GameManager {
 
                         // VENIMEUX — nouveau combat, nouveaux déclenchements possibles
                         playerPostCombatVenomousHandled = false,
-                        opponentPostCombatVenomousHandled = false
+                        opponentPostCombatVenomousHandled = false,
+
+                        // POST-COMBAT — nouveaux effets automatiques à résoudre
+                        playerPostCombatCardEffectResolved = false,
+                        opponentPostCombatCardEffectResolved = false,
+                        postCombatResolutionOrder = null,
 
                         ),
                         phase = TurnPhase.AMBUSH_BEFORE_EFFECTS
@@ -3269,8 +3274,8 @@ object GameManager {
                     )
 
                     val resolutionOrder = determineResolutionOrder(
-                        playerHasPrems = false,
-                        opponentHasPrems = false,
+                        playerHasPrems = hasPrems(playerCard),
+                        opponentHasPrems = hasPrems(opponentCard),
                         playerPower = playerEffectivePower,
                         opponentPower = opponentEffectivePower,
                         playerHp = game.playerHp,
@@ -3684,15 +3689,19 @@ object GameManager {
                 if (workingGame.pendingChoice != null) {
                     updatedGame = workingGame
                 } else {
-                    workingGame = PostCombatEffectResolver.apply(workingGame)
-
-                    if (workingGame.pendingChoice != null) {
-                        workingGame = resolveAiPendingChoiceIfNeeded(workingGame)
-
+                    // Une décision de l'IA peut se terminer immédiatement.
+                    // Reprendre alors le post-combat pour résoudre le second camp
+                    // avant de passer à la défausse de fin de tour.
+                    for (attempt in 0 until 8) {
+                        workingGame = PostCombatEffectResolver.apply(workingGame)
+                        if (workingGame.pendingChoice == null && workingGame.activeScryState == null) {
+                            break
+                        }
                         if (workingGame.pendingChoice != null) {
-                            updatedGame = workingGame.copy(
-                                phase = TurnPhase.POST_COMBAT
-                            )
+                            workingGame = resolveAiPendingChoiceIfNeeded(workingGame)
+                        }
+                        if (workingGame.pendingChoice != null || workingGame.activeScryState != null) {
+                            updatedGame = workingGame.copy(phase = TurnPhase.POST_COMBAT)
                             games[gameId] = updatedGame
                             return@withGameLock updatedGame
                         }
