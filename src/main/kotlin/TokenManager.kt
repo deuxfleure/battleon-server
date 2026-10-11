@@ -289,11 +289,17 @@ object TokenManager {
         }
     }
 
+
     private fun resolvePoison(
         game: GameState,
         target: ChoiceOwner
     ): GameState {
         var updatedGame = game
+
+        val hpBeforePoison = when (target) {
+            ChoiceOwner.PLAYER -> game.playerHp
+            ChoiceOwner.OPPONENT -> game.opponentHp
+        }
 
         while (
             getTokenAmount(
@@ -331,9 +337,52 @@ object TokenManager {
                 tokenId = TokenIds.POISON,
                 value = 1
             )
+        }
 
+        val hpAfterPoison = when (target) {
+            ChoiceOwner.PLAYER -> updatedGame.playerHp
+            ChoiceOwner.OPPONENT -> updatedGame.opponentHp
+        }
+
+        // SOURNOISE :
+        // Dès que l'adversaire perd réellement au moins 1 PV
+        // à cause du Poison, les Sournoises alliées en
+        // Embuscade rejoignent leur défausse.
+        if (hpAfterPoison < hpBeforePoison) {
+
+            fun isSournoiseInAmbush(tacticalCard: TacticalCard): Boolean {
+                return tacticalCard.card.id == CardId.SOURNOISE &&
+                        tacticalCard.entryType == TacticalEntryType.AMBUSH
+            }
+
+            updatedGame = when (target) {
+                ChoiceOwner.PLAYER -> {
+                    val sournoises = updatedGame.opponentAmbush
+                        .filter(::isSournoiseInAmbush)
+
+                    updatedGame.copy(
+                        opponentAmbush = updatedGame.opponentAmbush
+                            .filterNot(::isSournoiseInAmbush),
+                        opponentDiscard = updatedGame.opponentDiscard +
+                                sournoises.map { it.card }
+                    )
+                }
+
+                ChoiceOwner.OPPONENT -> {
+                    val sournoises = updatedGame.playerAmbush
+                        .filter(::isSournoiseInAmbush)
+
+                    updatedGame.copy(
+                        playerAmbush = updatedGame.playerAmbush
+                            .filterNot(::isSournoiseInAmbush),
+                        playerDiscard = updatedGame.playerDiscard +
+                                sournoises.map { it.card }
+                    )
+                }
+            }
         }
 
         return updatedGame
     }
+
 }

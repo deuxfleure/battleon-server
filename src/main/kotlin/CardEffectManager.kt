@@ -1067,6 +1067,9 @@ object CardEffectManager {
             CardId.GARDEVAUDOU ->
                 "Sacrifier Le Garde Vaudou après le combat pour gagner 3 Or ?"
 
+            CardId.CONTAGIEUX ->
+                "Sacrifier Contagieux après le combat pour infliger 2 jetons Poison à l'adversaire ?"
+
             else ->
                 "Voulez-vous sacrifier cette carte après le combat ?"
         }
@@ -1915,6 +1918,19 @@ object CardEffectManager {
                                             opponentGold = game.opponentGold + 3
                                         )
                                     }
+                                }
+
+                                CardId.CONTAGIEUX.name -> {
+                                    CardEffectManager.addPoisonToken(
+                                        game = game,
+                                        target = if (ownerIsPlayer) {
+                                            ChoiceOwner.OPPONENT
+                                        } else {
+                                            ChoiceOwner.PLAYER
+                                        },
+                                        source = pendingChoice.owner,
+                                        amount = 2
+                                    )
                                 }
 
                                 else -> game
