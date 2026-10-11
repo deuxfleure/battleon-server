@@ -292,6 +292,15 @@ data class GameState(
     val playerCurrentCardHasBruteBonus: Boolean = false,
     val opponentCurrentCardHasBruteBonus: Boolean = false,
 
+    // VENIMEUX — bonus accordé à la prochaine carte révélée.
+    val playerNextCardVenomousBonus: Int = 0,
+    val opponentNextCardVenomousBonus: Int = 0,
+
+    // VENIMEUX — bonus transféré à la carte actuellement révélée.
+    // À consommer et réinitialiser selon le cycle des bonus temporaires.
+    val playerCurrentCardVenomousBonus: Int = 0,
+    val opponentCurrentCardVenomousBonus: Int = 0,
+
     // ENRAGÉ — options achetées pour la carte révélée.
     // Chaque option ne peut être achetée qu'une fois par sortie.
     val playerEnragePurchasedOptions: Set<String> = emptySet(),
