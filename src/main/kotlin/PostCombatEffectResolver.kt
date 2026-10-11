@@ -91,6 +91,30 @@ object PostCombatEffectResolver {
         //======== ------ COTER Joueur ---- ===========
         //=============================================
         if (!game.playerEffectBlockedBySentinelle) {
+
+            // VENIMEUX — déclenchement unique après une victoire
+            if (!updatedGame.playerPostCombatVenomousHandled) {
+                updatedGame = updatedGame.copy(
+                    playerPostCombatVenomousHandled = true
+                )
+
+                if (playerWonCombat) {
+                    val venomous = CardEffectManager.getEffectiveVenomous(
+                        card = playerCard,
+                        currentBonus = game.playerCurrentCardVenomousBonus,
+                        effectsBlocked = game.playerCardEffectsBlockedByAmbush
+                    )
+
+                    if (venomous > 0) {
+                        updatedGame = CardEffectManager.addPoisonToken(
+                            game = updatedGame,
+                            target = ChoiceOwner.OPPONENT,
+                            amount = venomous
+                        )
+                    }
+                }
+            }
+
             if (playerWonCombat && playerCard.id == CardId.NECROMANCIEN) {
                 updatedGame = updatedGame.copy(
                     opponentDiscard = updatedGame.opponentDiscard + CardEffectManager.createRandomSkeletonCard()
@@ -311,6 +335,29 @@ object PostCombatEffectResolver {
         //====== ------ COTER ADVERSAIRE ---- =========
         //=============================================
         if (!game.opponentEffectBlockedBySentinelle) {
+
+            // VENIMEUX — déclenchement unique après une victoire
+            if (!updatedGame.opponentPostCombatVenomousHandled) {
+                updatedGame = updatedGame.copy(
+                    opponentPostCombatVenomousHandled = true
+                )
+
+                if (opponentWonCombat) {
+                    val venomous = CardEffectManager.getEffectiveVenomous(
+                        card = opponentCard,
+                        currentBonus = game.opponentCurrentCardVenomousBonus,
+                        effectsBlocked = game.opponentCardEffectsBlockedByAmbush
+                    )
+
+                    if (venomous > 0) {
+                        updatedGame = CardEffectManager.addPoisonToken(
+                            game = updatedGame,
+                            target = ChoiceOwner.PLAYER,
+                            amount = venomous
+                        )
+                    }
+                }
+            }
 
             if (opponentWonCombat && opponentCard.id == CardId.NECROMANCIEN) {
                 updatedGame = updatedGame.copy(

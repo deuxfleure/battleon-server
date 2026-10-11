@@ -426,6 +426,11 @@ data class GameState(
     val playerPostCombatSacrificeHandled: Boolean = false,
     val opponentPostCombatSacrificeHandled: Boolean = false,
 
+    // VENIMEUX — évite de déclencher deux fois la compétence
+    // lorsque le post-combat reprend après un choix.
+    val playerPostCombatVenomousHandled: Boolean = false,
+    val opponentPostCombatVenomousHandled: Boolean = false,
+
     // =========================================================
     // 17. JOURNAL DE PARTIE
     // =========================================================

@@ -3215,8 +3215,13 @@ object GameManager {
                         playerCardEffectsBlockedByAmbush = false,
                         opponentCardEffectsBlockedByAmbush = false,
 
-                            playerPostCombatSacrificeHandled = false,
-                            opponentPostCombatSacrificeHandled = false
+                        playerPostCombatSacrificeHandled = false,
+                        opponentPostCombatSacrificeHandled = false,
+
+                        // VENIMEUX — nouveau combat, nouveaux déclenchements possibles
+                        playerPostCombatVenomousHandled = false,
+                        opponentPostCombatVenomousHandled = false
+
                         ),
                         phase = TurnPhase.AMBUSH_BEFORE_EFFECTS
                     )
