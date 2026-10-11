@@ -371,6 +371,44 @@ object CardEffectManager {
         )
     }
 
+
+    // =========================================================
+    // VENIMEUX — compétence naturelle et valeur effective
+    // =========================================================
+
+    fun getBaseVenomous(card: Card): Int {
+        return when (card.id) {
+            CardId.SOURNOISE -> 1
+            CardId.LAMEERRANTE -> 1
+            CardId.CONTAGIEUX -> 1
+            CardId.REINEARAIGNEE -> 2
+            CardId.ARAIGNEEJUVENILE -> 1
+
+            // Cartes pas encore présentes dans CardId :
+            // GRANDEMORSURE -> 2
+            // FUNESTE -> 1
+            // MAITREDESPOTIONS -> 2
+            // BEHEMOTH -> 1
+            // OMEGA -> 6
+
+            else -> 0
+        }
+    }
+
+    fun getEffectiveVenomous(
+        card: Card,
+        currentBonus: Int,
+        effectsBlocked: Boolean
+    ): Int {
+        if (effectsBlocked) return 0
+
+        return maxOf(
+            0,
+            getBaseVenomous(card) + currentBonus
+        )
+    }
+
+
     fun addPoisonToken(
         game: GameState,
         target: ChoiceOwner,
