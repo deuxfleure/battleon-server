@@ -100,7 +100,9 @@ object PostCombatEffectResolver {
 
                 if (playerWonCombat) {
                     val venomous = CardEffectManager.getEffectiveVenomous(
+                        game = updatedGame,
                         card = playerCard,
+                        isPlayer = true,
                         currentBonus = game.playerCurrentCardVenomousBonus,
                         effectsBlocked = game.playerCardEffectsBlockedByAmbush
                     )
@@ -344,7 +346,9 @@ object PostCombatEffectResolver {
 
                 if (opponentWonCombat) {
                     val venomous = CardEffectManager.getEffectiveVenomous(
+                        game = updatedGame,
                         card = opponentCard,
+                        isPlayer = false,
                         currentBonus = game.opponentCurrentCardVenomousBonus,
                         effectsBlocked = game.opponentCardEffectsBlockedByAmbush
                     )

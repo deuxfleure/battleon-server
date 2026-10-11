@@ -395,16 +395,55 @@ object CardEffectManager {
         }
     }
 
+    // SOURNOISE — VENIMEUX +1 aux cartes du propriétaire
+    // tant qu'elle est en Embuscade.
+    fun countSournoiseVenomousBonus(
+        game: GameState,
+        isPlayer: Boolean
+    ): Int {
+        val tacticalCards = if (isPlayer) {
+            game.playerAmbush
+        } else {
+            game.opponentAmbush
+        }
+
+        return tacticalCards.count { tacticalCard ->
+            tacticalCard.entryType == TacticalEntryType.AMBUSH &&
+                    tacticalCard.card.id == CardId.SOURNOISE
+        }
+    }
+
     fun getEffectiveVenomous(
+        game: GameState,
         card: Card,
+        isPlayer: Boolean,
         currentBonus: Int,
         effectsBlocked: Boolean
     ): Int {
         if (effectsBlocked) return 0
 
+        val sournoiseBonus = countSournoiseVenomousBonus(
+            game = game,
+            isPlayer = isPlayer
+        )
+
+        // REINE ARAIGNÉE — VENIMEUX +1 aux Araignées
+        // tant qu'elle est en Préparation.
+        val reineAraigneeBonus = if (card.isSpider) {
+            countReineAraigneePowerBonus(
+                game = game,
+                isPlayer = isPlayer
+            )
+        } else {
+            0
+        }
+
         return maxOf(
             0,
-            getBaseVenomous(card) + currentBonus
+            getBaseVenomous(card) +
+                    currentBonus +
+                    sournoiseBonus +
+                    reineAraigneeBonus
         )
     }
 
@@ -412,13 +451,38 @@ object CardEffectManager {
     fun addPoisonToken(
         game: GameState,
         target: ChoiceOwner,
-        amount: Int = 1
+        amount: Int = 1,
+        source: ChoiceOwner
     ): GameState {
+
+        if (amount <= 0) return game
+
+        val empoisonneuseActive = if (source != target) {
+            val tacticalCards = if (source == ChoiceOwner.PLAYER) {
+                game.playerAmbush
+            } else {
+                game.opponentAmbush
+            }
+
+            tacticalCards.any { tacticalCard ->
+                tacticalCard.entryType == TacticalEntryType.AMBUSH &&
+                        tacticalCard.card.id == CardId.EMPOISONNEUSE
+            }
+        } else {
+            false
+        }
+
+        val finalAmount = if (empoisonneuseActive) {
+            amount * 2
+        } else {
+            amount
+        }
+
         return TokenManager.addToken(
             game = game,
             target = target,
             tokenId = TokenManager.TokenIds.POISON,
-            amount = amount
+            amount = finalAmount
         )
     }
 
