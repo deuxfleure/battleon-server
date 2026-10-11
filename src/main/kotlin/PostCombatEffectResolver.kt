@@ -111,7 +111,8 @@ object PostCombatEffectResolver {
                         updatedGame = CardEffectManager.addPoisonToken(
                             game = updatedGame,
                             target = ChoiceOwner.OPPONENT,
-                            amount = venomous
+                            source = ChoiceOwner.PLAYER,
+                            amount = venomous,
                         )
                     }
                 }
@@ -173,6 +174,7 @@ object PostCombatEffectResolver {
                 updatedGame = CardEffectManager.addPoisonToken(
                     game = updatedGame,
                     target = ChoiceOwner.OPPONENT,
+                    source = ChoiceOwner.PLAYER,
                     amount = 1
                 )
             }
@@ -299,6 +301,7 @@ object PostCombatEffectResolver {
                 updatedGame = CardEffectManager.addPoisonToken(
                     game = updatedGame,
                     target = ChoiceOwner.OPPONENT,
+                    source = ChoiceOwner.PLAYER,
                     amount = 1
                 )
 
@@ -357,6 +360,7 @@ object PostCombatEffectResolver {
                         updatedGame = CardEffectManager.addPoisonToken(
                             game = updatedGame,
                             target = ChoiceOwner.PLAYER,
+                            source = ChoiceOwner.OPPONENT,
                             amount = venomous
                         )
                     }
@@ -438,6 +442,7 @@ object PostCombatEffectResolver {
                 updatedGame = CardEffectManager.addPoisonToken(
                     game = updatedGame,
                     target = ChoiceOwner.PLAYER,
+                    source = ChoiceOwner.OPPONENT,
                     amount = 1
                 )
             }
@@ -546,6 +551,7 @@ object PostCombatEffectResolver {
                 updatedGame = CardEffectManager.addPoisonToken(
                     game = updatedGame,
                     target = ChoiceOwner.PLAYER,
+                    source = ChoiceOwner.OPPONENT,
                     amount = 1
                 )
 
