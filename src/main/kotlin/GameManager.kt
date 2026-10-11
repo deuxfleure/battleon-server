@@ -3189,6 +3189,10 @@ object GameManager {
                         playerCurrentCardDamageBonus = game.playerNextCardDamageBonus,
                         opponentCurrentCardDamageBonus = game.opponentNextCardDamageBonus,
 
+                        // VENIMEUX — transfert des bonus à la carte révélée
+                        playerCurrentCardVenomousBonus = game.playerNextCardVenomousBonus,
+                        opponentCurrentCardVenomousBonus = game.opponentNextCardVenomousBonus,
+
                         playerCurrentCardHasBruteBonus = game.playerNextCardHasBrute,
                         opponentCurrentCardHasBruteBonus = game.opponentNextCardHasBrute,
 
@@ -3197,6 +3201,10 @@ object GameManager {
 
                         playerNextCardDamageBonus = 0,
                         opponentNextCardDamageBonus = 0,
+
+                        // VENIMEUX — bonus consommés lors de la révélation
+                        playerNextCardVenomousBonus = 0,
+                        opponentNextCardVenomousBonus = 0,
 
                         playerNextCardHasBrute = false,
                         opponentNextCardHasBrute = false,
@@ -3706,6 +3714,9 @@ object GameManager {
 
                             playerCurrentCardDamageBonus = 0,
                             opponentCurrentCardDamageBonus = 0,
+
+                            playerCurrentCardVenomousBonus = 0,
+                            opponentCurrentCardVenomousBonus = 0,
 
                             playerCurrentCardHasBruteBonus = false,
                             opponentCurrentCardHasBruteBonus = false
