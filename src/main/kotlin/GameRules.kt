@@ -54,6 +54,13 @@ enum class ResolutionOrder {
     OPPONENT_FIRST
 }
 
+fun hasPrems(card: Card): Boolean {
+    return when (card.id) {
+        CardId.TACTICIEN -> true
+        else -> false
+    }
+}
+
 fun determineResolutionOrder(
     playerHasPrems: Boolean,
     opponentHasPrems: Boolean,

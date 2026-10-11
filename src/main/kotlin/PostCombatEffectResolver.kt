@@ -1,97 +1,225 @@
 package com.battleon
 
+/** Résolution des effets post-combat selon la priorité du combat.
+ * Les drapeaux persistants permettent de reprendre après les choix.
+ */
 object PostCombatEffectResolver {
 
     fun apply(game: GameState): GameState {
+        if (game.pendingChoice != null || game.activeScryState != null) return game
+
+        // La Force finale est conservée par COMBAT : ne pas la recalculer après
+        // la destruction d'une carte ou la modification de l'Or pendant POST_COMBAT.
+        val playerPower = game.playerEffectivePower
+        val opponentPower = game.opponentEffectivePower
+
+        val order = game.postCombatResolutionOrder ?: determineResolutionOrder(
+            playerHasPrems = game.lastPlayerCard?.let { hasPrems(it) } ?: false,
+            opponentHasPrems = game.lastOpponentCard?.let { hasPrems(it) } ?: false,
+            playerPower = playerPower,
+            opponentPower = opponentPower,
+            playerHp = game.playerHp,
+            opponentHp = game.opponentHp,
+            playerGold = game.playerGold,
+            opponentGold = game.opponentGold
+        )
+        var result = game.copy(postCombatResolutionOrder = order)
+        val sides = when (order) {
+            ResolutionOrder.PLAYER_FIRST -> listOf(ChoiceOwner.PLAYER, ChoiceOwner.OPPONENT)
+            ResolutionOrder.OPPONENT_FIRST -> listOf(ChoiceOwner.OPPONENT, ChoiceOwner.PLAYER)
+        }
+        for (side in sides) {
+            result = if (side == ChoiceOwner.PLAYER) {
+                resolvePlayerPostCombat(result, playerPower, opponentPower)
+            } else {
+                resolveOpponentPostCombat(result, playerPower, opponentPower)
+            }
+            if (result.pendingChoice != null || result.activeScryState != null) return result
+        }
+        return result
+    }
+
+    private fun resolvePlayerPostCombat(
+        game: GameState,
+        playerPower: Int,
+        opponentPower: Int
+    ): GameState {
         var updatedGame = game
-
-        val playerCard = game.lastPlayerCard
-        val opponentCard = game.lastOpponentCard
-
-        if (playerCard == null || opponentCard == null) {
-            return updatedGame
-        }
-
-        val playerPower = CardEffectManager.getEffectivePower(
-            game = game,
-            card = playerCard,
-            ownerGold = game.playerGold,
-            nextCardPowerBonus = game.playerCurrentCardPowerBonus,
-            isPlayer = true
-        )
-
-        val opponentPower = CardEffectManager.getEffectivePower(
-            game = game,
-            card = opponentCard,
-            ownerGold = game.opponentGold,
-            nextCardPowerBonus = game.opponentCurrentCardPowerBonus,
-            isPlayer = false
-        )
-
-        val playerLostCombat = playerPower < opponentPower
-        val opponentLostCombat = opponentPower < playerPower
-
         val playerWonCombat = playerPower > opponentPower
-        val opponentWonCombat = opponentPower > playerPower
+        val playerLostCombat = playerPower < opponentPower
 
-        val drawCombat = opponentPower == playerPower
-
-        // =====================================================
-        // TIQUE — soin différé après le combat
-        //
-        // L'activation depuis la défausse a déjà :
-        // - détruit Tique
-        // - consommé tous les jetons Sang
-        // - ajouté leur quantité à la Force de la carte active
-        //
-        // Le soin dépend maintenant de la différence de Force finale.
-        // Le flag est immédiatement consommé pour éviter un second soin
-        // si POST_COMBAT est résolu plusieurs fois.
-        // =====================================================
-
+        // Soin différé de Tique : peut s'appliquer même si la carte révélée
+        // a été détruite entretemps.
         if (updatedGame.playerTiqueHealPending) {
-            val healAmount = maxOf(
-                0,
-                playerPower - opponentPower
+            updatedGame = updatedGame.copy(playerTiqueHealPending = false)
+            val amount = maxOf(0, playerPower - opponentPower)
+            if (amount > 0) updatedGame = TokenManager.heal(
+                game = updatedGame, target = ChoiceOwner.PLAYER, amount = amount
             )
-
-            updatedGame = updatedGame.copy(
-                playerTiqueHealPending = false
-            )
-
-            if (healAmount > 0) {
-                updatedGame = TokenManager.heal(
-                    game = updatedGame,
-                    target = ChoiceOwner.PLAYER,
-                    amount = healAmount
-                )
-            }
         }
+        val playerCard = updatedGame.lastPlayerCard ?: return updatedGame
+        if (updatedGame.playerEffectBlockedBySentinelle) return updatedGame
 
-        if (updatedGame.opponentTiqueHealPending) {
-            val healAmount = maxOf(
-                0,
-                opponentPower - playerPower
-            )
+        if (!updatedGame.playerPostCombatCardEffectResolved) {
+                // Effets automatiques ici
+                // TISSEUR DE MENSONGES — Poison selon la différence de Force
+                if (playerWonCombat && playerCard.id == CardId.TISSEURDEMENSONGES) {
+                    updatedGame = CardEffectManager.addPoisonToken(
+                        game = updatedGame,
+                        target = ChoiceOwner.OPPONENT,
+                        source = ChoiceOwner.PLAYER,
+                        amount = playerPower - opponentPower
+                    )
+                }
+                // Necromancien — ajout de squelette
+                if (playerWonCombat && playerCard.id == CardId.NECROMANCIEN) {
+                    updatedGame = updatedGame.copy(
+                        opponentDiscard = updatedGame.opponentDiscard + CardEffectManager.createRandomSkeletonCard()
+                    )
+                }
+                // ECUMEURS - Brulure
+                if (playerWonCombat && playerCard.id == CardId.ECUMEDESMERS) {
+                    updatedGame = CardEffectManager.addBurnToken(
+                        game = updatedGame,
+                        target = ChoiceOwner.OPPONENT,
+                    )
+                }
+                // DISCIPLE DE LA FLAMME
+                if (playerCard.id == CardId.DISCIPLEDELAFLAMME) {
 
-            updatedGame = updatedGame.copy(
-                opponentTiqueHealPending = false
-            )
+                    // S'il gagne, il inflige Brûlure.
+                    if (playerWonCombat) {
+                        updatedGame = CardEffectManager.addBurnToken(
+                            game = updatedGame,
+                            target = ChoiceOwner.OPPONENT
+                        )
+                    }
 
-            if (healAmount > 0) {
-                updatedGame = TokenManager.heal(
-                    game = updatedGame,
-                    target = ChoiceOwner.OPPONENT,
-                    amount = healAmount
-                )
-            }
+                    // Dans tous les cas, la prochaine carte inflige +1 dégât.
+                    updatedGame = updatedGame.copy(
+                        playerNextCardDamageBonus =
+                            updatedGame.playerNextCardDamageBonus + 1
+                    )
+                }
+                // TIQUE - sang
+                if (playerLostCombat && playerCard.id == CardId.TIQUE) {
+                    updatedGame = CardEffectManager.addBloodToken(
+                        game = updatedGame,
+                        target = ChoiceOwner.PLAYER
+                    )
+                }
+                // OEUF D'ARAIGNÉE — poison si perte
+                if (playerLostCombat && playerCard.id == CardId.OEUFDARAIGNEE) {
+                    updatedGame = CardEffectManager.addPoisonToken(
+                        game = updatedGame,
+                        target = ChoiceOwner.OPPONENT,
+                        source = ChoiceOwner.PLAYER,
+                        amount = 1
+                    )
+                }
+                // DÉVOREUR D'ESPOIRS
+                if (playerCard.id == CardId.DEVOREURDESPOIRS) {
+                    if (playerLostCombat) {
+                        // S'il perd : l'adversaire perd 1 Or.
+                        updatedGame = updatedGame.copy(
+                            opponentGold = maxOf(0, updatedGame.opponentGold - 1)
+                        )
+                    }
+
+                    if (playerWonCombat) {
+                        // S'il gagne : la prochaine carte adverse perd 1 Force.
+                        updatedGame = updatedGame.copy(
+                            opponentNextCardPowerBonus =
+                                updatedGame.opponentNextCardPowerBonus - 1
+                        )
+                    }
+                }
+                // GARDIEN DES ENFERS
+                if (playerCard.id == CardId.GARDIENDESENFERS) {
+                    val playerWon = playerPower > opponentPower
+                    val diff = playerPower - opponentPower
+
+                    if (playerWon && diff > 0) {
+                        updatedGame = CardEffectManager.applyBretteur(
+                            game = updatedGame,
+                            owner = ChoiceOwner.PLAYER,
+                            amount = diff
+                        )
+                    }
+                }
+                // DUR a cuire
+                if (playerLostCombat && playerCard.id == CardId.DURACUIRE) {
+                    updatedGame = updatedGame.copy(
+                        playerNextCardPowerBonus = updatedGame.playerNextCardPowerBonus + 2,
+                        playerNextCardDamageBonus = updatedGame.playerNextCardDamageBonus + 1
+                    )
+                }
+                // Costaud
+                if (playerLostCombat && playerCard.id == CardId.COSTAUD) {
+                    updatedGame = updatedGame.copy(
+                        opponentNextCardPowerBonus = updatedGame.opponentNextCardPowerBonus - 2
+                    )
+                }
+                // Epine noire
+                if (playerLostCombat && playerCard.id == CardId.EPINENOIRE) {
+                    updatedGame = updatedGame.copy(
+                        opponentHp = maxOf(0, updatedGame.opponentHp - 1)
+                    )
+                }
+                // Danseusemacabre
+                if (playerLostCombat && playerCard.id == CardId.DANSEUSEMACABRE) {
+                    updatedGame = updatedGame.copy(
+                        playerGold = updatedGame.playerGold + 2
+                    )
+                }
+                // Sangpacte
+                if (!playerLostCombat && playerCard.id == CardId.SANGPACTE) {
+                    updatedGame = updatedGame.copy(
+                        playerHp = maxOf(0, updatedGame.playerHp - 1),
+                        playerGold = updatedGame.playerGold + 2
+                    )
+                }
+                // Bulldozer
+                if (playerCard.id == CardId.BULLDOZER) {
+                    val playerWon = playerPower > opponentPower
+                    val diff = playerPower - opponentPower
+
+                    if (
+                        playerWon &&
+                        diff >= 4 &&
+                        CardEffectManager.canDestroyOneCardWithFiveCardRule(
+                            game = updatedGame,
+                            isPlayer = false
+                        )
+                    ) {
+                        updatedGame = updatedGame.copy(
+                            lastOpponentCard = null,
+                            opponentDisplayedTurnCard = null
+                        )
+                    }
+                }
+                // Porteur d'egide
+                if (playerCard.id == CardId.PORTEURDEGIDEDECHU) {
+                    if (playerLostCombat) {
+                        updatedGame = TokenManager.heal(
+                            game = updatedGame,
+                            target = ChoiceOwner.PLAYER,
+                            amount = 1
+                        )
+                    }
+
+                    if (playerPower > opponentPower) {
+                        updatedGame = CardEffectManager.applyBretteur(
+                            game = updatedGame,
+                            owner = ChoiceOwner.PLAYER,
+                            amount = 1
+                        )
+                    }
+                }
+
+
+            updatedGame = updatedGame.copy(playerPostCombatCardEffectResolved = true)
         }
-
-        //=============================================
-        //======== ------ COTER Joueur ---- ===========
-        //=============================================
-        if (!game.playerEffectBlockedBySentinelle) {
-
             // VENIMEUX — déclenchement unique après une victoire
             if (!updatedGame.playerPostCombatVenomousHandled) {
                 updatedGame = updatedGame.copy(
@@ -117,44 +245,6 @@ object PostCombatEffectResolver {
                     }
                 }
             }
-
-            if (playerWonCombat && playerCard.id == CardId.NECROMANCIEN) {
-                updatedGame = updatedGame.copy(
-                    opponentDiscard = updatedGame.opponentDiscard + CardEffectManager.createRandomSkeletonCard()
-                )
-            }
-
-            if (playerWonCombat && playerCard.id == CardId.ECUMEDESMERS) {
-                updatedGame = CardEffectManager.addBurnToken(
-                    game = updatedGame,
-                    target = ChoiceOwner.OPPONENT,
-                )
-            }
-            // DISCIPLE DE LA FLAMME
-            if (playerCard.id == CardId.DISCIPLEDELAFLAMME) {
-
-                // S'il gagne, il inflige Brûlure.
-                if (playerWonCombat) {
-                    updatedGame = CardEffectManager.addBurnToken(
-                        game = updatedGame,
-                        target = ChoiceOwner.OPPONENT
-                    )
-                }
-
-                // Dans tous les cas, la prochaine carte inflige +1 dégât.
-                updatedGame = updatedGame.copy(
-                    playerNextCardDamageBonus =
-                        updatedGame.playerNextCardDamageBonus + 1
-                )
-            }
-
-            if (playerLostCombat && playerCard.id == CardId.TIQUE) {
-                updatedGame = CardEffectManager.addBloodToken(
-                    game = updatedGame,
-                    target = ChoiceOwner.PLAYER
-                )
-            }
-
             if (
                 !updatedGame.playerPostCombatSacrificeHandled &&
                 playerPower > opponentPower &&
@@ -169,15 +259,6 @@ object PostCombatEffectResolver {
                 )
             }
 
-            // OEUF D'ARAIGNÉE — poison si perte
-            if (playerLostCombat && playerCard.id == CardId.OEUFDARAIGNEE) {
-                updatedGame = CardEffectManager.addPoisonToken(
-                    game = updatedGame,
-                    target = ChoiceOwner.OPPONENT,
-                    source = ChoiceOwner.PLAYER,
-                    amount = 1
-                )
-            }
             // OEUF D'ARAIGNÉE — choix après combat
             if (
                 !updatedGame.playerPostCombatSacrificeHandled &&
@@ -190,38 +271,6 @@ object PostCombatEffectResolver {
                     ),
                     infoMessage = null
                 )
-            }
-
-            // DÉVOREUR D'ESPOIRS
-            if (playerCard.id == CardId.DEVOREURDESPOIRS) {
-                if (playerLostCombat) {
-                    // S'il perd : l'adversaire perd 1 Or.
-                    updatedGame = updatedGame.copy(
-                        opponentGold = maxOf(0, updatedGame.opponentGold - 1)
-                    )
-                }
-
-                if (playerWonCombat) {
-                    // S'il gagne : la prochaine carte adverse perd 1 Force.
-                    updatedGame = updatedGame.copy(
-                        opponentNextCardPowerBonus =
-                            updatedGame.opponentNextCardPowerBonus - 1
-                    )
-                }
-            }
-
-            // GARDIEN DES ENFERS
-            if (playerCard.id == CardId.GARDIENDESENFERS) {
-                val playerWon = playerPower > opponentPower
-                val diff = playerPower - opponentPower
-
-                if (playerWon && diff > 0) {
-                    updatedGame = CardEffectManager.applyBretteur(
-                        game = updatedGame,
-                        owner = ChoiceOwner.PLAYER,
-                        amount = diff
-                    )
-                }
             }
 
             if (
@@ -242,57 +291,6 @@ object PostCombatEffectResolver {
                     ),
                     infoMessage = null
                 )
-            }
-
-            if (playerLostCombat && playerCard.id == CardId.DURACUIRE) {
-                updatedGame = updatedGame.copy(
-                    playerNextCardPowerBonus = updatedGame.playerNextCardPowerBonus + 2,
-                    playerNextCardDamageBonus = updatedGame.playerNextCardDamageBonus + 1
-                )
-            }
-
-            if (playerLostCombat && playerCard.id == CardId.COSTAUD) {
-                updatedGame = updatedGame.copy(
-                    opponentNextCardPowerBonus = updatedGame.opponentNextCardPowerBonus - 2
-                )
-            }
-
-            if (playerLostCombat && playerCard.id == CardId.EPINENOIRE) {
-                updatedGame = updatedGame.copy(
-                    opponentHp = maxOf(0, updatedGame.opponentHp - 1)
-                )
-            }
-
-            if (playerLostCombat && playerCard.id == CardId.DANSEUSEMACABRE) {
-                updatedGame = updatedGame.copy(
-                    playerGold = updatedGame.playerGold + 2
-                )
-            }
-
-            if (!playerLostCombat && playerCard.id == CardId.SANGPACTE) {
-                updatedGame = updatedGame.copy(
-                    playerHp = maxOf(0, updatedGame.playerHp - 1),
-                    playerGold = updatedGame.playerGold + 2
-                )
-            }
-
-            if (playerCard.id == CardId.BULLDOZER) {
-                val playerWon = playerPower > opponentPower
-                val diff = playerPower - opponentPower
-
-                if (
-                    playerWon &&
-                    diff >= 4 &&
-                    CardEffectManager.canDestroyOneCardWithFiveCardRule(
-                        game = updatedGame,
-                        isPlayer = false
-                    )
-                ) {
-                    updatedGame = updatedGame.copy(
-                        lastOpponentCard = null,
-                        opponentDisplayedTurnCard = null
-                    )
-                }
             }
 
             if (
@@ -318,55 +316,36 @@ object PostCombatEffectResolver {
                 )
             }
 
-            if (playerCard.id == CardId.PORTEURDEGIDEDECHU) {
-                if (playerLostCombat) {
-                    updatedGame = TokenManager.heal(
-                        game = updatedGame,
-                        target = ChoiceOwner.PLAYER,
-                        amount = 1
-                    )
-                }
+        return updatedGame
+    }
 
-                if (playerPower > opponentPower) {
-                    updatedGame = CardEffectManager.applyBretteur(
-                        game = updatedGame,
-                        owner = ChoiceOwner.PLAYER,
-                        amount = 1
-                    )
-                }
-            }
+    private fun resolveOpponentPostCombat(
+        game: GameState,
+        playerPower: Int,
+        opponentPower: Int
+    ): GameState {
+        var updatedGame = game
+        val opponentWonCombat = opponentPower > playerPower
+        val opponentLostCombat = opponentPower < playerPower
+
+        if (updatedGame.opponentTiqueHealPending) {
+            updatedGame = updatedGame.copy(opponentTiqueHealPending = false)
+            val amount = maxOf(0, opponentPower - playerPower)
+            if (amount > 0) updatedGame = TokenManager.heal(
+                game = updatedGame, target = ChoiceOwner.OPPONENT, amount = amount
+            )
         }
+        val opponentCard = updatedGame.lastOpponentCard ?: return updatedGame
+        if (updatedGame.opponentEffectBlockedBySentinelle) return updatedGame
 
-
-        //=============================================
-        //====== ------ COTER ADVERSAIRE ---- =========
-        //=============================================
-        if (!game.opponentEffectBlockedBySentinelle) {
-
-            // VENIMEUX — déclenchement unique après une victoire
-            if (!updatedGame.opponentPostCombatVenomousHandled) {
-                updatedGame = updatedGame.copy(
-                    opponentPostCombatVenomousHandled = true
+        if (!updatedGame.opponentPostCombatCardEffectResolved) {
+            if (opponentWonCombat && opponentCard.id == CardId.TISSEURDEMENSONGES) {
+                updatedGame = CardEffectManager.addPoisonToken(
+                    game = updatedGame,
+                    target = ChoiceOwner.PLAYER,
+                    source = ChoiceOwner.OPPONENT,
+                    amount = opponentPower - playerPower
                 )
-
-                if (opponentWonCombat) {
-                    val venomous = CardEffectManager.getEffectiveVenomous(
-                        game = updatedGame,
-                        card = opponentCard,
-                        isPlayer = false,
-                        currentBonus = game.opponentCurrentCardVenomousBonus,
-                        effectsBlocked = game.opponentCardEffectsBlockedByAmbush
-                    )
-
-                    if (venomous > 0) {
-                        updatedGame = CardEffectManager.addPoisonToken(
-                            game = updatedGame,
-                            target = ChoiceOwner.PLAYER,
-                            source = ChoiceOwner.OPPONENT,
-                            amount = venomous
-                        )
-                    }
-                }
             }
 
             if (opponentWonCombat && opponentCard.id == CardId.NECROMANCIEN) {
@@ -407,20 +386,6 @@ object PostCombatEffectResolver {
                 )
             }
 
-            if (
-                !updatedGame.opponentPostCombatSacrificeHandled &&
-                opponentPower > playerPower &&
-                opponentCard.id == CardId.ARAIGNEEGEANTE
-            ) {
-                return updatedGame.copy(
-                    pendingChoice = CardEffectManager.buildAraigneeGeantePendingChoice(
-                        game = updatedGame,
-                        owner = ChoiceOwner.OPPONENT
-                    ),
-                    infoMessage = null
-                )
-            }
-
             // DÉVOREUR D'ESPOIRS
             if (opponentCard.id == CardId.DEVOREURDESPOIRS) {
                 if (opponentLostCombat) {
@@ -448,20 +413,6 @@ object PostCombatEffectResolver {
                     amount = 1
                 )
             }
-            // OEUF D'ARAIGNÉE — choix après combat
-            if (
-                !updatedGame.opponentPostCombatSacrificeHandled &&
-                opponentCard.id == CardId.OEUFDARAIGNEE
-            ) {
-                return updatedGame.copy(
-                    pendingChoice = CardEffectManager.buildOeufAraigneePendingChoice(
-                        game = updatedGame,
-                        owner = ChoiceOwner.OPPONENT
-                    ),
-                    infoMessage = null
-                )
-            }
-
             // GARDIEN DES ENFERS
             if (opponentCard.id == CardId.GARDIENDESENFERS) {
                 val opponentWon = opponentPower > playerPower
@@ -474,25 +425,6 @@ object PostCombatEffectResolver {
                         amount = diff
                     )
                 }
-            }
-
-            if (
-                !updatedGame.opponentPostCombatSacrificeHandled &&
-                (
-                        opponentCard.id == CardId.DEVINDELUMIERE ||
-                                opponentCard.id == CardId.DEVINDESTENEBRES ||
-                                opponentCard.id == CardId.AGILE ||
-                                opponentCard.id == CardId.GARDEVAUDOU ||
-                                opponentCard.id == CardId.CONTAGIEUX
-                        )
-            ) {
-                return updatedGame.copy(
-                    pendingChoice = CardEffectManager.buildPostCombatSacrificePendingChoice(
-                        cardId = opponentCard.id,
-                        owner = ChoiceOwner.OPPONENT
-                    ),
-                    infoMessage = null
-                )
             }
 
             if (opponentLostCombat && opponentCard.id == CardId.DURACUIRE) {
@@ -546,6 +478,99 @@ object PostCombatEffectResolver {
                 }
             }
 
+            if (opponentCard.id == CardId.PORTEURDEGIDEDECHU) {
+                if (opponentLostCombat) {
+                    updatedGame = TokenManager.heal(
+                        game = updatedGame,
+                        target = ChoiceOwner.OPPONENT,
+                        amount = 1
+                    )
+                }
+
+                if (opponentPower > playerPower) {
+                    updatedGame = CardEffectManager.applyBretteur(
+                        game = updatedGame,
+                        owner = ChoiceOwner.OPPONENT,
+                        amount = 1
+                    )
+                }
+            }
+
+            updatedGame = updatedGame.copy(opponentPostCombatCardEffectResolved = true)
+        }
+            // VENIMEUX — déclenchement unique après une victoire
+            if (!updatedGame.opponentPostCombatVenomousHandled) {
+                updatedGame = updatedGame.copy(
+                    opponentPostCombatVenomousHandled = true
+                )
+
+                if (opponentWonCombat) {
+                    val venomous = CardEffectManager.getEffectiveVenomous(
+                        game = updatedGame,
+                        card = opponentCard,
+                        isPlayer = false,
+                        currentBonus = game.opponentCurrentCardVenomousBonus,
+                        effectsBlocked = game.opponentCardEffectsBlockedByAmbush
+                    )
+
+                    if (venomous > 0) {
+                        updatedGame = CardEffectManager.addPoisonToken(
+                            game = updatedGame,
+                            target = ChoiceOwner.PLAYER,
+                            source = ChoiceOwner.OPPONENT,
+                            amount = venomous
+                        )
+                    }
+                }
+            }
+
+            if (
+                !updatedGame.opponentPostCombatSacrificeHandled &&
+                opponentPower > playerPower &&
+                opponentCard.id == CardId.ARAIGNEEGEANTE
+            ) {
+                return updatedGame.copy(
+                    pendingChoice = CardEffectManager.buildAraigneeGeantePendingChoice(
+                        game = updatedGame,
+                        owner = ChoiceOwner.OPPONENT
+                    ),
+                    infoMessage = null
+                )
+            }
+
+            // OEUF D'ARAIGNÉE — choix après combat
+            if (
+                !updatedGame.opponentPostCombatSacrificeHandled &&
+                opponentCard.id == CardId.OEUFDARAIGNEE
+            ) {
+                return updatedGame.copy(
+                    pendingChoice = CardEffectManager.buildOeufAraigneePendingChoice(
+                        game = updatedGame,
+                        owner = ChoiceOwner.OPPONENT
+                    ),
+                    infoMessage = null
+                )
+            }
+
+            if (
+                !updatedGame.opponentPostCombatSacrificeHandled &&
+                (
+                        opponentCard.id == CardId.DEVINDELUMIERE ||
+                                opponentCard.id == CardId.DEVINDESTENEBRES ||
+                                opponentCard.id == CardId.AGILE ||
+                                opponentCard.id == CardId.GARDEVAUDOU ||
+                                opponentCard.id == CardId.CONTAGIEUX
+                        )
+            ) {
+                return updatedGame.copy(
+                    pendingChoice = CardEffectManager.buildPostCombatSacrificePendingChoice(
+                        cardId = opponentCard.id,
+                        owner = ChoiceOwner.OPPONENT
+                    ),
+                    infoMessage = null
+                )
+            }
+
             if (
                 opponentLostCombat &&
                 opponentCard.id == CardId.REPRESAILLES &&
@@ -568,26 +593,6 @@ object PostCombatEffectResolver {
                     canDiscardViewedCards = true
                 )
             }
-
-
-            if (opponentCard.id == CardId.PORTEURDEGIDEDECHU) {
-                if (opponentLostCombat) {
-                    updatedGame = TokenManager.heal(
-                        game = updatedGame,
-                        target = ChoiceOwner.OPPONENT,
-                        amount = 1
-                    )
-                }
-
-                if (opponentPower > playerPower) {
-                    updatedGame = CardEffectManager.applyBretteur(
-                        game = updatedGame,
-                        owner = ChoiceOwner.OPPONENT,
-                        amount = 1
-                    )
-                }
-            }
-        }
 
         return updatedGame
     }

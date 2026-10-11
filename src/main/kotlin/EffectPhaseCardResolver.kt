@@ -16,6 +16,18 @@ object EffectPhaseCardResolver {
 
         return when (currentCard.id) {
 
+            CardId.TISSEURDEMENSONGES -> {
+                if (ownerIsPlayer) {
+                    game.copy(
+                        playerGold = game.playerGold + 1
+                    )
+                } else {
+                    game.copy(
+                        opponentGold = game.opponentGold + 1
+                    )
+                }
+            }
+
             CardId.ARAIGNEESOLDAT -> {
                 game.copy(
                     pendingChoice = CardEffectManager.buildAraigneeSoldatPendingChoice(

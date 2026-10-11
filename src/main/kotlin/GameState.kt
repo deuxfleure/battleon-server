@@ -431,6 +431,15 @@ data class GameState(
     val playerPostCombatVenomousHandled: Boolean = false,
     val opponentPostCombatVenomousHandled: Boolean = false,
 
+    // Effets automatiques propres à la carte, résolus une seule fois
+    // par combat, même si le post-combat reprend après un choix.
+    val playerPostCombatCardEffectResolved: Boolean = false,
+    val opponentPostCombatCardEffectResolved: Boolean = false,
+
+    // Ordre du post-combat, calculé une seule fois par combat.
+    // Conservé pendant les interruptions et reprises après un choix.
+    val postCombatResolutionOrder: ResolutionOrder? = null,
+
     // =========================================================
     // 17. JOURNAL DE PARTIE
     // =========================================================
