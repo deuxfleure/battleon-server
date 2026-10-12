@@ -47,6 +47,15 @@ object EffectPhaseCardResolver {
                 )
             }
 
+            CardId.LAMEERRANTE -> {
+                game.copy(
+                    pendingChoice = CardEffectManager.buildLameErrantePendingChoice(
+                        owner = owner
+                    ),
+                    infoMessage = null
+                )
+            }
+
             CardId.AGILE -> {
                 game.copy(
                     pendingChoice = CardEffectManager.buildAgilePendingChoice(

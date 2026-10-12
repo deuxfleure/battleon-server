@@ -440,6 +440,9 @@ data class GameState(
     // Conservé pendant les interruptions et reprises après un choix.
     val postCombatResolutionOrder: ResolutionOrder? = null,
 
+    // boolean d'esquive activée
+    val combatCancelledByDodge: Boolean = false,
+
     // =========================================================
     // 17. JOURNAL DE PARTIE
     // =========================================================

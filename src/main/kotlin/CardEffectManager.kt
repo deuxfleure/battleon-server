@@ -1125,6 +1125,19 @@ object CardEffectManager {
             owner = owner
         )
     }
+
+    fun buildLameErrantePendingChoice(
+        owner: ChoiceOwner
+    ): PendingChoice {
+        return PendingChoice(
+            type = "LAME_ERRANTE_DODGE",
+            cardId = CardId.LAMEERRANTE.name,
+            options = listOf("DODGE", "PASS"),
+            message = "",
+            owner = owner
+        )
+    }
+
     fun buildBadGeniePendingChoice(
         game: GameState,
         owner: ChoiceOwner

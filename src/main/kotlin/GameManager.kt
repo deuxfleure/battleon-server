@@ -3235,6 +3235,8 @@ object GameManager {
                         opponentPostCombatCardEffectResolved = false,
                         postCombatResolutionOrder = null,
 
+                        combatCancelledByDodge = false,
+
                         ),
                         phase = TurnPhase.AMBUSH_BEFORE_EFFECTS
                     )

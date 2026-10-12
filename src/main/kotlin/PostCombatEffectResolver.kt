@@ -134,6 +134,14 @@ object PostCombatEffectResolver {
                         )
                     }
                 }
+                // LAME ERRANTE — BRETTEUR 2
+                if (playerWonCombat && playerCard.id == CardId.LAMEERRANTE) {
+                    updatedGame = CardEffectManager.applyBretteur(
+                        game = updatedGame,
+                        owner = ChoiceOwner.PLAYER,
+                        amount = 2
+                    )
+                }
                 // GARDIEN DES ENFERS
                 if (playerCard.id == CardId.GARDIENDESENFERS) {
                     val playerWon = playerPower > opponentPower
@@ -425,6 +433,15 @@ object PostCombatEffectResolver {
                         amount = diff
                     )
                 }
+            }
+
+            // LAME ERRANTE — BRETTEUR 2
+            if (opponentWonCombat && opponentCard.id == CardId.LAMEERRANTE) {
+                updatedGame = CardEffectManager.applyBretteur(
+                    game = updatedGame,
+                    owner = ChoiceOwner.OPPONENT,
+                    amount = 2
+                )
             }
 
             if (opponentLostCombat && opponentCard.id == CardId.DURACUIRE) {
