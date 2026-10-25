@@ -50,6 +50,62 @@ object PostCombatEffectResolver {
         )
     }
 
+    private fun resolveChainedCardEffects(
+        game: GameState,
+        owner: ChoiceOwner,
+        card: Card
+    ): GameState {
+
+        val progress = getEffectProgress(game, owner)
+            ?: return game
+
+        if (progress.completed || progress.cardId != card.id) {
+            return game
+        }
+
+        return when (card.id) {
+
+            CardId.MALIN -> {
+                when (progress.nextEffectIndex) {
+
+                    // Étape 0 : Débusquer
+                    0 -> {
+                        val pendingChoice =
+                            CardEffectManager.buildDebusquerPendingChoice(
+                                game = game,
+                                owner = owner,
+                                sourceCardId = card.id
+                            )
+
+                        if (pendingChoice != null) {
+                            game.copy(
+                                pendingChoice = pendingChoice,
+                                infoMessage = null
+                            )
+                        } else {
+                            // Aucune cible : passer automatiquement à l'étape 1.
+                            advanceEffectProgress(game, owner)
+                        }
+                    }
+
+                    // La deuxième capacité sera ajoutée ensuite.
+                    1 -> game
+
+                    // Séquence terminée.
+                    else -> {
+                        setEffectProgress(
+                            game = game,
+                            owner = owner,
+                            progress = progress.copy(completed = true)
+                        )
+                    }
+                }
+            }
+
+            else -> game
+        }
+    }
+
     fun apply(game: GameState): GameState {
         if (game.pendingChoice != null || game.activeScryState != null) return game
 
