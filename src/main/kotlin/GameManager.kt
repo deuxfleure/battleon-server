@@ -3815,137 +3815,162 @@ object GameManager {
                             var recordedGame = recordDuelResultIfNeeded(finishedGame)
                             recordedGame = recordSoloResultIfNeeded(recordedGame)
                             recordedGame
-                        } else {
 
-                            // ===============================
-                            // DÉFAUSSE DES CARTES JOUÉES
-                            // ===============================
-                            val destroyPlayerRevealedCard =
-                                workingGame.delayedEffects.any {
-                                    it.timing == DelayedEffectTiming.END_TURN &&
-                                            it.type == DelayedEffectType.DESTROY_REVEALED_CARD &&
-                                            it.target == DelayedEffectTarget.PLAYER
+                    } else {
+                        enterPhase(
+                            game = workingGame.copy(
+                                isFinished = false,
+                                result = null
+                            ),
+                            phase = TurnPhase.COMBAT_CLEANUP
+                        )
+                    }
+                }
+            }
+
+                // -------------------------------------------------
+// COMBAT_CLEANUP
+// -------------------------------------------------
+                TurnPhase.COMBAT_CLEANUP -> {
+
+                    if (game.combatCancelledByDodge) {
+
+                        // ESQUIVE : aucun combat n'a eu lieu.
+                        // Les deux cartes vont directement à la défausse.
+                        updatedGame = enterPhase(
+                            game = game.copy(
+                                playerDiscard = game.playerDiscard +
+                                        listOfNotNull(game.lastPlayerCard),
+
+                                opponentDiscard = game.opponentDiscard +
+                                        listOfNotNull(game.lastOpponentCard),
+
+                                lastPlayerCard = null,
+                                lastOpponentCard = null,
+
+                                combatCancelledByDodge = false,
+
+                                delayedEffects = game.delayedEffects.filter {
+                                    it.timing != DelayedEffectTiming.END_TURN
                                 }
+                            ),
+                            phase = TurnPhase.AMBUSH_BEFORE_SHOP
+                        )
 
-                            val destroyOpponentRevealedCard =
-                                workingGame.delayedEffects.any {
-                                    it.timing == DelayedEffectTiming.END_TURN &&
-                                            it.type == DelayedEffectType.DESTROY_REVEALED_CARD &&
-                                            it.target == DelayedEffectTarget.OPPONENT
-                                }
+                    } else {
 
-                            val playerCard = workingGame.lastPlayerCard
-                            val opponentCard = workingGame.lastOpponentCard
-
-                            val playerWonCombat =
-                                workingGame.playerEffectivePower > workingGame.opponentEffectivePower
-
-                            val playerLostCombat =
-                                workingGame.playerEffectivePower < workingGame.opponentEffectivePower
-
-                            val opponentWonCombat =
-                                workingGame.opponentEffectivePower > workingGame.playerEffectivePower
-
-                            val opponentLostCombat =
-                                workingGame.opponentEffectivePower < workingGame.playerEffectivePower
-
-
-                            // =====================================================
-                            // ENTRÉE DANS LA ZONE EMBUSCADE / PRÉPARATION
-                            // =====================================================
-
-                            val playerEntersAmbush =
-                                playerCard != null &&
-                                        !destroyPlayerRevealedCard &&
-                                        playerCard.hasAmbush &&
-                                        playerLostCombat
-
-                            val playerEntersPreparation =
-                                playerCard != null &&
-                                        !destroyPlayerRevealedCard &&
-                                        playerCard.hasPreparation &&
-                                        playerWonCombat
-
-                            val opponentEntersAmbush =
-                                opponentCard != null &&
-                                        !destroyOpponentRevealedCard &&
-                                        opponentCard.hasAmbush &&
-                                        opponentLostCombat
-
-                            val opponentEntersPreparation =
-                                opponentCard != null &&
-                                        !destroyOpponentRevealedCard &&
-                                        opponentCard.hasPreparation &&
-                                        opponentWonCombat
-
-
-                            val newPlayerAmbush = when {
-                                playerEntersAmbush -> {
-                                    workingGame.playerAmbush + TacticalCard(
-                                        card = playerCard!!,
-                                        entryType = TacticalEntryType.AMBUSH
-                                    )
-                                }
-
-                                playerEntersPreparation -> {
-                                    workingGame.playerAmbush + TacticalCard(
-                                        card = playerCard!!,
-                                        entryType = TacticalEntryType.PREPARATION
-                                    )
-                                }
-
-                                else -> workingGame.playerAmbush
+                        // COMBAT NORMAL
+                        val destroyPlayerRevealedCard =
+                            game.delayedEffects.any {
+                                it.timing == DelayedEffectTiming.END_TURN &&
+                                        it.type == DelayedEffectType.DESTROY_REVEALED_CARD &&
+                                        it.target == DelayedEffectTarget.PLAYER
                             }
 
-                            val newOpponentAmbush = when {
-                                opponentEntersAmbush -> {
-                                    workingGame.opponentAmbush + TacticalCard(
-                                        card = opponentCard!!,
-                                        entryType = TacticalEntryType.AMBUSH
-                                    )
-                                }
-
-                                opponentEntersPreparation -> {
-                                    workingGame.opponentAmbush + TacticalCard(
-                                        card = opponentCard!!,
-                                        entryType = TacticalEntryType.PREPARATION
-                                    )
-                                }
-
-                                else -> workingGame.opponentAmbush
+                        val destroyOpponentRevealedCard =
+                            game.delayedEffects.any {
+                                it.timing == DelayedEffectTiming.END_TURN &&
+                                        it.type == DelayedEffectType.DESTROY_REVEALED_CARD &&
+                                        it.target == DelayedEffectTarget.OPPONENT
                             }
 
+                        val playerCard = game.lastPlayerCard
+                        val opponentCard = game.lastOpponentCard
 
-                            // =====================================================
-                            // DÉFAUSSE NORMALE
-                            // =====================================================
+                        val playerWonCombat =
+                            game.playerEffectivePower > game.opponentEffectivePower
 
-                            val newPlayerDiscard =
-                                if (
-                                    playerCard != null &&
+                        val playerLostCombat =
+                            game.playerEffectivePower < game.opponentEffectivePower
+
+                        val opponentWonCombat =
+                            game.opponentEffectivePower > game.playerEffectivePower
+
+                        val opponentLostCombat =
+                            game.opponentEffectivePower < game.playerEffectivePower
+
+                        val playerEntersAmbush =
+                            playerCard != null &&
                                     !destroyPlayerRevealedCard &&
-                                    !playerEntersAmbush &&
-                                    !playerEntersPreparation
-                                ) {
-                                    workingGame.playerDiscard + playerCard
-                                } else {
-                                    workingGame.playerDiscard
-                                }
+                                    playerCard.hasAmbush &&
+                                    playerLostCombat
 
-                            val newOpponentDiscard =
-                                if (
-                                    opponentCard != null &&
+                        val playerEntersPreparation =
+                            playerCard != null &&
+                                    !destroyPlayerRevealedCard &&
+                                    playerCard.hasPreparation &&
+                                    playerWonCombat
+
+                        val opponentEntersAmbush =
+                            opponentCard != null &&
                                     !destroyOpponentRevealedCard &&
-                                    !opponentEntersAmbush &&
-                                    !opponentEntersPreparation
-                                ) {
-                                    workingGame.opponentDiscard + opponentCard
-                                } else {
-                                    workingGame.opponentDiscard
-                                }
+                                    opponentCard.hasAmbush &&
+                                    opponentLostCombat
 
+                        val opponentEntersPreparation =
+                            opponentCard != null &&
+                                    !destroyOpponentRevealedCard &&
+                                    opponentCard.hasPreparation &&
+                                    opponentWonCombat
 
-                            val cleanedGame = workingGame.copy(
+                        val newPlayerAmbush = when {
+                            playerEntersAmbush ->
+                                game.playerAmbush + TacticalCard(
+                                    card = playerCard!!,
+                                    entryType = TacticalEntryType.AMBUSH
+                                )
+
+                            playerEntersPreparation ->
+                                game.playerAmbush + TacticalCard(
+                                    card = playerCard!!,
+                                    entryType = TacticalEntryType.PREPARATION
+                                )
+
+                            else -> game.playerAmbush
+                        }
+
+                        val newOpponentAmbush = when {
+                            opponentEntersAmbush ->
+                                game.opponentAmbush + TacticalCard(
+                                    card = opponentCard!!,
+                                    entryType = TacticalEntryType.AMBUSH
+                                )
+
+                            opponentEntersPreparation ->
+                                game.opponentAmbush + TacticalCard(
+                                    card = opponentCard!!,
+                                    entryType = TacticalEntryType.PREPARATION
+                                )
+
+                            else -> game.opponentAmbush
+                        }
+
+                        val newPlayerDiscard =
+                            if (
+                                playerCard != null &&
+                                !destroyPlayerRevealedCard &&
+                                !playerEntersAmbush &&
+                                !playerEntersPreparation
+                            ) {
+                                game.playerDiscard + playerCard
+                            } else {
+                                game.playerDiscard
+                            }
+
+                        val newOpponentDiscard =
+                            if (
+                                opponentCard != null &&
+                                !destroyOpponentRevealedCard &&
+                                !opponentEntersAmbush &&
+                                !opponentEntersPreparation
+                            ) {
+                                game.opponentDiscard + opponentCard
+                            } else {
+                                game.opponentDiscard
+                            }
+
+                        updatedGame = enterPhase(
+                            game = game.copy(
                                 playerDiscard = newPlayerDiscard,
                                 opponentDiscard = newOpponentDiscard,
 
@@ -3955,45 +3980,14 @@ object GameManager {
                                 lastPlayerCard = null,
                                 lastOpponentCard = null,
 
-                                delayedEffects = workingGame.delayedEffects.filter {
+                                delayedEffects = game.delayedEffects.filter {
                                     it.timing != DelayedEffectTiming.END_TURN
                                 }
-                            )
-
-                            enterPhase(
-                                game = cleanedGame.copy(
-                                    isFinished = false,
-                                    result = null
-                                ),
-                                phase = TurnPhase.AMBUSH_BEFORE_SHOP
-                            )
-                        }
+                            ),
+                            phase = TurnPhase.AMBUSH_BEFORE_SHOP
+                        )
                     }
                 }
-            }
-
-            // -------------------------------------------------
-            // COMBAT_CLEANUP
-            // -------------------------------------------------
-            TurnPhase.COMBAT_CLEANUP -> {
-                updatedGame = enterPhase(
-                    game = game.copy(
-                        playerDiscard = game.playerDiscard +
-                                listOfNotNull(game.lastPlayerCard),
-
-                        opponentDiscard = game.opponentDiscard +
-                                listOfNotNull(game.lastOpponentCard),
-
-                        lastPlayerCard = null,
-                        lastOpponentCard = null,
-
-                        delayedEffects = game.delayedEffects.filter {
-                            it.timing != DelayedEffectTiming.END_TURN
-                        }
-                    ),
-                    phase = TurnPhase.AMBUSH_BEFORE_SHOP
-                )
-            }
 
             // -------------------------------------------------
             // SHOP_RESOLUTION
