@@ -3236,6 +3236,10 @@ object GameManager {
                         // POST-COMBAT — nouveaux effets automatiques à résoudre
                         playerPostCombatCardEffectResolved = false,
                         opponentPostCombatCardEffectResolved = false,
+
+                        playerPostCombatEffectProgress = null,
+                        opponentPostCombatEffectProgress = null,
+
                         postCombatResolutionOrder = null,
 
                         combatCancelledByDodge = false,

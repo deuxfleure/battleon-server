@@ -481,6 +481,46 @@ object TrainingAiPendingChoiceResolver {
         return when (pendingChoice.type) {
 
             // -----------------------------------
+            // MALIN — deuxième effet
+            // IA de base : toujours +1 Force
+            // -----------------------------------
+            "MALIN_SECOND_CHOICE" -> {
+                "NEXT_POWER_1"
+            }
+
+            // -----------------------------------
+            // MALIN — Débusquer
+            // Priorité au Trappeur, sinon aléatoire
+            // -----------------------------------
+            "DEBUSQUER_CHOICE" -> {
+
+                val enemyAmbush = if (pendingChoice.owner == ChoiceOwner.OPPONENT) {
+                    game.playerAmbush
+                } else {
+                    game.opponentAmbush
+                }
+
+                val trapperIndex = enemyAmbush.indexOfFirst {
+                    it.id == CardId.TRAPPEUR
+                }
+
+                val trapperOption = "DISCARD:$trapperIndex"
+
+                if (
+                    trapperIndex >= 0 &&
+                    trapperOption in pendingChoice.options
+                ) {
+                    trapperOption
+                } else {
+                    val validTargets = pendingChoice.options.filter {
+                        it.startsWith("DISCARD:")
+                    }
+
+                    validTargets.randomOrNull() ?: "PASS"
+                }
+            }
+
+            // -----------------------------------
             // MAUVAIS GÉNIE
             // -----------------------------------
             "BAD_GENIE_WEAPON" -> {
