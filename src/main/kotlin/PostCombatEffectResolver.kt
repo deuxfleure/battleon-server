@@ -88,8 +88,15 @@ object PostCombatEffectResolver {
                         }
                     }
 
-                    // La deuxième capacité sera ajoutée ensuite.
-                    1 -> game
+                    // Étape 1 : choisir entre Scruter 1 et +1 Force.
+                    1 -> {
+                        game.copy(
+                            pendingChoice = CardEffectManager.buildMalinSecondPendingChoice(
+                                owner = owner
+                            ),
+                            infoMessage = null
+                        )
+                    }
 
                     // Séquence terminée.
                     else -> {

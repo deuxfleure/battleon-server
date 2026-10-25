@@ -873,6 +873,22 @@ object CardEffectManager {
         )
     }
 
+    fun buildMalinSecondPendingChoice(
+        owner: ChoiceOwner
+    ): PendingChoice {
+
+        return PendingChoice(
+            type = "MALIN_SECOND_CHOICE",
+            cardId = CardId.MALIN.name,
+            options = listOf(
+                "SCRY_1",
+                "NEXT_POWER_1"
+            ),
+            message = "Malin : choisissez votre deuxième effet.",
+            owner = owner
+        )
+    }
+
     fun buildEnragePendingChoice(
         game: GameState,
         owner: ChoiceOwner
