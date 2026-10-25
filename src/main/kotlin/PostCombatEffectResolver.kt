@@ -254,6 +254,27 @@ object PostCombatEffectResolver {
 
             updatedGame = updatedGame.copy(playerPostCombatCardEffectResolved = true)
         }
+            // MALIN — initialisation de la séquence post-combat
+            if (playerWonCombat && playerCard.id == CardId.MALIN) {
+
+                val progress = getEffectProgress(
+                    game = updatedGame,
+                    owner = ChoiceOwner.PLAYER
+                )
+
+                if (progress == null) {
+                    updatedGame = setEffectProgress(
+                        game = updatedGame,
+                        owner = ChoiceOwner.PLAYER,
+                        progress = PostCombatEffectProgress(
+                            cardId = CardId.MALIN,
+                            owner = ChoiceOwner.PLAYER,
+                            nextEffectIndex = 0
+                        )
+                    )
+                }
+            }
+
             // VENIMEUX — déclenchement unique après une victoire
             if (!updatedGame.playerPostCombatVenomousHandled) {
                 updatedGame = updatedGame.copy(
