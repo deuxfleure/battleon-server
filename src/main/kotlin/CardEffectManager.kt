@@ -1381,6 +1381,42 @@ object CardEffectManager {
             }
 
             // -------------------------------------------------
+            // MALIN — Deuxième choix
+            // -------------------------------------------------
+            "MALIN_SECOND_CHOICE" -> {
+                when (choice) {
+
+                    "NEXT_POWER_1" -> {
+                        if (ownerIsPlayer) {
+                            game.copy(
+                                playerNextCardPowerBonus = game.playerNextCardPowerBonus + 1,
+                                pendingChoice = null,
+                                playerPostCombatEffectProgress =
+                                    game.playerPostCombatEffectProgress?.copy(
+                                        nextEffectIndex = 2,
+                                        completed = true
+                                    ),
+                                infoMessage = null
+                            )
+                        } else {
+                            game.copy(
+                                opponentNextCardPowerBonus = game.opponentNextCardPowerBonus + 1,
+                                pendingChoice = null,
+                                opponentPostCombatEffectProgress =
+                                    game.opponentPostCombatEffectProgress?.copy(
+                                        nextEffectIndex = 2,
+                                        completed = true
+                                    ),
+                                infoMessage = null
+                            )
+                        }
+                    }
+
+                    else -> game.copy(infoMessage = "Choix invalide")
+                }
+            }
+
+            // -------------------------------------------------
             // Débusquer
             // -------------------------------------------------
 
