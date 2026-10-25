@@ -501,7 +501,7 @@ object TrainingAiPendingChoiceResolver {
                 }
 
                 val trapperIndex = enemyAmbush.indexOfFirst {
-                    it.id == CardId.TRAPPEUR
+                    it.card.id == CardId.TRAPPEUR
                 }
 
                 val trapperOption = "DISCARD:$trapperIndex"
