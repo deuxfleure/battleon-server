@@ -213,6 +213,33 @@ object EffectPhaseCardResolver {
                 )
             }
 
+            CardId.OEIL -> {
+                val hasLessHp = if (ownerIsPlayer) {
+                    game.playerHp < game.opponentHp
+                } else {
+                    game.opponentHp < game.playerHp
+                }
+
+                val updatedGame = if (hasLessHp) {
+                    if (ownerIsPlayer) {
+                        game.copy(playerGold = game.playerGold + 1)
+                    } else {
+                        game.copy(opponentGold = game.opponentGold + 1)
+                    }
+                } else {
+                    game
+                }
+
+                CardEffectManager.startScry(
+                    game = updatedGame,
+                    sourceId = CardId.OEIL.name,
+                    resolver = owner,
+                    target = if (ownerIsPlayer) ChoiceOwner.OPPONENT else ChoiceOwner.PLAYER,
+                    amount = 1,
+                    canDiscardViewedCards = true
+                )
+            }
+
             CardId.SQUELETTE_FAIBLESSE -> {
                 if (ownerIsPlayer) {
                     game.copy(

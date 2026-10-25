@@ -1070,6 +1070,9 @@ object CardEffectManager {
             CardId.CONTAGIEUX ->
                 "Sacrifier Contagieux après le combat pour infliger 2 jetons Poison à l'adversaire ?"
 
+            CardId.OEIL ->
+                "Sacrifier L'Œil après le combat pour gagner 2 PV ?"
+
             else ->
                 "Voulez-vous sacrifier cette carte après le combat ?"
         }
@@ -1950,6 +1953,14 @@ object CardEffectManager {
                                     } else {
                                         game.copy(playerHp = maxOf(0, game.playerHp - 1))
                                     }
+                                }
+
+                                CardId.OEIL.name -> {
+                                    TokenManager.heal(
+                                        game = game,
+                                        target = pendingChoice.owner,
+                                        amount = 2
+                                    )
                                 }
 
                                 CardId.GARDEVAUDOU.name -> {
