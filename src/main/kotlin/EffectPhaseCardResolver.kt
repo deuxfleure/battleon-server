@@ -131,6 +131,22 @@ object EffectPhaseCardResolver {
                 )
             }
 
+            CardId.ONIFLEAUDEGIVRE -> {
+                val pendingChoice = CardEffectManager.buildOniFleauDeGivrePendingChoice(
+                    game = game,
+                    owner = owner
+                )
+
+                if (pendingChoice != null) {
+                    game.copy(
+                        pendingChoice = pendingChoice,
+                        infoMessage = null
+                    )
+                } else {
+                    game
+                }
+            }
+
             CardId.TACTICIEN -> {
                 game.copy(
                     pendingChoice = CardEffectManager.buildTacticienPendingChoice(

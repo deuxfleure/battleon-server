@@ -845,6 +845,60 @@ object CardEffectManager {
         )
     }
 
+    fun buildOniFleauDeGivrePendingChoice(
+        game: GameState,
+        owner: ChoiceOwner
+    ): PendingChoice? {
+
+        val ownerIsPlayer = owner == ChoiceOwner.PLAYER
+
+        val targetAmbush = if (ownerIsPlayer) {
+            game.opponentAmbush
+        } else {
+            game.playerAmbush
+        }
+
+        val ownerGold = if (ownerIsPlayer) {
+            game.playerGold
+        } else {
+            game.opponentGold
+        }
+
+        // Règle des cinq cartes : impossible de descendre à moins de cinq.
+        if (!canDestroyOneCardWithFiveCardRule(
+                game = game,
+                isPlayer = !ownerIsPlayer
+            )
+        ) {
+            return null
+        }
+
+        // Seules les cartes abordables peuvent être ciblées.
+        val options = targetAmbush.mapIndexedNotNull { index, tacticalCard ->
+            val destructionCost = tacticalCard.card.cost + 1
+
+            if (ownerGold >= destructionCost) {
+                "DESTROY:$index"
+            } else {
+                null
+            }
+        }
+
+        // Aucune cible autorisée ou abordable : pas de fenêtre.
+        if (options.isEmpty()) {
+            return null
+        }
+
+        return PendingChoice(
+            type = "ONI_FLEAU_DE_GIVRE_CHOICE",
+            cardId = CardId.ONIFLEAUDEGIVRE.name,
+            options = options + "PASS",
+            message = "ONI_FLEAU_DE_GIVRE_CHOICE",
+            owner = owner,
+            ownerGold = ownerGold
+        )
+    }
+
     fun buildDebusquerPendingChoice(
         game: GameState,
         owner: ChoiceOwner,
@@ -1348,6 +1402,82 @@ object CardEffectManager {
         val ownerIsPlayer = pendingChoice.owner == ChoiceOwner.PLAYER
 
         return when (pendingChoice.type) {
+
+            // -------------------------------------------------
+            // ONI FLÉAU DE GIVRE — Destruction en zone tactique
+            // -------------------------------------------------
+            "ONI_FLEAU_DE_GIVRE_CHOICE" -> {
+
+                if (choice !in pendingChoice.options) {
+                    game.copy(infoMessage = "Choix invalide")
+                } else if (choice == "PASS") {
+                    game.copy(
+                        pendingChoice = null,
+                        playerEffectResolved =
+                            if (ownerIsPlayer) true else game.playerEffectResolved,
+                        opponentEffectResolved =
+                            if (!ownerIsPlayer) true else game.opponentEffectResolved,
+                        infoMessage = null
+                    )
+                } else {
+                    val index = choice.removePrefix("DESTROY:").toIntOrNull()
+
+                    val targetAmbush = if (ownerIsPlayer) {
+                        game.opponentAmbush
+                    } else {
+                        game.playerAmbush
+                    }
+
+                    val ownerGold = if (ownerIsPlayer) {
+                        game.playerGold
+                    } else {
+                        game.opponentGold
+                    }
+
+                    if (index == null || index !in targetAmbush.indices) {
+                        game.copy(infoMessage = "Choix invalide")
+                    } else {
+                        val destructionCost = targetAmbush[index].card.cost + 1
+
+                        when {
+                            !canDestroyOneCardWithFiveCardRule(
+                                game = game,
+                                isPlayer = !ownerIsPlayer
+                            ) -> {
+                                game.copy(infoMessage = "Règle des 5 cartes")
+                            }
+
+                            ownerGold < destructionCost -> {
+                                game.copy(infoMessage = "Or insuffisant")
+                            }
+
+                            else -> {
+                                if (ownerIsPlayer) {
+                                    game.copy(
+                                        playerGold = game.playerGold - destructionCost,
+                                        opponentAmbush = game.opponentAmbush.filterIndexed { i, _ ->
+                                            i != index
+                                        },
+                                        pendingChoice = null,
+                                        playerEffectResolved = true,
+                                        infoMessage = null
+                                    )
+                                } else {
+                                    game.copy(
+                                        opponentGold = game.opponentGold - destructionCost,
+                                        playerAmbush = game.playerAmbush.filterIndexed { i, _ ->
+                                            i != index
+                                        },
+                                        pendingChoice = null,
+                                        opponentEffectResolved = true,
+                                        infoMessage = null
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             // -------------------------------------------------
             // Lame Errante
