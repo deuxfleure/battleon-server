@@ -31,6 +31,25 @@ object PostCombatEffectResolver {
         }
     }
 
+    fun advanceEffectProgress(
+        game: GameState,
+        owner: ChoiceOwner
+    ): GameState {
+
+        val progress = getEffectProgress(
+            game = game,
+            owner = owner
+        ) ?: return game
+
+        return setEffectProgress(
+            game = game,
+            owner = owner,
+            progress = progress.copy(
+                nextEffectIndex = progress.nextEffectIndex + 1
+            )
+        )
+    }
+
     fun apply(game: GameState): GameState {
         if (game.pendingChoice != null || game.activeScryState != null) return game
 
@@ -563,6 +582,28 @@ object PostCombatEffectResolver {
 
             updatedGame = updatedGame.copy(opponentPostCombatCardEffectResolved = true)
         }
+
+            // MALIN — initialisation de la séquence post-combat
+            if (opponentWonCombat && opponentCard.id == CardId.MALIN) {
+
+                val progress = getEffectProgress(
+                    game = updatedGame,
+                    owner = ChoiceOwner.OPPONENT
+                )
+
+                if (progress == null) {
+                    updatedGame = setEffectProgress(
+                        game = updatedGame,
+                        owner = ChoiceOwner.OPPONENT,
+                        progress = PostCombatEffectProgress(
+                            cardId = CardId.MALIN,
+                            owner = ChoiceOwner.OPPONENT,
+                            nextEffectIndex = 0
+                        )
+                    )
+                }
+            }
+
             // VENIMEUX — déclenchement unique après une victoire
             if (!updatedGame.opponentPostCombatVenomousHandled) {
                 updatedGame = updatedGame.copy(
