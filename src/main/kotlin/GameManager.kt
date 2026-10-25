@@ -3816,21 +3816,22 @@ object GameManager {
                             recordedGame = recordSoloResultIfNeeded(recordedGame)
                             recordedGame
 
-                    } else {
-                        enterPhase(
-                            game = workingGame.copy(
-                                isFinished = false,
-                                result = null
-                            ),
-                            phase = TurnPhase.COMBAT_CLEANUP
-                        )
+                        } else {
+                            enterPhase(
+                                game = workingGame.copy(
+                                    isFinished = false,
+                                    result = null
+                                ),
+                                phase = TurnPhase.COMBAT_CLEANUP
+                            )
+                        }
                     }
                 }
             }
 
                 // -------------------------------------------------
-// COMBAT_CLEANUP
-// -------------------------------------------------
+                // COMBAT_CLEANUP
+                // -------------------------------------------------
                 TurnPhase.COMBAT_CLEANUP -> {
 
                     if (game.combatCancelledByDodge) {
