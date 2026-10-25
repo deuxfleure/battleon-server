@@ -83,8 +83,15 @@ object PostCombatEffectResolver {
                                 infoMessage = null
                             )
                         } else {
-                            // Aucune cible : passer automatiquement à l'étape 1.
-                            advanceEffectProgress(game, owner)
+                            // Aucune cible : avancer et déclencher immédiatement le deuxième choix.
+                            val advancedGame = advanceEffectProgress(game, owner)
+
+                            advancedGame.copy(
+                                pendingChoice = CardEffectManager.buildMalinSecondPendingChoice(
+                                    owner = owner
+                                ),
+                                infoMessage = null
+                            )
                         }
                     }
 
