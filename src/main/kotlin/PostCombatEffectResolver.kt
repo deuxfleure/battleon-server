@@ -501,7 +501,12 @@ object PostCombatEffectResolver {
             card = playerCard
         )
 
-        return updatedGame
+        return moveRevealedCardToTacticalZone(
+            game = updatedGame,
+            owner = ChoiceOwner.PLAYER,
+            wonCombat = playerWonCombat,
+            lostCombat = playerLostCombat
+        )
     }
 
     private fun resolveOpponentPostCombat(
@@ -810,6 +815,11 @@ object PostCombatEffectResolver {
             card = opponentCard
         )
 
-        return updatedGame
+        return moveRevealedCardToTacticalZone(
+            game = updatedGame,
+            owner = ChoiceOwner.OPPONENT,
+            wonCombat = opponentWonCombat,
+            lostCombat = opponentLostCombat
+        )
     }
 }
