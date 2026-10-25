@@ -120,6 +120,48 @@ object PostCombatEffectResolver {
         }
     }
 
+    private fun moveRevealedCardToTacticalZone(
+        game: GameState,
+        owner: ChoiceOwner,
+        wonCombat: Boolean,
+        lostCombat: Boolean
+    ): GameState {
+
+        val card = when (owner) {
+            ChoiceOwner.PLAYER -> game.lastPlayerCard
+            ChoiceOwner.OPPONENT -> game.lastOpponentCard
+        } ?: return game
+
+        val entryType = when {
+            card.hasAmbush && lostCombat ->
+                TacticalEntryType.AMBUSH
+
+            card.hasPreparation && wonCombat ->
+                TacticalEntryType.PREPARATION
+
+            else -> return game
+        }
+
+        val tacticalCard = TacticalCard(
+            card = card,
+            entryType = entryType
+        )
+
+        return when (owner) {
+            ChoiceOwner.PLAYER -> game.copy(
+                playerAmbush = game.playerAmbush + tacticalCard,
+                lastPlayerCard = null,
+                playerDisplayedTurnCard = null
+            )
+
+            ChoiceOwner.OPPONENT -> game.copy(
+                opponentAmbush = game.opponentAmbush + tacticalCard,
+                lastOpponentCard = null,
+                opponentDisplayedTurnCard = null
+            )
+        }
+    }
+
     fun apply(game: GameState): GameState {
         if (game.pendingChoice != null || game.activeScryState != null) return game
 
