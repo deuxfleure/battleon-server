@@ -1386,6 +1386,42 @@ object CardEffectManager {
             "MALIN_SECOND_CHOICE" -> {
                 when (choice) {
 
+                    "SCRY_1" -> {
+
+                        // Le deuxième choix de Malin est consommé.
+                        val updatedGame = if (ownerIsPlayer) {
+                            game.copy(
+                                pendingChoice = null,
+                                playerPostCombatEffectProgress =
+                                    game.playerPostCombatEffectProgress?.copy(
+                                        nextEffectIndex = 2,
+                                        completed = true
+                                    ),
+                                infoMessage = null
+                            )
+                        } else {
+                            game.copy(
+                                pendingChoice = null,
+                                opponentPostCombatEffectProgress =
+                                    game.opponentPostCombatEffectProgress?.copy(
+                                        nextEffectIndex = 2,
+                                        completed = true
+                                    ),
+                                infoMessage = null
+                            )
+                        }
+
+                        // Réutilisation du système de scrutage existant.
+                        startScry(
+                            game = updatedGame,
+                            sourceId = CardId.MALIN.name,
+                            resolver = pendingChoice.owner,
+                            target = pendingChoice.owner,
+                            amount = 1,
+                            completionContext = ScryCompletionContext.POST_COMBAT
+                        )
+                    }
+
                     "NEXT_POWER_1" -> {
                         if (ownerIsPlayer) {
                             game.copy(
