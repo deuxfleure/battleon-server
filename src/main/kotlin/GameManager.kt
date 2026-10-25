@@ -2585,6 +2585,25 @@ object GameManager {
                 }
             }
 
+            CardId.GARDIENSACRE -> {
+                val golemdocre = CardCatalog.getCard(CardId.GOLEMDOCRE)
+                val squeletton = CardEffectManager.createRandomSkeletonCard()
+
+                when (owner) {
+                    ChoiceOwner.PLAYER -> {
+                        game.copy(
+                            playerDiscard = game.playerDiscard + golemdocre + squeletton
+                        )
+                    }
+
+                    ChoiceOwner.OPPONENT -> {
+                        game.copy(
+                            opponentDiscard = game.opponentDiscard + golemdocre + squeletton
+                        )
+                    }
+                }
+            }
+
             else -> game
         }
     }

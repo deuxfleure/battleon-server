@@ -302,24 +302,15 @@ object PostCombatEffectResolver {
                         playerGold = updatedGame.playerGold + 2
                     )
                 }
-                // Bulldozer
+                // Bulldozer — CHARGE 4
                 if (playerCard.id == CardId.BULLDOZER) {
-                    val playerWon = playerPower > opponentPower
-                    val diff = playerPower - opponentPower
-
-                    if (
-                        playerWon &&
-                        diff >= 4 &&
-                        CardEffectManager.canDestroyOneCardWithFiveCardRule(
-                            game = updatedGame,
-                            isPlayer = false
-                        )
-                    ) {
-                        updatedGame = updatedGame.copy(
-                            lastOpponentCard = null,
-                            opponentDisplayedTurnCard = null
-                        )
-                    }
+                    updatedGame = CardDestroyManager.resolveCharge(
+                        game = updatedGame,
+                        actor = CardDestroyManager.Side.PLAYER,
+                        threshold = 4,
+                        actorPower = playerPower,
+                        defenderPower = opponentPower
+                    ).game
                 }
                 // Porteur d'egide
                 if (playerCard.id == CardId.PORTEURDEGIDEDECHU) {
@@ -620,23 +611,15 @@ object PostCombatEffectResolver {
                 )
             }
 
+            // Bulldozer adverse — CHARGE 4
             if (opponentCard.id == CardId.BULLDOZER) {
-                val opponentWon = opponentPower > playerPower
-                val diff = opponentPower - playerPower
-
-                if (
-                    opponentWon &&
-                    diff >= 4 &&
-                    CardEffectManager.canDestroyOneCardWithFiveCardRule(
-                        game = updatedGame,
-                        isPlayer = true
-                    )
-                ) {
-                    updatedGame = updatedGame.copy(
-                        lastPlayerCard = null,
-                        playerDisplayedTurnCard = null
-                    )
-                }
+                updatedGame = CardDestroyManager.resolveCharge(
+                    game = updatedGame,
+                    actor = CardDestroyManager.Side.OPPONENT,
+                    threshold = 4,
+                    actorPower = opponentPower,
+                    defenderPower = playerPower
+                ).game
             }
 
             if (opponentCard.id == CardId.PORTEURDEGIDEDECHU) {
