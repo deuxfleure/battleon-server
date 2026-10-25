@@ -1365,6 +1365,64 @@ object CardEffectManager {
             }
 
             // -------------------------------------------------
+            // Débusquer
+            // -------------------------------------------------
+
+            "DEBUSQUER_CHOICE" -> {
+
+                val targetIsPlayer = pendingChoice.owner == ChoiceOwner.OPPONENT
+
+                val targetAmbush = if (targetIsPlayer) {
+                    game.playerAmbush
+                } else {
+                    game.opponentAmbush
+                }
+
+                when {
+                    choice == "PASS" -> {
+                        game.copy(
+                            pendingChoice = null,
+                            infoMessage = null
+                        )
+                    }
+
+                    choice.startsWith("DISCARD:") -> {
+                        val index = choice.removePrefix("DISCARD:").toIntOrNull()
+
+                        if (index == null || index !in targetAmbush.indices) {
+                            game.copy(infoMessage = "Choix invalide")
+                        } else {
+                            val selectedCard = targetAmbush[index].card
+
+                            if (targetIsPlayer) {
+                                game.copy(
+                                    playerAmbush = game.playerAmbush.filterIndexed { i, _ ->
+                                        i != index
+                                    },
+                                    playerDiscard = game.playerDiscard + selectedCard,
+                                    pendingChoice = null,
+                                    infoMessage = null
+                                )
+                            } else {
+                                game.copy(
+                                    opponentAmbush = game.opponentAmbush.filterIndexed { i, _ ->
+                                        i != index
+                                    },
+                                    opponentDiscard = game.opponentDiscard + selectedCard,
+                                    pendingChoice = null,
+                                    infoMessage = null
+                                )
+                            }
+                        }
+                    }
+
+                    else -> {
+                        game.copy(infoMessage = "Choix invalide")
+                    }
+                }
+            }
+
+            // -------------------------------------------------
             // ARAIGNÉE GÉANTE
             // -------------------------------------------------
             "ARAIGNEE_GEANTE_CHOICE" -> {
