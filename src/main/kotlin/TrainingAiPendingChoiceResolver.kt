@@ -489,6 +489,43 @@ object TrainingAiPendingChoiceResolver {
             }
 
             // -----------------------------------
+            // ONI FLÉAU DE GIVRE
+            // IA opportuniste : détruit la carte
+            // adverse la moins chère possible.
+            // -----------------------------------
+            "ONI_FLEAU_DE_GIVRE_CHOICE" -> {
+
+                val enemyAmbush = if (pendingChoice.owner == ChoiceOwner.OPPONENT) {
+                    game.playerAmbush
+                } else {
+                    game.opponentAmbush
+                }
+
+                val cheapestTargets = pendingChoice.options
+                    .filter { it.startsWith("DESTROY:") }
+                    .mapNotNull { option ->
+                        val index = option.removePrefix("DESTROY:").toIntOrNull()
+                            ?: return@mapNotNull null
+
+                        val card = enemyAmbush.getOrNull(index)?.card
+                            ?: return@mapNotNull null
+
+                        option to (card.cost + 1)
+                    }
+
+                val lowestCost = cheapestTargets.minOfOrNull { it.second }
+
+                if (lowestCost == null) {
+                    "PASS"
+                } else {
+                    cheapestTargets
+                        .filter { it.second == lowestCost }
+                        .random()
+                        .first
+                }
+            }
+
+            // -----------------------------------
             // MALIN — Débusquer
             // Priorité au Trappeur, sinon aléatoire
             // -----------------------------------
