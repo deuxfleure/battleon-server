@@ -5,6 +5,32 @@ package com.battleon
  */
 object PostCombatEffectResolver {
 
+    private fun getEffectProgress(
+        game: GameState,
+        owner: ChoiceOwner
+    ): PostCombatEffectProgress? {
+        return when (owner) {
+            ChoiceOwner.PLAYER -> game.playerPostCombatEffectProgress
+            ChoiceOwner.OPPONENT -> game.opponentPostCombatEffectProgress
+        }
+    }
+
+    private fun setEffectProgress(
+        game: GameState,
+        owner: ChoiceOwner,
+        progress: PostCombatEffectProgress?
+    ): GameState {
+        return when (owner) {
+            ChoiceOwner.PLAYER -> game.copy(
+                playerPostCombatEffectProgress = progress
+            )
+
+            ChoiceOwner.OPPONENT -> game.copy(
+                opponentPostCombatEffectProgress = progress
+            )
+        }
+    }
+
     fun apply(game: GameState): GameState {
         if (game.pendingChoice != null || game.activeScryState != null) return game
 

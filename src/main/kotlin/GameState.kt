@@ -128,7 +128,8 @@ data class ScryState(
 data class PostCombatEffectProgress(
     val cardId: CardId,
     val owner: ChoiceOwner,
-    val nextEffectIndex: Int = 0
+    val nextEffectIndex: Int = 0,
+    val completed: Boolean = false
 )
 
 @Serializable
@@ -449,9 +450,10 @@ data class GameState(
     // Conservé pendant les interruptions et reprises après un choix.
     val postCombatResolutionOrder: ResolutionOrder? = null,
 
-    // Progression générique des effets successifs d'une carte.
-    // null = aucune séquence d'effets en cours.
-    val postCombatEffectProgress: PostCombatEffectProgress? = null,
+    // Progression des effets successifs, indépendante pour chaque camp.
+    // Chaque séquence conserve son état jusqu'au nettoyage du combat.
+    val playerPostCombatEffectProgress: PostCombatEffectProgress? = null,
+    val opponentPostCombatEffectProgress: PostCombatEffectProgress? = null,
 
     // boolean d'esquive activée
     val combatCancelledByDodge: Boolean = false,
