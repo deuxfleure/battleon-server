@@ -447,6 +447,13 @@ object PostCombatEffectResolver {
                 )
             }
 
+        // Résolution des effets successifs de la carte.
+        updatedGame = resolveChainedCardEffects(
+            game = updatedGame,
+            owner = ChoiceOwner.PLAYER,
+            card = playerCard
+        )
+
         return updatedGame
     }
 
@@ -756,6 +763,13 @@ object PostCombatEffectResolver {
                     canDiscardViewedCards = true
                 )
             }
+
+        // Résolution des effets successifs de la carte.
+        updatedGame = resolveChainedCardEffects(
+            game = updatedGame,
+            owner = ChoiceOwner.OPPONENT,
+            card = opponentCard
+        )
 
         return updatedGame
     }
