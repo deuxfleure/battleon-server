@@ -845,6 +845,34 @@ object CardEffectManager {
         )
     }
 
+    fun buildDebusquerPendingChoice(
+        game: GameState,
+        owner: ChoiceOwner,
+        sourceCardId: CardId
+    ): PendingChoice? {
+
+        val opponentAmbush = if (owner == ChoiceOwner.PLAYER) {
+            game.opponentAmbush
+        } else {
+            game.playerAmbush
+        }
+
+        // Aucune carte adverse à débusquer.
+        if (opponentAmbush.isEmpty()) {
+            return null
+        }
+
+        return PendingChoice(
+            type = "DEBUSQUER_CHOICE",
+            cardId = sourceCardId.name,
+            options = opponentAmbush.indices.map { index ->
+                "DISCARD:$index"
+            } + "PASS",
+            message = "DEBUSQUER_CHOICE",
+            owner = owner
+        )
+    }
+
     fun buildEnragePendingChoice(
         game: GameState,
         owner: ChoiceOwner
