@@ -1303,6 +1303,37 @@ object CardEffectManager {
         return when (pendingChoice.type) {
 
             // -------------------------------------------------
+            // Lame Errante
+            // -------------------------------------------------
+            "LAME_ERRANTE_DODGE" -> {
+                if (choice !in pendingChoice.options) {
+                    game.copy(infoMessage = "Choix invalide")
+                } else {
+                    val useDodge = choice == "DODGE"
+
+                    game.copy(
+                        playerHp = if (ownerIsPlayer && useDodge) {
+                            (game.playerHp - 1).coerceAtLeast(0)
+                        } else game.playerHp,
+
+                        opponentHp = if (!ownerIsPlayer && useDodge) {
+                            (game.opponentHp - 1).coerceAtLeast(0)
+                        } else game.opponentHp,
+
+                        combatCancelledByDodge =
+                            game.combatCancelledByDodge || useDodge,
+
+                        pendingChoice = null,
+                        playerEffectResolved =
+                            if (ownerIsPlayer) true else game.playerEffectResolved,
+                        opponentEffectResolved =
+                            if (!ownerIsPlayer) true else game.opponentEffectResolved,
+                        infoMessage = null
+                    )
+                }
+            }
+
+            // -------------------------------------------------
             // ARAIGNÉE GÉANTE
             // -------------------------------------------------
             "ARAIGNEE_GEANTE_CHOICE" -> {

@@ -3,6 +3,7 @@ package com.battleon
 object CardCatalog {
 
     private val cardsById: Map<CardId, Card> = listOf(
+        // Carte NO COST
         Card(CardId.COLLECTOR, 1, 0, CardFaction.MERCENARY, purchaseLimit = null,false,false,false,false),
         Card(CardId.WARRIOR, 3, 0,CardFaction.BEAST, purchaseLimit = null,false,false,false,false),
         Card(CardId.CURSED, 2, 0,CardFaction.DEMON, purchaseLimit = null,false,false,false,false),

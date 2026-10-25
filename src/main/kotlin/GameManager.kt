@@ -844,6 +844,9 @@ object GameManager {
         val now = System.currentTimeMillis()
 
         val deadlineAtMillis = when {
+            // Phase technique : aucune attente imposée.
+            phase == TurnPhase.COMBAT_CLEANUP -> null
+
             // PRE_START : 90 secondes en PvP.
             phase == TurnPhase.PRE_START && isPvpMode(game) ->
                 now + PVP_PRE_START_TIMEOUT_MILLIS
@@ -3489,6 +3492,31 @@ object GameManager {
                     updatedGame = game.copy(
                         infoMessage = "Aucune carte révélée pour le combat"
                     )
+                } else if (game.combatCancelledByDodge) {
+                    updatedGame = enterPhase(
+                        game = game.copy(
+                            combatDamageToPlayer = 0,
+                            combatDamageToOpponent = 0,
+
+                            playerEffectivePower = 0,
+                            opponentEffectivePower = 0,
+
+                            playerCurrentCardPowerBonus = 0,
+                            opponentCurrentCardPowerBonus = 0,
+
+                            playerCurrentCardDamageBonus = 0,
+                            opponentCurrentCardDamageBonus = 0,
+
+                            playerCurrentCardVenomousBonus = 0,
+                            opponentCurrentCardVenomousBonus = 0,
+
+                            playerCurrentCardHasBruteBonus = false,
+                            opponentCurrentCardHasBruteBonus = false,
+
+                            infoMessage = null
+                        ),
+                        phase = TurnPhase.COMBAT_CLEANUP
+                    )
                 } else {
                     var newPlayerHp = game.playerHp
                     var newOpponentHp = game.opponentHp
@@ -3945,6 +3973,29 @@ object GameManager {
             }
 
             // -------------------------------------------------
+            // COMBAT_CLEANUP
+            // -------------------------------------------------
+            TurnPhase.COMBAT_CLEANUP -> {
+                updatedGame = enterPhase(
+                    game = game.copy(
+                        playerDiscard = game.playerDiscard +
+                                listOfNotNull(game.lastPlayerCard),
+
+                        opponentDiscard = game.opponentDiscard +
+                                listOfNotNull(game.lastOpponentCard),
+
+                        lastPlayerCard = null,
+                        lastOpponentCard = null,
+
+                        delayedEffects = game.delayedEffects.filter {
+                            it.timing != DelayedEffectTiming.END_TURN
+                        }
+                    ),
+                    phase = TurnPhase.AMBUSH_BEFORE_SHOP
+                )
+            }
+
+            // -------------------------------------------------
             // SHOP_RESOLUTION
             // -------------------------------------------------
             TurnPhase.SHOP_RESOLUTION -> {
@@ -4262,7 +4313,8 @@ object GameManager {
             TurnPhase.REVEAL,
             TurnPhase.EFFECTS,
             TurnPhase.COMBAT,
-            TurnPhase.POST_COMBAT -> false
+            TurnPhase.POST_COMBAT,
+            TurnPhase.COMBAT_CLEANUP -> false
         }
     }
 
