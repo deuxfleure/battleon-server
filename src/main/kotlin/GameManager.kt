@@ -3359,6 +3359,70 @@ object GameManager {
                         effectAnimationOrder = effectAnimationOrder
                     )
 
+
+                    fun activateSentinelle(
+                        currentGame: GameState,
+                        owner: ChoiceOwner
+                    ): GameState {
+                        val isPlayer = owner == ChoiceOwner.PLAYER
+
+                        val sentinelleCard = if (isPlayer) playerCard else opponentCard
+                        if (sentinelleCard.id != CardId.SENTINELLE) return currentGame
+
+                        // Une Sentinelle dont les capacités sont bloquées
+                        // ne peut pas bloquer celles de son adversaire.
+                        val ownerBlocked = if (isPlayer) {
+                            currentGame.playerAbilitiesBlocked ||
+                                    currentGame.playerCardEffectsBlockedByAmbush
+                        } else {
+                            currentGame.opponentAbilitiesBlocked ||
+                                    currentGame.opponentCardEffectsBlockedByAmbush
+                        }
+
+                        if (ownerBlocked) return currentGame
+
+                        val sentinellePower = if (isPlayer) {
+                            CardEffectManager.getEffectivePower(
+                                game = currentGame,
+                                card = sentinelleCard,
+                                ownerGold = currentGame.playerGold,
+                                nextCardPowerBonus = currentGame.playerCurrentCardPowerBonus,
+                                isPlayer = true
+                            )
+                        } else {
+                            CardEffectManager.getEffectivePower(
+                                game = currentGame,
+                                card = sentinelleCard,
+                                ownerGold = currentGame.opponentGold,
+                                nextCardPowerBonus = currentGame.opponentCurrentCardPowerBonus,
+                                isPlayer = false
+                            )
+                        }
+
+                        val targetCard = if (isPlayer) opponentCard else playerCard
+
+                        val targetPower = CardEffectManager.getEffectivePower(
+                            game = currentGame,
+                            card = targetCard,
+                            ownerGold = if (isPlayer) currentGame.opponentGold else currentGame.playerGold,
+                            nextCardPowerBonus = if (isPlayer) {
+                                currentGame.opponentCurrentCardPowerBonus
+                            } else {
+                                currentGame.playerCurrentCardPowerBonus
+                            },
+                            isPlayer = !isPlayer
+                        )
+
+                        if (targetPower < sentinellePower) return currentGame
+
+                        return if (isPlayer) {
+                            currentGame.copy(opponentAbilitiesBlocked = true)
+                        } else {
+                            currentGame.copy(playerAbilitiesBlocked = true)
+                        }
+                    }
+
+
                     when (resolutionOrder) {
                         ResolutionOrder.PLAYER_FIRST -> {
                             if (!workingGame.playerEffectResolved) {
