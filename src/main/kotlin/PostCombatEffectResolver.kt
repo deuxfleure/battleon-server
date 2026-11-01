@@ -210,15 +210,25 @@ object PostCombatEffectResolver {
             ChoiceOwner.OPPONENT -> game.lastOpponentCard
         } ?: return game
 
+
         val entryType = when {
+            // Force tranquille et Le Perfide rejoignent l'EMBUSCADE
+            // après le combat, quel que soit son résultat.
+            card.id == CardId.FORCETRANQUILLE ||
+                    card.id == CardId.PERFIDE ->
+                TacticalEntryType.AMBUSH
+
+            // EMBUSCADE classique : uniquement en cas de défaite.
             card.hasAmbush && lostCombat ->
                 TacticalEntryType.AMBUSH
 
+            // PRÉPARATION classique : uniquement en cas de victoire.
             card.hasPreparation && wonCombat ->
                 TacticalEntryType.PREPARATION
 
             else -> return game
         }
+
 
         val tacticalCard = TacticalCard(
             card = card,
