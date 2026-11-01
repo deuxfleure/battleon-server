@@ -1632,12 +1632,16 @@ object CardEffectManager {
                         "COUNTER" -> {
                             val options = mutableListOf<String>()
 
-                            if (game.lastPlayerCard != null) {
-                                options.add("COUNTER_PLAYER")
-                            }
+                            // Avant la révélation, aucune carte du tour
+                            // en cours ne peut encore être contrée.
+                            if (game.phase != TurnPhase.AMBUSH_BEFORE_REVEAL) {
+                                if (game.lastPlayerCard != null) {
+                                    options.add("COUNTER_PLAYER")
+                                }
 
-                            if (game.lastOpponentCard != null) {
-                                options.add("COUNTER_OPPONENT")
+                                if (game.lastOpponentCard != null) {
+                                    options.add("COUNTER_OPPONENT")
+                                }
                             }
 
                             options.add("PASS")

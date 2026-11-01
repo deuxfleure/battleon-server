@@ -1365,6 +1365,11 @@ object GameManager {
         owner: ChoiceOwner,
         runeId: String
     ): Boolean {
+        // Une décision en attente doit être terminée
+        // avant toute nouvelle activation tactique.
+        if (game.pendingChoice != null) {
+            return false
+        }
         if (game.mode != "SOLO" && game.mode != "TRAINING") {
             return false
         }
@@ -1429,6 +1434,12 @@ object GameManager {
         owner: ChoiceOwner,
         tacticalCardIndex: Int
     ): Boolean {
+
+        // Une décision en attente doit être terminée
+        // avant toute nouvelle activation tactique.
+        if (game.pendingChoice != null) {
+            return false
+        }
         if (!isAmbushPhase(game.phase)) {
             return false
         }
