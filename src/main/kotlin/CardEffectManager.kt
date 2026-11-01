@@ -1344,18 +1344,27 @@ object CardEffectManager {
             owner = owner
         )
     }
+
     fun buildAraigneeGeantePendingChoice(
         game: GameState,
         owner: ChoiceOwner
     ): PendingChoice {
 
-        val discard = if (owner == ChoiceOwner.PLAYER) {
-            game.playerDiscard
+        val side = if (owner == ChoiceOwner.PLAYER) {
+            CardDestroyManager.Side.PLAYER
         } else {
-            game.opponentDiscard
+            CardDestroyManager.Side.OPPONENT
         }
 
-        val options = discard.mapIndexed { index, _ ->
+        val eligibleIndices = CardDestroyManager.eligibleIndices(
+            game = game,
+            owner = side,
+            zone = CardDestroyManager.Zone.DISCARD,
+            cause = CardDestroyManager.Cause.REPLACEMENT,
+            bypassFiveCardRule = true
+        )
+
+        val options = eligibleIndices.map { index ->
             "DISCARD:$index"
         } + "PASS"
 
@@ -1368,28 +1377,7 @@ object CardEffectManager {
         )
     }
 
-    fun buildSentinelleBuyDestroyPendingChoice(
-        game: GameState,
-        owner: ChoiceOwner
-    ): PendingChoice {
-        val discard = if (owner == ChoiceOwner.PLAYER) {
-            game.playerDiscard
-        } else {
-            game.opponentDiscard
-        }
 
-        val validOptions = discard.indices.map { index ->
-            "DISCARD:$index"
-        }
-
-        return PendingChoice(
-            type = "SENTINELLE_BUY_DESTROY",
-            cardId = CardId.SENTINELLE.name,
-            options = validOptions + "PASS",
-            message = "La Sentinelle : choisissez une carte de votre défausse à détruire.",
-            owner = owner
-        )
-    }
     private fun buildMageDestroyReservePendingChoice(
         game: GameState,
         owner: ChoiceOwner
@@ -1701,7 +1689,7 @@ object CardEffectManager {
                     }
 
 
-                    choice.startsWith("DISCARD:") -> {
+                    choice.startsWith("DISCARD:") && choice in pendingChoice.options -> {
                         val index = choice.removePrefix("DISCARD:").toIntOrNull()
 
                         if (index == null) {
