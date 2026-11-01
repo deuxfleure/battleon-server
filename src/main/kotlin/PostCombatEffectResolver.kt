@@ -127,6 +127,13 @@ object PostCombatEffectResolver {
         lostCombat: Boolean
     ): GameState {
 
+        val abilitiesBlocked = when (owner) {
+            ChoiceOwner.PLAYER -> game.playerAbilitiesBlocked
+            ChoiceOwner.OPPONENT -> game.opponentAbilitiesBlocked
+        }
+
+        if (abilitiesBlocked) return game
+
         val card = when (owner) {
             ChoiceOwner.PLAYER -> game.lastPlayerCard
             ChoiceOwner.OPPONENT -> game.lastOpponentCard
@@ -215,7 +222,7 @@ object PostCombatEffectResolver {
             )
         }
         val playerCard = updatedGame.lastPlayerCard ?: return updatedGame
-        if (updatedGame.playerEffectBlockedBySentinelle) return updatedGame
+        if (updatedGame.playerAbilitiesBlocked) return updatedGame
 
         if (!updatedGame.playerPostCombatCardEffectResolved) {
                 // Effets automatiques ici
@@ -526,7 +533,7 @@ object PostCombatEffectResolver {
             )
         }
         val opponentCard = updatedGame.lastOpponentCard ?: return updatedGame
-        if (updatedGame.opponentEffectBlockedBySentinelle) return updatedGame
+        if (updatedGame.opponentAbilitiesBlocked) return updatedGame
 
         if (!updatedGame.opponentPostCombatCardEffectResolved) {
             if (opponentWonCombat && opponentCard.id == CardId.TISSEURDEMENSONGES) {
