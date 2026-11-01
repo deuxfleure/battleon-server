@@ -2233,34 +2233,54 @@ object CardEffectManager {
                         }
                     }
 
+
                     "SACRIFICE_YES" -> {
-                        if (!canDestroyOneCardWithFiveCardRule(game, ownerIsPlayer)) {
-                            if (ownerIsPlayer) {
-                                game.copy(
-                                    pendingChoice = null,
-                                    playerPostCombatSacrificeHandled = true,
-                                    infoMessage = "Règle des 5 cartes"
-                                )
-                            } else {
-                                game.copy(
-                                    pendingChoice = null,
-                                    opponentPostCombatSacrificeHandled = true,
-                                    infoMessage = "Règle des 5 cartes"
-                                )
-                            }
+                        val ownerSide = if (ownerIsPlayer) {
+                            CardDestroyManager.Side.PLAYER
                         } else {
+                            CardDestroyManager.Side.OPPONENT
+                        }
+
+                        val destruction = CardDestroyManager.destroyRevealed(
+                            game = game,
+                            owner = ownerSide,
+                            cause = CardDestroyManager.Cause.SACRIFICE
+                        )
+
+                        if (!destruction.destroyed) {
+                            destruction.game.copy(
+                                pendingChoice = null,
+                                playerPostCombatSacrificeHandled =
+                                    if (ownerIsPlayer) true
+                                    else game.playerPostCombatSacrificeHandled,
+                                opponentPostCombatSacrificeHandled =
+                                    if (!ownerIsPlayer) true
+                                    else game.opponentPostCombatSacrificeHandled,
+                                infoMessage = when (destruction.failure) {
+                                    CardDestroyManager.Failure.FIVE_CARD_MINIMUM ->
+                                        "Règle des 5 cartes"
+                                    else -> "Sacrifice impossible"
+                                }
+                            )
+                        } else {
+                            val destroyedGame = destruction.game
+
                             val rewardedGame = when (pendingChoice.cardId) {
                                 CardId.AGILE.name -> {
                                     if (ownerIsPlayer) {
-                                        game.copy(playerGold = game.playerGold + 2)
+                                        destroyedGame.copy(
+                                            playerGold = destroyedGame.playerGold + 2
+                                        )
                                     } else {
-                                        game.copy(opponentGold = game.opponentGold + 2)
+                                        destroyedGame.copy(
+                                            opponentGold = destroyedGame.opponentGold + 2
+                                        )
                                     }
                                 }
 
                                 CardId.DEVINDELUMIERE.name -> {
                                     TokenManager.heal(
-                                        game = game,
+                                        game = destroyedGame,
                                         target = pendingChoice.owner,
                                         amount = 1
                                     )
@@ -2268,15 +2288,19 @@ object CardEffectManager {
 
                                 CardId.DEVINDESTENEBRES.name -> {
                                     if (ownerIsPlayer) {
-                                        game.copy(opponentHp = maxOf(0, game.opponentHp - 1))
+                                        destroyedGame.copy(
+                                            opponentHp = maxOf(0, destroyedGame.opponentHp - 1)
+                                        )
                                     } else {
-                                        game.copy(playerHp = maxOf(0, game.playerHp - 1))
+                                        destroyedGame.copy(
+                                            playerHp = maxOf(0, destroyedGame.playerHp - 1)
+                                        )
                                     }
                                 }
 
                                 CardId.OEIL.name -> {
                                     TokenManager.heal(
-                                        game = game,
+                                        game = destroyedGame,
                                         target = pendingChoice.owner,
                                         amount = 2
                                     )
@@ -2284,19 +2308,19 @@ object CardEffectManager {
 
                                 CardId.GARDEVAUDOU.name -> {
                                     if (ownerIsPlayer) {
-                                        game.copy(
-                                            playerGold = game.playerGold + 3
+                                        destroyedGame.copy(
+                                            playerGold = destroyedGame.playerGold + 3
                                         )
                                     } else {
-                                        game.copy(
-                                            opponentGold = game.opponentGold + 3
+                                        destroyedGame.copy(
+                                            opponentGold = destroyedGame.opponentGold + 3
                                         )
                                     }
                                 }
 
                                 CardId.CONTAGIEUX.name -> {
-                                    CardEffectManager.addPoisonToken(
-                                        game = game,
+                                    addPoisonToken(
+                                        game = destroyedGame,
                                         target = if (ownerIsPlayer) {
                                             ChoiceOwner.OPPONENT
                                         } else {
@@ -2307,28 +2331,22 @@ object CardEffectManager {
                                     )
                                 }
 
-                                else -> game
+                                else -> destroyedGame
                             }
 
-                            if (ownerIsPlayer) {
-                                rewardedGame.copy(
-                                    lastPlayerCard = null,
-                                    playerDisplayedTurnCard = null,
-                                    pendingChoice = null,
-                                    playerPostCombatSacrificeHandled = true,
-                                    infoMessage = null
-                                )
-                            } else {
-                                rewardedGame.copy(
-                                    lastOpponentCard = null,
-                                    opponentDisplayedTurnCard = null,
-                                    pendingChoice = null,
-                                    opponentPostCombatSacrificeHandled = true,
-                                    infoMessage = null
-                                )
-                            }
+                            rewardedGame.copy(
+                                pendingChoice = null,
+                                playerPostCombatSacrificeHandled =
+                                    if (ownerIsPlayer) true
+                                    else rewardedGame.playerPostCombatSacrificeHandled,
+                                opponentPostCombatSacrificeHandled =
+                                    if (!ownerIsPlayer) true
+                                    else rewardedGame.opponentPostCombatSacrificeHandled,
+                                infoMessage = null
+                            )
                         }
                     }
+
 
                     else -> {
                         game.copy(
