@@ -147,6 +147,25 @@ object EffectPhaseCardResolver {
                 }
             }
 
+            CardId.SAUVAGE -> {
+                val beastCount = CardEffectManager.countBeastLink(
+                    game = game,
+                    owner = owner
+                )
+
+                if (beastCount >= 2) {
+                    game.copy(
+                        pendingChoice = CardEffectManager.buildSauvagePendingChoice(
+                            game = game,
+                            owner = owner
+                        ),
+                        infoMessage = null
+                    )
+                } else {
+                    game
+                }
+            }
+
             CardId.TACTICIEN -> {
                 game.copy(
                     pendingChoice = CardEffectManager.buildTacticienPendingChoice(

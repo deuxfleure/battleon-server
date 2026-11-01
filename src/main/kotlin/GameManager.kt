@@ -3698,6 +3698,34 @@ object GameManager {
                         isPlayer = false
                     )
 
+                    val playerSauvageDamage =
+                        if (
+                            playerCard.id == CardId.SAUVAGE &&
+                            !game.playerAbilitiesBlocked &&
+                            !game.playerCardEffectsBlockedByAmbush &&
+                            playerEffectivePower > opponentEffectivePower
+                        ) {
+                            CardEffectManager.countBeastLink(game, ChoiceOwner.PLAYER)
+                                .takeIf { it >= 6 }
+                                ?.div(2)
+                        } else {
+                            null
+                        }
+
+                    val opponentSauvageDamage =
+                        if (
+                            opponentCard.id == CardId.SAUVAGE &&
+                            !game.opponentAbilitiesBlocked &&
+                            !game.opponentCardEffectsBlockedByAmbush &&
+                            opponentEffectivePower > playerEffectivePower
+                        ) {
+                            CardEffectManager.countBeastLink(game, ChoiceOwner.OPPONENT)
+                                .takeIf { it >= 6 }
+                                ?.div(2)
+                        } else {
+                            null
+                        }
+
                     val playerDamageDealt =
                         if (
                             playerCard.id == CardId.TRAPPEUR &&
@@ -3712,7 +3740,8 @@ object GameManager {
                                 defenderPower = opponentEffectivePower,
                                 nextCardDamageBonus = game.playerCurrentCardDamageBonus,
                                 attackerHasBrute = playerHasBrute,
-                                enrageCombatDamage = game.playerEnrageCombatDamage
+                                enrageCombatDamage = game.playerEnrageCombatDamage,
+                                replacementDamage = playerSauvageDamage
                             )
                         }
 
@@ -3730,7 +3759,8 @@ object GameManager {
                                 defenderPower = playerEffectivePower,
                                 nextCardDamageBonus = game.opponentCurrentCardDamageBonus,
                                 attackerHasBrute = opponentHasBrute,
-                                enrageCombatDamage = game.opponentEnrageCombatDamage
+                                enrageCombatDamage = game.opponentEnrageCombatDamage,
+                                replacementDamage = opponentSauvageDamage
                             )
                         }
 

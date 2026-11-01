@@ -749,6 +749,7 @@ object CardEffectManager {
         }
     }
 
+
     fun getCombatDamageDealt(
         attacker: Card,
         defender: Card,
@@ -756,20 +757,28 @@ object CardEffectManager {
         defenderPower: Int,
         nextCardDamageBonus: Int,
         attackerHasBrute: Boolean,
-        enrageCombatDamage: Int = 1
+        enrageCombatDamage: Int = 1,
+        replacementDamage: Int? = null
     ): Int {
+        // Aucun dégât si cette carte ne gagne pas le combat.
         if (attackerPower <= defenderPower) {
             return 0
         }
 
+        // Dégâts normaux : BRUTE, ENRAGE et bonus.
         val baseDamage = when {
             attackerHasBrute -> attackerPower - defenderPower
             attacker.id == CardId.ENRAGE -> enrageCombatDamage
             else -> 1
         }
 
-        return baseDamage + nextCardDamageBonus
+        val normalDamage = baseDamage + nextCardDamageBonus
+
+        // Les effets de remplacement ont priorité sur les dégâts normaux.
+        // null = aucun remplacement ; 0 = remplacement par zéro dégât.
+        return replacementDamage ?: normalDamage
     }
+
 
     fun applyFideleEffect(
         game: GameState,
@@ -1461,6 +1470,57 @@ object CardEffectManager {
         val ownerIsPlayer = pendingChoice.owner == ChoiceOwner.PLAYER
 
         return when (pendingChoice.type) {
+
+            // -------------------------------------------------
+            // SAUVAGE — Défausse de 0 à 3 cartes
+            // -------------------------------------------------
+            "SAUVAGE_DISCARD_CHOICE" -> {
+
+                val amount = choice
+                    .takeIf { it in pendingChoice.options }
+                    ?.takeIf { it.startsWith("DISCARD:") }
+                    ?.removePrefix("DISCARD:")
+                    ?.toIntOrNull()
+
+                if (amount == null || amount !in 0..3) {
+                    game.copy(infoMessage = "Choix invalide")
+                } else {
+
+                    var updatedGame = game
+
+                    repeat(amount) {
+                        updatedGame = discardTopCardWithReshuffleIfNeeded(
+                            game = updatedGame,
+                            targetIsPlayer = ownerIsPlayer
+                        )
+                    }
+
+                    val beastCount = countBeastLink(
+                        game = updatedGame,
+                        owner = pendingChoice.owner
+                    )
+
+                    val powerBonus = if (beastCount >= 4) 3 else 0
+
+                    if (ownerIsPlayer) {
+                        updatedGame.copy(
+                            playerCurrentCardPowerBonus =
+                                updatedGame.playerCurrentCardPowerBonus + powerBonus,
+                            pendingChoice = null,
+                            playerEffectResolved = true,
+                            infoMessage = null
+                        )
+                    } else {
+                        updatedGame.copy(
+                            opponentCurrentCardPowerBonus =
+                                updatedGame.opponentCurrentCardPowerBonus + powerBonus,
+                            pendingChoice = null,
+                            opponentEffectResolved = true,
+                            infoMessage = null
+                        )
+                    }
+                }
+            }
 
             // -------------------------------------------------
             // ONI FLÉAU DE GIVRE — Destruction en zone tactique
