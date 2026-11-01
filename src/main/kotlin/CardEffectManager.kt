@@ -30,22 +30,6 @@ object CardEffectManager {
         return countCards(game, isPlayer) > 5
     }
 
-    fun destroyOneCardFromDiscardById(
-        discard: List<Card>,
-        targetCardId: String
-    ): List<Card> {
-        var removed = false
-
-        return discard.filter { card ->
-            if (!removed && card.id.name == targetCardId) {
-                removed = true
-                false
-            } else {
-                true
-            }
-        }
-    }
-
     //-----------------------
     // ------ Scrutage-------
     //-----------------------
@@ -1299,9 +1283,22 @@ object CardEffectManager {
             game.opponentDiscard
         }
 
-        val discardOptions = discard.map { card ->
-            "CARD:${card.id.name}"
+
+        val ownerSide = if (owner == ChoiceOwner.PLAYER) {
+            CardDestroyManager.Side.PLAYER
+        } else {
+            CardDestroyManager.Side.OPPONENT
         }
+
+        val discardOptions = CardDestroyManager.eligibleIndices(
+            game = game,
+            owner = ownerSide,
+            zone = CardDestroyManager.Zone.DISCARD,
+            cause = CardDestroyManager.Cause.OWN_EFFECT
+        ).map { index ->
+            "CARD:${discard[index].id.name}"
+        }.distinct()
+
 
         val options = discardOptions + "PASS"
 
@@ -2562,61 +2559,67 @@ object CardEffectManager {
                         }
                     }
 
+
                     choice.startsWith("CARD:") -> {
                         val targetCardId = choice.removePrefix("CARD:")
 
-                        if (!canDestroyOneCardWithFiveCardRule(game, ownerIsPlayer)) {
-                            game.copy(
-                                infoMessage = "Règle des 5 cartes"
-                            )
+                        val ownerSide = if (ownerIsPlayer) {
+                            CardDestroyManager.Side.PLAYER
                         } else {
-                            val sourceDiscard = if (ownerIsPlayer) {
-                                game.playerDiscard
-                            } else {
-                                game.opponentDiscard
-                            }
+                            CardDestroyManager.Side.OPPONENT
+                        }
 
-                            val destroyedCard = sourceDiscard.firstOrNull { it.id.name == targetCardId }
-                                ?: return game.copy(infoMessage = "Choix invalide")
+                        val sourceDiscard = if (ownerIsPlayer) {
+                            game.playerDiscard
+                        } else {
+                            game.opponentDiscard
+                        }
 
-                            val newDiscard = destroyOneCardFromDiscardById(
-                                discard = sourceDiscard,
-                                targetCardId = targetCardId
+                        val targetIndex = sourceDiscard.indexOfFirst {
+                            it.id.name == targetCardId
+                        }
+
+                        if (choice !in pendingChoice.options || targetIndex < 0) {
+                            game.copy(infoMessage = "Choix invalide")
+                        } else {
+                            val destroyedCard = sourceDiscard[targetIndex]
+
+                            val destruction = CardDestroyManager.destroyAt(
+                                game = game,
+                                owner = ownerSide,
+                                zone = CardDestroyManager.Zone.DISCARD,
+                                index = targetIndex,
+                                cause = CardDestroyManager.Cause.OWN_EFFECT
                             )
 
-                            val healAmount = destroyedCard.power / 2
-
-                            val gameAfterDestroy = if (ownerIsPlayer) {
-                                game.copy(
-                                    playerDiscard = newDiscard
-                                )
+                            if (!destruction.destroyed) {
+                                game.copy(infoMessage = "Destruction impossible")
                             } else {
-                                game.copy(
-                                    opponentDiscard = newDiscard
-                                )
-                            }
+                                val healAmount = destroyedCard.power / 2
 
-                            val healedGame = TokenManager.heal(
-                                game = gameAfterDestroy,
-                                target = pendingChoice.owner,
-                                amount = healAmount
-                            )
+                                val healedGame = TokenManager.heal(
+                                    game = destruction.game,
+                                    target = pendingChoice.owner,
+                                    amount = healAmount
+                                )
 
-                            if (ownerIsPlayer) {
-                                healedGame.copy(
-                                    pendingChoice = null,
-                                    playerEffectResolved = true,
-                                    infoMessage = null
-                                )
-                            } else {
-                                healedGame.copy(
-                                    pendingChoice = null,
-                                    opponentEffectResolved = true,
-                                    infoMessage = null
-                                )
+                                if (ownerIsPlayer) {
+                                    healedGame.copy(
+                                        pendingChoice = null,
+                                        playerEffectResolved = true,
+                                        infoMessage = null
+                                    )
+                                } else {
+                                    healedGame.copy(
+                                        pendingChoice = null,
+                                        opponentEffectResolved = true,
+                                        infoMessage = null
+                                    )
+                                }
                             }
                         }
                     }
+
 
                     else -> {
                         game.copy(
