@@ -23,13 +23,6 @@ object CardEffectManager {
                 revealedCount
     }
 
-    fun canDestroyOneCardWithFiveCardRule(
-        game: GameState,
-        isPlayer: Boolean
-    ): Boolean {
-        return countCards(game, isPlayer) > 5
-    }
-
     //-----------------------
     // ------ Scrutage-------
     //-----------------------
@@ -848,18 +841,23 @@ object CardEffectManager {
             game.opponentGold
         }
 
-        // Règle des cinq cartes : impossible de descendre à moins de cinq.
-        if (!canDestroyOneCardWithFiveCardRule(
-                game = game,
-                isPlayer = !ownerIsPlayer
-            )
-        ) {
-            return null
+
+        val targetSide = if (ownerIsPlayer) {
+            CardDestroyManager.Side.OPPONENT
+        } else {
+            CardDestroyManager.Side.PLAYER
         }
 
-        // Seules les cartes abordables peuvent être ciblées.
-        val options = targetAmbush.mapIndexedNotNull { index, tacticalCard ->
-            val destructionCost = tacticalCard.card.cost + 1
+        val eligibleIndices = CardDestroyManager.eligibleIndices(
+            game = game,
+            owner = targetSide,
+            zone = CardDestroyManager.Zone.AMBUSH,
+            cause = CardDestroyManager.Cause.OPPONENT_EFFECT
+        )
+
+        // Seules les cartes destructibles ET abordables sont proposées.
+        val options = eligibleIndices.mapNotNull { index ->
+            val destructionCost = targetAmbush[index].card.cost + 1
 
             if (ownerGold >= destructionCost) {
                 "DESTROY:$index"
@@ -867,6 +865,7 @@ object CardEffectManager {
                 null
             }
         }
+
 
         // Aucune cible autorisée ou abordable : pas de fenêtre.
         if (options.isEmpty()) {
@@ -1255,7 +1254,14 @@ object CardEffectManager {
         }.distinct()
 
 
-        val selfOption = if (canDestroyOneCardWithFiveCardRule(game, owner == ChoiceOwner.PLAYER)) {
+        val selfOption = if (
+            CardDestroyManager.eligibleIndices(
+                game = game,
+                owner = ownerSide,
+                zone = CardDestroyManager.Zone.REVEALED,
+                cause = CardDestroyManager.Cause.SACRIFICE
+            ).isNotEmpty()
+        ) {
             listOf("SELF")
         } else {
             emptyList()
@@ -1451,35 +1457,39 @@ object CardEffectManager {
                     } else {
                         val destructionCost = targetAmbush[index].card.cost + 1
 
-                        when {
-                            !canDestroyOneCardWithFiveCardRule(
-                                game = game,
-                                isPlayer = !ownerIsPlayer
-                            ) -> {
-                                game.copy(infoMessage = "Règle des 5 cartes")
-                            }
 
+                        when {
                             ownerGold < destructionCost -> {
                                 game.copy(infoMessage = "Or insuffisant")
                             }
 
                             else -> {
-                                if (ownerIsPlayer) {
-                                    game.copy(
-                                        playerGold = game.playerGold - destructionCost,
-                                        opponentAmbush = game.opponentAmbush.filterIndexed { i, _ ->
-                                            i != index
-                                        },
+                                val targetSide = if (ownerIsPlayer) {
+                                    CardDestroyManager.Side.OPPONENT
+                                } else {
+                                    CardDestroyManager.Side.PLAYER
+                                }
+
+                                val destruction = CardDestroyManager.destroyAt(
+                                    game = game,
+                                    owner = targetSide,
+                                    zone = CardDestroyManager.Zone.AMBUSH,
+                                    index = index,
+                                    cause = CardDestroyManager.Cause.OPPONENT_EFFECT
+                                )
+
+                                if (!destruction.destroyed) {
+                                    game.copy(infoMessage = "Destruction impossible")
+                                } else if (ownerIsPlayer) {
+                                    destruction.game.copy(
+                                        playerGold = destruction.game.playerGold - destructionCost,
                                         pendingChoice = null,
                                         playerEffectResolved = true,
                                         infoMessage = null
                                     )
                                 } else {
-                                    game.copy(
-                                        opponentGold = game.opponentGold - destructionCost,
-                                        playerAmbush = game.playerAmbush.filterIndexed { i, _ ->
-                                            i != index
-                                        },
+                                    destruction.game.copy(
+                                        opponentGold = destruction.game.opponentGold - destructionCost,
                                         pendingChoice = null,
                                         opponentEffectResolved = true,
                                         infoMessage = null
@@ -1487,6 +1497,7 @@ object CardEffectManager {
                                 }
                             }
                         }
+
                     }
                 }
             }
@@ -2452,7 +2463,21 @@ object CardEffectManager {
                     }
 
                     choice == "SELF" -> {
-                        if (!canDestroyOneCardWithFiveCardRule(game, ownerIsPlayer)) {
+                        val ownerSide = if (ownerIsPlayer) {
+                            CardDestroyManager.Side.PLAYER
+                        } else {
+                            CardDestroyManager.Side.OPPONENT
+                        }
+
+                        if (
+                            choice !in pendingChoice.options ||
+                            CardDestroyManager.eligibleIndices(
+                                game = game,
+                                owner = ownerSide,
+                                zone = CardDestroyManager.Zone.REVEALED,
+                                cause = CardDestroyManager.Cause.SACRIFICE
+                            ).isEmpty()
+                        ) {
                             game.copy(
                                 infoMessage = "Règle des 5 cartes"
                             )

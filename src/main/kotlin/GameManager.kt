@@ -966,14 +966,28 @@ object GameManager {
         }
 
         // La destruction de Tique doit laisser au moins 5 cartes.
-        if (
-            !CardEffectManager.canDestroyOneCardWithFiveCardRule(
-                game = game,
-                isPlayer = owner == ChoiceOwner.PLAYER
-            )
-        ) {
+
+        val ownerSide = if (owner == ChoiceOwner.PLAYER) {
+            CardDestroyManager.Side.PLAYER
+        } else {
+            CardDestroyManager.Side.OPPONENT
+        }
+
+        // Tique doit être destructible dans la défausse.
+        // CardDestroyManager vérifie aussi la règle des 5 cartes.
+        val canDestroyTique = CardDestroyManager.eligibleIndices(
+            game = game,
+            owner = ownerSide,
+            zone = CardDestroyManager.Zone.DISCARD,
+            cause = CardDestroyManager.Cause.SACRIFICE
+        ).any { index ->
+            discard[index].id == CardId.TIQUE
+        }
+
+        if (!canDestroyTique) {
             return false
         }
+
 
         // Il faut au moins un jeton Sang.
         return TokenManager.getTokenAmount(
@@ -1000,44 +1014,56 @@ object GameManager {
             tokenId = TokenManager.TokenIds.BLOOD
         )
 
-        // Détruit exactement une Tique de la défausse.
-        fun removeOneTique(discard: List<Card>): List<Card> {
-            val index = discard.indexOfFirst { it.id == CardId.TIQUE }
 
-            return if (index >= 0) {
-                discard.filterIndexed { i, _ -> i != index }
-            } else {
-                discard
-            }
+        val ownerSide = if (owner == ChoiceOwner.PLAYER) {
+            CardDestroyManager.Side.PLAYER
+        } else {
+            CardDestroyManager.Side.OPPONENT
         }
 
-        var updatedGame = when (owner) {
-            ChoiceOwner.PLAYER -> {
-                game.copy(
-                    playerDiscard = removeOneTique(game.playerDiscard),
-
-                    playerCurrentCardPowerBonus =
-                        game.playerCurrentCardPowerBonus + bloodAmount,
-
-                    playerTiqueHealPending = true,
-
-                    infoMessage = null
-                )
-            }
-
-            ChoiceOwner.OPPONENT -> {
-                game.copy(
-                    opponentDiscard = removeOneTique(game.opponentDiscard),
-
-                    opponentCurrentCardPowerBonus =
-                        game.opponentCurrentCardPowerBonus + bloodAmount,
-
-                    opponentTiqueHealPending = true,
-
-                    infoMessage = null
-                )
-            }
+        val discard = if (owner == ChoiceOwner.PLAYER) {
+            game.playerDiscard
+        } else {
+            game.opponentDiscard
         }
+
+        val tiqueIndex = CardDestroyManager.eligibleIndices(
+            game = game,
+            owner = ownerSide,
+            zone = CardDestroyManager.Zone.DISCARD,
+            cause = CardDestroyManager.Cause.SACRIFICE
+        ).firstOrNull { index ->
+            discard[index].id == CardId.TIQUE
+        } ?: return@withGameLock game
+
+        val destruction = CardDestroyManager.destroyAt(
+            game = game,
+            owner = ownerSide,
+            zone = CardDestroyManager.Zone.DISCARD,
+            index = tiqueIndex,
+            cause = CardDestroyManager.Cause.SACRIFICE
+        )
+
+        if (!destruction.destroyed) {
+            return@withGameLock game
+        }
+
+        var updatedGame = if (owner == ChoiceOwner.PLAYER) {
+            destruction.game.copy(
+                playerCurrentCardPowerBonus =
+                    destruction.game.playerCurrentCardPowerBonus + bloodAmount,
+                playerTiqueHealPending = true,
+                infoMessage = null
+            )
+        } else {
+            destruction.game.copy(
+                opponentCurrentCardPowerBonus =
+                    destruction.game.opponentCurrentCardPowerBonus + bloodAmount,
+                opponentTiqueHealPending = true,
+                infoMessage = null
+            )
+        }
+
 
         updatedGame = TokenManager.removeAllToken(
             game = updatedGame,
