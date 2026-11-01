@@ -2475,42 +2475,52 @@ object CardEffectManager {
                         }
                     }
 
+
                     choice.startsWith("CARD:") -> {
                         val targetCardId = choice.removePrefix("CARD:")
+                        val cardId = CardId.entries.firstOrNull {
+                            it.name == targetCardId
+                        }
 
-                        if (!canDestroyOneCardWithFiveCardRule(game, ownerIsPlayer)) {
-                            game.copy(
-                                infoMessage = "Règle des 5 cartes"
-                            )
+                        val ownerSide = if (ownerIsPlayer) {
+                            CardDestroyManager.Side.PLAYER
                         } else {
-                            val sourceDiscard = if (ownerIsPlayer) {
-                                game.playerDiscard
-                            } else {
-                                game.opponentDiscard
-                            }
+                            CardDestroyManager.Side.OPPONENT
+                        }
 
-                            val newDiscard = destroyOneCardFromDiscardById(
-                                discard = sourceDiscard,
-                                targetCardId = targetCardId
+                        if (cardId == null || choice !in pendingChoice.options) {
+                            game.copy(infoMessage = "Choix invalide")
+                        } else {
+                            val destruction = CardDestroyManager.destroyById(
+                                game = game,
+                                owner = ownerSide,
+                                zone = CardDestroyManager.Zone.DISCARD,
+                                cardId = cardId,
+                                cause = CardDestroyManager.Cause.OWN_EFFECT
                             )
 
-                            if (ownerIsPlayer) {
-                                game.copy(
-                                    playerDiscard = newDiscard,
-                                    pendingChoice = null,
-                                    playerEffectResolved = true,
-                                    infoMessage = null
-                                )
+                            if (destruction.destroyed) {
+                                if (ownerIsPlayer) {
+                                    destruction.game.copy(
+                                        pendingChoice = null,
+                                        playerEffectResolved = true,
+                                        infoMessage = null
+                                    )
+                                } else {
+                                    destruction.game.copy(
+                                        pendingChoice = null,
+                                        opponentEffectResolved = true,
+                                        infoMessage = null
+                                    )
+                                }
                             } else {
                                 game.copy(
-                                    opponentDiscard = newDiscard,
-                                    pendingChoice = null,
-                                    opponentEffectResolved = true,
-                                    infoMessage = null
+                                    infoMessage = "Destruction impossible"
                                 )
                             }
                         }
                     }
+
 
                     else -> {
                         game.copy(
