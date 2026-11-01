@@ -1677,33 +1677,50 @@ object CardEffectManager {
                         }
                     }
 
+
                     choice.startsWith("DISCARD:") -> {
                         val index = choice.removePrefix("DISCARD:").toIntOrNull()
 
                         if (index == null) {
                             game.copy(infoMessage = "Choix invalide")
                         } else {
-                            val egg = CardCatalog.getCard(CardId.OEUFDARAIGNEE)
+                            val ownerSide = if (ownerIsPlayer) {
+                                CardDestroyManager.Side.PLAYER
+                            } else {
+                                CardDestroyManager.Side.OPPONENT
+                            }
 
-                            if (ownerIsPlayer) {
-                                if (index !in game.playerDiscard.indices) {
-                                    game.copy(infoMessage = "Choix invalide")
-                                } else {
-                                    game.copy(
-                                        playerDiscard = game.playerDiscard
-                                            .filterIndexed { i, _ -> i != index } + egg,
+                            val destruction = CardDestroyManager.destroyForReplacement(
+                                game = game,
+                                owner = ownerSide,
+                                zone = CardDestroyManager.Zone.DISCARD,
+                                index = index,
+                                bypassFiveCardRule = true
+                            )
+
+                            if (!destruction.destroyed) {
+                                destruction.game.copy(
+                                    infoMessage = when (destruction.failure) {
+                                        CardDestroyManager.Failure.NO_TARGET ->
+                                            "Choix invalide"
+                                        else ->
+                                            "Remplacement impossible"
+                                    }
+                                )
+                            } else {
+                                val egg = CardCatalog.getCard(CardId.OEUFDARAIGNEE)
+                                val updatedGame = destruction.game
+
+                                if (ownerIsPlayer) {
+                                    updatedGame.copy(
+                                        playerDiscard = updatedGame.playerDiscard + egg,
                                         pendingChoice = null,
                                         playerPostCombatSacrificeHandled = true,
                                         infoMessage = null
                                     )
-                                }
-                            } else {
-                                if (index !in game.opponentDiscard.indices) {
-                                    game.copy(infoMessage = "Choix invalide")
                                 } else {
-                                    game.copy(
-                                        opponentDiscard = game.opponentDiscard
-                                            .filterIndexed { i, _ -> i != index } + egg,
+                                    updatedGame.copy(
+                                        opponentDiscard = updatedGame.opponentDiscard + egg,
                                         pendingChoice = null,
                                         opponentPostCombatSacrificeHandled = true,
                                         infoMessage = null
@@ -1712,6 +1729,7 @@ object CardEffectManager {
                             }
                         }
                     }
+
 
                     else -> {
                         game.copy(infoMessage = "Choix invalide")
@@ -1737,31 +1755,50 @@ object CardEffectManager {
 
                 val spiderCard = CardCatalog.getCard(spiderId)
 
+
+                val destruction = CardDestroyManager.destroyForReplacement(
+                    game = game,
+                    owner = if (ownerIsPlayer) {
+                        CardDestroyManager.Side.PLAYER
+                    } else {
+                        CardDestroyManager.Side.OPPONENT
+                    },
+                    zone = CardDestroyManager.Zone.REVEALED,
+                    index = 0,
+                    bypassFiveCardRule = true
+                )
+
+                if (!destruction.destroyed) {
+                    return destruction.game.copy(
+                        pendingChoice = null,
+                        playerPostCombatSacrificeHandled =
+                            if (ownerIsPlayer) true
+                            else game.playerPostCombatSacrificeHandled,
+                        opponentPostCombatSacrificeHandled =
+                            if (!ownerIsPlayer) true
+                            else game.opponentPostCombatSacrificeHandled,
+                        infoMessage = "Remplacement impossible"
+                    )
+                }
+
+                val updatedGame = destruction.game
+
                 return if (ownerIsPlayer) {
-                    game.copy(
-                        playerDiscard = game.playerDiscard + spiderCard,
-
-                        // L'œuf est détruit : il ne doit PAS partir en défausse
-                        lastPlayerCard = null,
-                        playerDisplayedTurnCard = null,
-
+                    updatedGame.copy(
+                        playerDiscard = updatedGame.playerDiscard + spiderCard,
                         pendingChoice = null,
                         playerPostCombatSacrificeHandled = true,
                         infoMessage = null
                     )
                 } else {
-                    game.copy(
-                        opponentDiscard = game.opponentDiscard + spiderCard,
-
-                        // L'œuf est détruit : il ne doit PAS partir en défausse
-                        lastOpponentCard = null,
-                        opponentDisplayedTurnCard = null,
-
+                    updatedGame.copy(
+                        opponentDiscard = updatedGame.opponentDiscard + spiderCard,
                         pendingChoice = null,
                         opponentPostCombatSacrificeHandled = true,
                         infoMessage = null
                     )
                 }
+
             }
 
             // -------------------------------------------------
