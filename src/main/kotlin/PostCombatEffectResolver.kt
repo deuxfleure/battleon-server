@@ -59,13 +59,6 @@ object PostCombatEffectResolver {
         val progress = getEffectProgress(game, owner)
             ?: return game
 
-        println(
-            "GOLEM DEBUG: card=${card.id}, " +
-                    "owner=$owner, " +
-                    "progressCard=${progress.cardId}, " +
-                    "index=${progress.nextEffectIndex}, " +
-                    "completed=${progress.completed}"
-        )
 
         if (progress.completed || progress.cardId != card.id) {
             return game

@@ -562,6 +562,59 @@ object CardEffectManager {
 
         return discard.count { it.id == CardId.ROIDEMON }
     }
+
+    // =========================================================
+// SAUVAGE — LIEN BÊTES
+// =========================================================
+
+    fun countBeastLink(
+        game: GameState,
+        owner: ChoiceOwner
+    ): Int {
+        val discard = if (owner == ChoiceOwner.PLAYER) {
+            game.playerDiscard
+        } else {
+            game.opponentDiscard
+        }
+
+        return discard.count { it.faction == CardFaction.BEAST }
+    }
+
+    fun buildSauvagePendingChoice(
+        game: GameState,
+        owner: ChoiceOwner
+    ): PendingChoice {
+        val isPlayer = owner == ChoiceOwner.PLAYER
+
+        val deckCount = if (isPlayer) {
+            game.playerDeck.size
+        } else {
+            game.opponentDeck.size
+        }
+
+        val opponentCardId = if (isPlayer) {
+            game.lastOpponentCard?.id?.name
+        } else {
+            game.lastPlayerCard?.id?.name
+        }
+
+        return PendingChoice(
+            type = "SAUVAGE_DISCARD_CHOICE",
+            cardId = CardId.SAUVAGE.name,
+            options = listOf(
+                "DISCARD:0",
+                "DISCARD:1",
+                "DISCARD:2",
+                "DISCARD:3"
+            ),
+            message = "SAUVAGE_DISCARD_CHOICE",
+            owner = owner,
+            deckCount = deckCount,
+            beastCount = countBeastLink(game, owner),
+            opponentCardId = opponentCardId
+        )
+    }
+
     fun countHumanLinkBonus(
         game: GameState,
         isPlayer: Boolean

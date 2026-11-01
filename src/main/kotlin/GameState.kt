@@ -60,7 +60,10 @@ data class PendingChoice(
     // Utilisé par certains choix spéciaux, comme le Chaman,
     // pour afficher les cartes regardées sans les déplacer immédiatement.
     val previewOwnTopCard: Card? = null,
-    val previewOpponentTopCard: Card? = null
+    val previewOpponentTopCard: Card? = null,
+    val deckCount: Int? = null,
+    val beastCount: Int? = null,
+    val opponentCardId: String? = null
 )
 
 @Serializable
