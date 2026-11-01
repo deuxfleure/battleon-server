@@ -1302,17 +1302,21 @@ object GameManager {
                 CardId.PALADIN -> {
                     tacticalCard.entryType == TacticalEntryType.PREPARATION &&
                             (
-                                    game.phase == TurnPhase.AMBUSH_BEFORE_COMBAT ||
-                                            game.phase == TurnPhase.AMBUSH_BEFORE_POST_COMBAT
-                                    )
+                            game.phase == TurnPhase.AMBUSH_BEFORE_COMBAT ||
+                            game.phase == TurnPhase.AMBUSH_BEFORE_POST_COMBAT
+                            )
                 }
 
                 CardId.FORCETRANQUILLE -> {
                     tacticalCard.entryType == TacticalEntryType.AMBUSH &&
                             (
-                                    game.phase == TurnPhase.AMBUSH_BEFORE_EFFECTS ||
-                                            game.phase == TurnPhase.AMBUSH_BEFORE_COMBAT
-                                    )
+                            game.phase == TurnPhase.AMBUSH_BEFORE_EFFECTS ||
+                            game.phase == TurnPhase.AMBUSH_BEFORE_COMBAT
+                            )
+                }
+
+                CardId.TRAPPEUR -> {
+                    tacticalCard.entryType == TacticalEntryType.PREPARATION
                 }
 
                 else -> false
@@ -1711,13 +1715,32 @@ object GameManager {
                 }
             }
 
+            CardId.TRAPPEUR -> {
+                game.copy(
+                    pendingChoice = PendingChoice(
+                        type = "TRAPPEUR_ACTION_CHOICE",
+                        cardId = CardId.TRAPPEUR.name,
+                        options = listOf(
+                            "COUNTER",
+                            "DEBUSQUER",
+                            "PASS"
+                        ),
+                        message = "Trappeur : choisissez une action",
+                        owner = owner
+                    ),
+                    infoMessage = null
+                )
+            }
+
             else -> game
         }
 
-        updatedGame = resumeAmbushAfterPendingChoice(
-            game = updatedGame,
-            owner = owner
-        )
+        if (updatedGame.pendingChoice == null) {
+            updatedGame = resumeAmbushAfterPendingChoice(
+                game = updatedGame,
+                owner = owner
+            )
+        }
 
         games[gameId] = updatedGame
         updatedGame
@@ -3664,25 +3687,41 @@ object GameManager {
                         isPlayer = false
                     )
 
-                    val playerDamageDealt = CardEffectManager.getCombatDamageDealt(
-                        attacker = playerCard,
-                        defender = opponentCard,
-                        attackerPower = playerEffectivePower,
-                        defenderPower = opponentEffectivePower,
-                        nextCardDamageBonus = game.playerCurrentCardDamageBonus,
-                        attackerHasBrute = playerHasBrute,
-                        enrageCombatDamage = game.playerEnrageCombatDamage
-                    )
+                    val playerDamageDealt =
+                        if (
+                            playerCard.id == CardId.TRAPPEUR &&
+                            playerEffectivePower > opponentEffectivePower
+                        ) {
+                            0
+                        } else {
+                            CardEffectManager.getCombatDamageDealt(
+                                attacker = playerCard,
+                                defender = opponentCard,
+                                attackerPower = playerEffectivePower,
+                                defenderPower = opponentEffectivePower,
+                                nextCardDamageBonus = game.playerCurrentCardDamageBonus,
+                                attackerHasBrute = playerHasBrute,
+                                enrageCombatDamage = game.playerEnrageCombatDamage
+                            )
+                        }
 
-                    val opponentDamageDealt = CardEffectManager.getCombatDamageDealt(
-                        attacker = opponentCard,
-                        defender = playerCard,
-                        attackerPower = opponentEffectivePower,
-                        defenderPower = playerEffectivePower,
-                        nextCardDamageBonus = game.opponentCurrentCardDamageBonus,
-                        attackerHasBrute = opponentHasBrute,
-                        enrageCombatDamage = game.opponentEnrageCombatDamage
-                    )
+                    val opponentDamageDealt =
+                        if (
+                            opponentCard.id == CardId.TRAPPEUR &&
+                            opponentEffectivePower > playerEffectivePower
+                        ) {
+                            0
+                        } else {
+                            CardEffectManager.getCombatDamageDealt(
+                                attacker = opponentCard,
+                                defender = playerCard,
+                                attackerPower = opponentEffectivePower,
+                                defenderPower = playerEffectivePower,
+                                nextCardDamageBonus = game.opponentCurrentCardDamageBonus,
+                                attackerHasBrute = opponentHasBrute,
+                                enrageCombatDamage = game.opponentEnrageCombatDamage
+                            )
+                        }
 
                     val playerHasBurn =
                         TokenManager.hasToken(

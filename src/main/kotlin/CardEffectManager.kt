@@ -1594,6 +1594,131 @@ object CardEffectManager {
             }
 
             // -------------------------------------------------
+            // TRAPPEUR — CHOIX DE L'ACTION
+            // -------------------------------------------------
+            "TRAPPEUR_ACTION_CHOICE" -> {
+                if (choice !in pendingChoice.options) {
+                    game.copy(infoMessage = "Choix invalide")
+                } else {
+                    when (choice) {
+
+                        "PASS" -> {
+                            game.copy(
+                                pendingChoice = null,
+                                infoMessage = null
+                            )
+                        }
+
+                        "DEBUSQUER" -> {
+                            val enemyAmbush = if (ownerIsPlayer) {
+                                game.opponentAmbush
+                            } else {
+                                game.playerAmbush
+                            }
+
+                            game.copy(
+                                pendingChoice = PendingChoice(
+                                    type = "TRAPPEUR_DEBUSQUER_CHOICE",
+                                    cardId = CardId.TRAPPEUR.name,
+                                    options = enemyAmbush.indices.map { "DISCARD:$it" } +
+                                            "PASS",
+                                    message = "Trappeur : choisissez une carte adverse à débusquer",
+                                    owner = pendingChoice.owner
+                                ),
+                                infoMessage = null
+                            )
+                        }
+
+                        "COUNTER" -> {
+                            val options = mutableListOf<String>()
+
+                            if (game.lastPlayerCard != null) {
+                                options.add("COUNTER_PLAYER")
+                            }
+
+                            if (game.lastOpponentCard != null) {
+                                options.add("COUNTER_OPPONENT")
+                            }
+
+                            options.add("PASS")
+
+                            game.copy(
+                                pendingChoice = PendingChoice(
+                                    type = "TRAPPEUR_COUNTER_CHOICE",
+                                    cardId = CardId.TRAPPEUR.name,
+                                    options = options,
+                                    message = "Trappeur : choisissez la carte dont les effets seront contrés",
+                                    owner = pendingChoice.owner
+                                ),
+                                infoMessage = null
+                            )
+                        }
+
+                        else -> game.copy(infoMessage = "Choix invalide")
+                    }
+                }
+            }
+
+            // -------------------------------------------------
+            // TRAPPEUR — CONTRER UNE CARTE
+            // -------------------------------------------------
+            "TRAPPEUR_COUNTER_CHOICE" -> {
+                if (choice !in pendingChoice.options) {
+                    game.copy(infoMessage = "Choix invalide")
+                } else if (choice == "PASS") {
+                    game.copy(
+                        pendingChoice = null,
+                        infoMessage = null
+                    )
+                } else {
+                    val ownerAmbush = if (ownerIsPlayer) {
+                        game.playerAmbush
+                    } else {
+                        game.opponentAmbush
+                    }
+
+                    val trapperIndex = ownerAmbush.indexOfFirst {
+                        it.card.id == CardId.TRAPPEUR &&
+                                it.entryType == TacticalEntryType.PREPARATION
+                    }
+
+                    if (trapperIndex < 0) {
+                        game.copy(infoMessage = "Trappeur introuvable")
+                    } else {
+                        val trapper = ownerAmbush[trapperIndex].card
+
+                        if (ownerIsPlayer) {
+                            game.copy(
+                                playerAmbush = game.playerAmbush.filterIndexed { index, _ ->
+                                    index != trapperIndex
+                                },
+                                playerDiscard = game.playerDiscard + trapper,
+                                playerAbilitiesBlocked =
+                                    game.playerAbilitiesBlocked || choice == "COUNTER_PLAYER",
+                                opponentAbilitiesBlocked =
+                                    game.opponentAbilitiesBlocked || choice == "COUNTER_OPPONENT",
+                                pendingChoice = null,
+                                infoMessage = null
+                            )
+                        } else {
+                            game.copy(
+                                opponentAmbush = game.opponentAmbush.filterIndexed { index, _ ->
+                                    index != trapperIndex
+                                },
+                                opponentDiscard = game.opponentDiscard + trapper,
+                                playerAbilitiesBlocked =
+                                    game.playerAbilitiesBlocked || choice == "COUNTER_PLAYER",
+                                opponentAbilitiesBlocked =
+                                    game.opponentAbilitiesBlocked || choice == "COUNTER_OPPONENT",
+                                pendingChoice = null,
+                                infoMessage = null
+                            )
+                        }
+                    }
+                }
+            }
+
+            // -------------------------------------------------
             // Débusquer
             // -------------------------------------------------
 
