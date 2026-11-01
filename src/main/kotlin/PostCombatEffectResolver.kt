@@ -169,6 +169,58 @@ object PostCombatEffectResolver {
         }
     }
 
+    private fun resolveBadGenieSelfDestruction(
+        game: GameState,
+        owner: ChoiceOwner
+    ): GameState {
+        val target = if (owner == ChoiceOwner.PLAYER) {
+            DelayedEffectTarget.PLAYER
+        } else {
+            DelayedEffectTarget.OPPONENT
+        }
+
+        val pendingDestruction = game.delayedEffects.any {
+            it.timing == DelayedEffectTiming.END_TURN &&
+                    it.type == DelayedEffectType.DESTROY_REVEALED_CARD &&
+                    it.target == target
+        }
+
+        if (!pendingDestruction) return game
+
+        // L'intention est consommée, même si la destruction échoue.
+        val withoutPendingDestruction = game.copy(
+            delayedEffects = game.delayedEffects.filterNot {
+                it.timing == DelayedEffectTiming.END_TURN &&
+                        it.type == DelayedEffectType.DESTROY_REVEALED_CARD &&
+                        it.target == target
+            }
+        )
+
+        val side = if (owner == ChoiceOwner.PLAYER) {
+            CardDestroyManager.Side.PLAYER
+        } else {
+            CardDestroyManager.Side.OPPONENT
+        }
+
+        // Seul le Mauvais Génie lui-même peut être détruit
+        // par cette intention.
+        val revealedCard = if (owner == ChoiceOwner.PLAYER) {
+            withoutPendingDestruction.lastPlayerCard
+        } else {
+            withoutPendingDestruction.lastOpponentCard
+        }
+
+        if (revealedCard?.id != CardId.MAUVAISGENIE) {
+            return withoutPendingDestruction
+        }
+
+        return CardDestroyManager.destroyRevealed(
+            game = withoutPendingDestruction,
+            owner = side,
+            cause = CardDestroyManager.Cause.OWN_EFFECT
+        ).game
+    }
+
     fun apply(game: GameState): GameState {
         if (game.pendingChoice != null || game.activeScryState != null) return game
 
@@ -509,6 +561,19 @@ object PostCombatEffectResolver {
             card = playerCard
         )
 
+        // Ne pas poursuivre tant qu'un effet attend un choix.
+        if (updatedGame.pendingChoice != null ||
+            updatedGame.activeScryState != null
+        ) {
+            return updatedGame
+        }
+
+        // Mauvais Génie : autodestruction à sa priorité post-combat.
+        updatedGame = resolveBadGenieSelfDestruction(
+            game = updatedGame,
+            owner = ChoiceOwner.PLAYER
+        )
+
         return moveRevealedCardToTacticalZone(
             game = updatedGame,
             owner = ChoiceOwner.PLAYER,
@@ -822,6 +887,17 @@ object PostCombatEffectResolver {
             game = updatedGame,
             owner = ChoiceOwner.OPPONENT,
             card = opponentCard
+        )
+
+        if (updatedGame.pendingChoice != null ||
+            updatedGame.activeScryState != null
+        ) {
+            return updatedGame
+        }
+
+        updatedGame = resolveBadGenieSelfDestruction(
+            game = updatedGame,
+            owner = ChoiceOwner.OPPONENT
         )
 
         return moveRevealedCardToTacticalZone(
