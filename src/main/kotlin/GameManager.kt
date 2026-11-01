@@ -3242,6 +3242,9 @@ object GameManager {
                         playerEffectBlockedBySentinelle = false,
                         opponentEffectBlockedBySentinelle = false,
 
+                        playerAbilitiesBlocked = false,
+                        opponentAbilitiesBlocked = false,
+
                         playerCardEffectsBlockedByAmbush = false,
                         opponentCardEffectsBlockedByAmbush = false,
 
@@ -3427,7 +3430,7 @@ object GameManager {
                         ResolutionOrder.PLAYER_FIRST -> {
                             if (!workingGame.playerEffectResolved) {
                                 val blockedBySentinelle =
-                                    doesOpponentSentinelleBlockPlayerEffect()
+                                    workingGame.playerAbilitiesBlocked
 
                                 val blockedByAmbush =
                                     workingGame.playerCardEffectsBlockedByAmbush
@@ -3454,12 +3457,17 @@ object GameManager {
                                     workingGame = workingGame.copy(
                                         playerEffectResolved = true
                                     )
+
+                                    workingGame = activateSentinelle(
+                                        currentGame = workingGame,
+                                        owner = ChoiceOwner.PLAYER
+                                    )
                                 }
                             }
 
                             if (!workingGame.opponentEffectResolved) {
                                 val blockedBySentinelle =
-                                    doesPlayerSentinelleBlockOpponentEffect()
+                                    workingGame.opponentAbilitiesBlocked
 
                                 val blockedByAmbush =
                                     workingGame.opponentCardEffectsBlockedByAmbush
@@ -3486,6 +3494,10 @@ object GameManager {
                                     workingGame = workingGame.copy(
                                         opponentEffectResolved = true
                                     )
+                                    workingGame = activateSentinelle(
+                                        currentGame = workingGame,
+                                        owner = ChoiceOwner.OPPONENT
+                                    )
                                 }
                             }
                         }
@@ -3493,7 +3505,7 @@ object GameManager {
                         ResolutionOrder.OPPONENT_FIRST -> {
                             if (!workingGame.opponentEffectResolved) {
                                 val blockedBySentinelle =
-                                    doesPlayerSentinelleBlockOpponentEffect()
+                                    workingGame.opponentAbilitiesBlocked
 
                                 val blockedByAmbush =
                                     workingGame.opponentCardEffectsBlockedByAmbush
@@ -3518,12 +3530,17 @@ object GameManager {
                                     }
 
                                     workingGame = workingGame.copy(opponentEffectResolved = true)
+
+                                    workingGame = activateSentinelle(
+                                        currentGame = workingGame,
+                                        owner = ChoiceOwner.OPPONENT
+                                    )
                                 }
                             }
 
                             if (!workingGame.playerEffectResolved) {
                                 val blockedBySentinelle =
-                                    doesOpponentSentinelleBlockPlayerEffect()
+                                    workingGame.playerAbilitiesBlocked
 
                                 val blockedByAmbush =
                                     workingGame.playerCardEffectsBlockedByAmbush
@@ -3548,6 +3565,11 @@ object GameManager {
                                     }
 
                                     workingGame = workingGame.copy(playerEffectResolved = true)
+
+                                    workingGame = activateSentinelle(
+                                        currentGame = workingGame,
+                                        owner = ChoiceOwner.PLAYER
+                                    )
                                 }
                             }
                         }
@@ -3609,14 +3631,14 @@ object GameManager {
                     var newOpponentHp = game.opponentHp
 
                     val playerHasBrute =
-                        !game.playerEffectBlockedBySentinelle &&
+                        !game.playerAbilitiesBlocked &&
                                 CardEffectManager.hasBrute(
                                     card = playerCard,
                                     nextCardHasBrute = game.playerCurrentCardHasBruteBonus
                                 )
 
                     val opponentHasBrute =
-                        !game.opponentEffectBlockedBySentinelle &&
+                        !game.opponentAbilitiesBlocked &&
                                 CardEffectManager.hasBrute(
                                     card = opponentCard,
                                     nextCardHasBrute = game.opponentCurrentCardHasBruteBonus
@@ -3980,24 +4002,28 @@ object GameManager {
                         val playerEntersAmbush =
                             playerCard != null &&
                                     !destroyPlayerRevealedCard &&
+                                    !game.playerAbilitiesBlocked &&
                                     playerCard.hasAmbush &&
                                     playerLostCombat
 
                         val playerEntersPreparation =
                             playerCard != null &&
                                     !destroyPlayerRevealedCard &&
+                                    !game.playerAbilitiesBlocked &&
                                     playerCard.hasPreparation &&
                                     playerWonCombat
 
                         val opponentEntersAmbush =
                             opponentCard != null &&
                                     !destroyOpponentRevealedCard &&
+                                    !game.opponentAbilitiesBlocked &&
                                     opponentCard.hasAmbush &&
                                     opponentLostCombat
 
                         val opponentEntersPreparation =
                             opponentCard != null &&
                                     !destroyOpponentRevealedCard &&
+                                    !game.opponentAbilitiesBlocked &&
                                     opponentCard.hasPreparation &&
                                     opponentWonCombat
 
