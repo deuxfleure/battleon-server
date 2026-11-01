@@ -1255,9 +1255,21 @@ object CardEffectManager {
             game.opponentDiscard
         }
 
-        val discardOptions = discard.map { card ->
-            "CARD:${card.id.name}"
+        val ownerSide = if (owner == ChoiceOwner.PLAYER) {
+            CardDestroyManager.Side.PLAYER
+        } else {
+            CardDestroyManager.Side.OPPONENT
         }
+
+        val discardOptions = CardDestroyManager.eligibleIndices(
+            game = game,
+            owner = ownerSide,
+            zone = CardDestroyManager.Zone.DISCARD,
+            cause = CardDestroyManager.Cause.OWN_EFFECT
+        ).map { index ->
+            "CARD:${discard[index].id.name}"
+        }.distinct()
+
 
         val selfOption = if (canDestroyOneCardWithFiveCardRule(game, owner == ChoiceOwner.PLAYER)) {
             listOf("SELF")
