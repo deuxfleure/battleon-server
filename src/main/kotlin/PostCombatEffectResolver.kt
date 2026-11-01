@@ -196,6 +196,17 @@ object PostCombatEffectResolver {
             }
         )
 
+        // Vérifier si Trappeur a bloqué les capacités du Mauvais Génie.
+        val abilitiesBlocked = if (owner == ChoiceOwner.PLAYER) {
+            withoutPendingDestruction.playerAbilitiesBlocked
+        } else {
+            withoutPendingDestruction.opponentAbilitiesBlocked
+        }
+
+        if (abilitiesBlocked) {
+            return withoutPendingDestruction
+        }
+
         val side = if (owner == ChoiceOwner.PLAYER) {
             CardDestroyManager.Side.PLAYER
         } else {

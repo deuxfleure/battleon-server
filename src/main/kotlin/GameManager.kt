@@ -3926,49 +3926,16 @@ object GameManager {
 
                     } else {
 
-                        // COMBAT NORMAL
-                        val destroyPlayerRevealedCard =
-                            game.delayedEffects.any {
-                                it.timing == DelayedEffectTiming.END_TURN &&
-                                        it.type == DelayedEffectType.DESTROY_REVEALED_CARD &&
-                                        it.target == DelayedEffectTarget.PLAYER
-                            }
-
-                        val destroyOpponentRevealedCard =
-                            game.delayedEffects.any {
-                                it.timing == DelayedEffectTiming.END_TURN &&
-                                        it.type == DelayedEffectType.DESTROY_REVEALED_CARD &&
-                                        it.target == DelayedEffectTarget.OPPONENT
-                            }
-
-
-                        val playerCard = game.lastPlayerCard
-                        val opponentCard = game.lastOpponentCard
-
-                        // Embuscade et Préparation ont déjà été résolues
-                        // immédiatement dans PostCombatEffectResolver.
-                        // Les cartes encore révélées vont normalement
-                        // dans la défausse, sauf destruction différée.
-
-                        val newPlayerDiscard =
-                            if (playerCard != null && !destroyPlayerRevealedCard) {
-                                game.playerDiscard + playerCard
-                            } else {
-                                game.playerDiscard
-                            }
-
-                        val newOpponentDiscard =
-                            if (opponentCard != null && !destroyOpponentRevealedCard) {
-                                game.opponentDiscard + opponentCard
-                            } else {
-                                game.opponentDiscard
-                            }
-
+                        // Les destructions et déplacements tactiques ont déjà
+                        // été résolus pendant POST_COMBAT.
 
                         updatedGame = enterPhase(
                             game = game.copy(
-                                playerDiscard = newPlayerDiscard,
-                                opponentDiscard = newOpponentDiscard,
+                                playerDiscard = game.playerDiscard +
+                                        listOfNotNull(game.lastPlayerCard),
+
+                                opponentDiscard = game.opponentDiscard +
+                                        listOfNotNull(game.lastOpponentCard),
 
                                 lastPlayerCard = null,
                                 lastOpponentCard = null,
@@ -4050,58 +4017,22 @@ object GameManager {
             // END_TURN
             // -------------------------------------------------
             TurnPhase.END_TURN -> {
-                var destroyPlayerCard = false
-                var destroyOpponentCard = false
-
-                for (effect in game.delayedEffects) {
-                    if (effect.timing == DelayedEffectTiming.END_TURN) {
-                        when (effect.type) {
-                            DelayedEffectType.DESTROY_REVEALED_CARD -> {
-                                when (effect.target) {
-                                    DelayedEffectTarget.PLAYER -> destroyPlayerCard = true
-                                    DelayedEffectTarget.OPPONENT -> destroyOpponentCard = true
-                                }
-                            }
-                        }
-                    }
-                }
-
-                val canDestroyPlayerRevealedCard =
-                    destroyPlayerCard &&
-                            game.lastPlayerCard != null &&
-                            (game.playerDeck.size + game.playerDiscard.size + 1) > 5
-
-                val canDestroyOpponentRevealedCard =
-                    destroyOpponentCard &&
-                            game.lastOpponentCard != null &&
-                            (game.opponentDeck.size + game.opponentDiscard.size + 1) > 5
-
-                val playerDiscard = if (game.lastPlayerCard != null && !canDestroyPlayerRevealedCard) {
-                    game.playerDiscard + game.lastPlayerCard
-                } else {
-                    game.playerDiscard
-                }
-
-                val opponentDiscard = if (game.lastOpponentCard != null && !canDestroyOpponentRevealedCard) {
-                    game.opponentDiscard + game.lastOpponentCard
-                } else {
-                    game.opponentDiscard
-                }
 
                 val cleanedGame = clearShopStateForNewRound(
                     game.copy(
                         turnNumber = game.turnNumber + 1,
                         playerReady = false,
                         opponentReady = true,
-                        playerDiscard = playerDiscard,
-                        opponentDiscard = opponentDiscard,
+
                         lastPlayerCard = null,
                         lastOpponentCard = null,
                         playerDisplayedTurnCard = null,
                         opponentDisplayedTurnCard = null,
+
                         delayedEffects = game.delayedEffects.filter {
                             it.timing != DelayedEffectTiming.END_TURN
                         },
+
                         pendingChoice = null,
                         playerAmbassadriceTurnStartHp = null,
                         opponentAmbassadriceTurnStartHp = null,
