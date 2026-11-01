@@ -65,6 +65,71 @@ object PostCombatEffectResolver {
 
         return when (card.id) {
 
+            CardId.GOLEMDOCRE -> {
+                when (progress.nextEffectIndex) {
+
+                    // Étape 0 : soigner le propriétaire
+                    0 -> {
+                        val healedGame = TokenManager.heal(
+                            game = game,
+                            target = owner,
+                            amount = 1
+                        )
+
+                        val advancedGame = advanceEffectProgress(
+                            game = healedGame,
+                            owner = owner
+                        )
+
+                        resolveChainedCardEffects(
+                            game = advancedGame,
+                            owner = owner,
+                            card = card
+                        )
+                    }
+
+                    // Étape 1 : SCRUTER SOMBRE 1
+                    1 -> {
+                        CardEffectManager.startScry(
+                            game = game,
+                            sourceId = CardId.GOLEMDOCRE.name,
+                            resolver = owner,
+                            target = if (owner == ChoiceOwner.PLAYER) {
+                                ChoiceOwner.OPPONENT
+                            } else {
+                                ChoiceOwner.PLAYER
+                            },
+                            amount = 1,
+                            completionContext = ScryCompletionContext.POST_COMBAT,
+                            canDiscardViewedCards = true
+                        )
+                    }
+
+                    // Étape 2 : Maladie sur l'adversaire
+                    2 -> {
+                        val diseasedGame = CardEffectManager.addDiseaseToken(
+                            game = game,
+                            target = if (owner == ChoiceOwner.PLAYER) {
+                                ChoiceOwner.OPPONENT
+                            } else {
+                                ChoiceOwner.PLAYER
+                            }
+                        )
+
+                        setEffectProgress(
+                            game = diseasedGame,
+                            owner = owner,
+                            progress = progress.copy(
+                                nextEffectIndex = 3,
+                                completed = true
+                            )
+                        )
+                    }
+
+                    else -> game
+                }
+            }
+
             CardId.MALIN -> {
                 when (progress.nextEffectIndex) {
 
@@ -444,6 +509,7 @@ object PostCombatEffectResolver {
                 }
 
 
+
             updatedGame = updatedGame.copy(playerPostCombatCardEffectResolved = true)
         }
             // MALIN — initialisation de la séquence post-combat
@@ -770,6 +836,7 @@ object PostCombatEffectResolver {
                     )
                 }
             }
+
 
             updatedGame = updatedGame.copy(opponentPostCombatCardEffectResolved = true)
         }
