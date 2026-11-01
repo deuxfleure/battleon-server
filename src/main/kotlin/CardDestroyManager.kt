@@ -43,6 +43,19 @@ object CardDestroyManager {
     private fun other(side: Side): Side =
         if (side == Side.PLAYER) Side.OPPONENT else Side.PLAYER
 
+    private fun areAbilitiesBlocked(
+        game: GameState,
+        owner: Side,
+        zone: Zone
+    ): Boolean {
+        if (zone != Zone.REVEALED) return false
+
+        return when (owner) {
+            Side.PLAYER -> game.playerAbilitiesBlocked
+            Side.OPPONENT -> game.opponentAbilitiesBlocked
+        }
+    }
+
     /** GARDIENSACRE : immunité absolue, y compris à ses propres effets. */
     fun canBeDestroyed(card: Card): Boolean =
         card.id != CardId.GARDIENSACRE
@@ -70,24 +83,43 @@ object CardDestroyManager {
     fun canDestroy(
         game: GameState,
         owner: Side,
+        zone: Zone,
         card: Card,
         cause: Cause,
         bypassFiveCardRule: Boolean = false
-    ): Boolean = failureFor(game, owner, card, cause, bypassFiveCardRule) == null
+    ): Boolean = failureFor(
+        game = game,
+        owner = owner,
+        zone = zone,
+        card = card,
+        cause = cause,
+        bypassFiveCardRule = bypassFiveCardRule
+    ) == null
 
     private fun failureFor(
         game: GameState,
         owner: Side,
+        zone: Zone,
         card: Card,
         cause: Cause,
         bypassFiveCardRule: Boolean
-    ): Failure? = when {
-        !canBeDestroyed(card) -> Failure.CARD_IMMUNE
-        cause == Cause.OPPONENT_EFFECT && !canBeDestroyedByOpponent(card) ->
-            Failure.PROTECTED_FROM_OPPONENT
-        !bypassFiveCardRule && !passesFiveCardRule(game, owner) ->
-            Failure.FIVE_CARD_MINIMUM
-        else -> null
+    ): Failure? {
+        val abilitiesBlocked = areAbilitiesBlocked(game, owner, zone)
+
+        return when {
+            !abilitiesBlocked && !canBeDestroyed(card) ->
+                Failure.CARD_IMMUNE
+
+            !abilitiesBlocked &&
+                    cause == Cause.OPPONENT_EFFECT &&
+                    !canBeDestroyedByOpponent(card) ->
+                Failure.PROTECTED_FROM_OPPONENT
+
+            !bypassFiveCardRule && !passesFiveCardRule(game, owner) ->
+                Failure.FIVE_CARD_MINIMUM
+
+            else -> null
+        }
     }
 
     private fun cards(game: GameState, owner: Side, zone: Zone): List<Card> =
@@ -109,7 +141,7 @@ object CardDestroyManager {
         cause: Cause,
         bypassFiveCardRule: Boolean = false
     ): List<Int> = cards(game, owner, zone).indices.filter { index ->
-        canDestroy(game, owner, cards(game, owner, zone)[index], cause, bypassFiveCardRule)
+        canDestroy(game, owner, zone, cards(game, owner, zone)[index], cause, bypassFiveCardRule)
     }
 
     /**
@@ -128,7 +160,7 @@ object CardDestroyManager {
     ): Result {
         val target = cards(game, owner, zone).getOrNull(index)
             ?: return Result(game, false, failure = Failure.NO_TARGET)
-        val failure = failureFor(game, owner, target, cause, bypassFiveCardRule)
+        val failure = failureFor(game, owner, zone, target, cause, bypassFiveCardRule)
         if (failure != null) return Result(game, false, failure = failure)
 
         val changed = when (zone) {
