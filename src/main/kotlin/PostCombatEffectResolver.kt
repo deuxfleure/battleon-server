@@ -90,8 +90,13 @@ object PostCombatEffectResolver {
 
                     // Étape 1 : SCRUTER SOMBRE 1
                     1 -> {
-                        CardEffectManager.startScry(
+                        val advancedGame = advanceEffectProgress(
                             game = game,
+                            owner = owner
+                        )
+
+                        CardEffectManager.startScry(
+                            game = advancedGame,
                             sourceId = CardId.GOLEMDOCRE.name,
                             resolver = owner,
                             target = if (owner == ChoiceOwner.PLAYER) {
