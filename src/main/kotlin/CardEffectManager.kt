@@ -1108,15 +1108,20 @@ object CardEffectManager {
             playerDeck.firstOrNull()
         }
 
-        val canDestroyOwnTopCard = canDestroyOneCardWithFiveCardRule(
-            game = recycledGame.copy(
-                playerDeck = playerDeck,
-                opponentDeck = opponentDeck,
-                playerDiscard = playerDiscard,
-                opponentDiscard = opponentDiscard
-            ),
-            isPlayer = ownerIsPlayer
-        ) && ownTopCard != null
+        val ownerSide = if (ownerIsPlayer) {
+            CardDestroyManager.Side.PLAYER
+        } else {
+            CardDestroyManager.Side.OPPONENT
+        }
+
+        val canDestroyOwnTopCard = ownTopCard != null &&
+                CardDestroyManager.canDestroy(
+                    game = recycledGame,
+                    owner = ownerSide,
+                    zone = CardDestroyManager.Zone.DECK,
+                    card = ownTopCard,
+                    cause = CardDestroyManager.Cause.OWN_EFFECT
+                )
 
         val options = if (canDestroyOwnTopCard) {
             listOf("DISCARD_OPPONENT_TOP", "DESTROY_OWN_TOP")
@@ -2007,51 +2012,56 @@ object CardEffectManager {
                         }
                     }
 
+
+
                     "DESTROY_OWN_TOP" -> {
-                        if (!canDestroyOneCardWithFiveCardRule(game, ownerIsPlayer)) {
-                            return game.copy(
-                                infoMessage = "Règle des 5 cartes"
-                            )
-                        }
-
-                        val targetOwner = if (ownerIsPlayer) {
-                            ChoiceOwner.PLAYER
+                        val ownerSide = if (ownerIsPlayer) {
+                            CardDestroyManager.Side.PLAYER
                         } else {
-                            ChoiceOwner.OPPONENT
+                            CardDestroyManager.Side.OPPONENT
                         }
 
-                        val recycledGame = DeckManager.reshuffleDiscardIntoDeckIfNeeded(
+                        val destruction = CardDestroyManager.destroyTopOfDeck(
                             game = game,
-                            target = targetOwner
+                            owner = ownerSide,
+                            cause = CardDestroyManager.Cause.OWN_EFFECT
                         )
 
-                        val updatedGame = if (ownerIsPlayer) {
+                        if (!destruction.destroyed) {
+                            destruction.game.copy(
+                                infoMessage = when (destruction.failure) {
+                                    CardDestroyManager.Failure.FIVE_CARD_MINIMUM ->
+                                        "Règle des 5 cartes"
 
-                            recycledGame.copy(
-                                playerDeck = recycledGame.playerDeck.drop(1)
-                            )
+                                    CardDestroyManager.Failure.CARD_IMMUNE ->
+                                        "Cette carte est indestructible"
 
-                        } else {
+                                    CardDestroyManager.Failure.NO_TARGET ->
+                                        "Aucune carte à détruire"
 
-                            recycledGame.copy(
-                                opponentDeck = recycledGame.opponentDeck.drop(1)
-                            )
-                        }
-
-                        if (ownerIsPlayer) {
-                            updatedGame.copy(
-                                pendingChoice = null,
-                                playerEffectResolved = true,
-                                infoMessage = null
+                                    else -> "Destruction impossible"
+                                }
                             )
                         } else {
-                            updatedGame.copy(
-                                pendingChoice = null,
-                                opponentEffectResolved = true,
-                                infoMessage = null
-                            )
+                            val updatedGame = destruction.game
+
+                            if (ownerIsPlayer) {
+                                updatedGame.copy(
+                                    pendingChoice = null,
+                                    playerEffectResolved = true,
+                                    infoMessage = null
+                                )
+                            } else {
+                                updatedGame.copy(
+                                    pendingChoice = null,
+                                    opponentEffectResolved = true,
+                                    infoMessage = null
+                                )
+                            }
                         }
                     }
+
+
 
                     else -> {
                         game.copy(
