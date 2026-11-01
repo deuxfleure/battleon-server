@@ -4252,10 +4252,30 @@ object GameManager {
 
         val activeScryBeforeResolution = game.activeScryState
 
+        val pendingChoiceBeforeResolution = game.pendingChoice
+
         var updatedGame = CardEffectManager.resolvePendingChoice(
             game = game,
             choice = choice
         )
+
+        // TRAPPEUR — reprise de la fenêtre tactique
+        // uniquement lorsque le dernier choix est terminé.
+        val trapperChoiceJustFinished =
+            isAmbushPhase(game.phase) &&
+                    pendingChoiceBeforeResolution?.type in listOf(
+                "TRAPPEUR_ACTION_CHOICE",
+                "TRAPPEUR_COUNTER_CHOICE",
+                "TRAPPEUR_DEBUSQUER_CHOICE"
+            ) &&
+                    updatedGame.pendingChoice == null
+
+        if (trapperChoiceJustFinished) {
+            updatedGame = resumeAmbushAfterPendingChoice(
+                game = updatedGame,
+                owner = pendingChoiceBeforeResolution!!.owner
+            )
+        }
 
         val ambushScryJustFinished =
             activeScryBeforeResolution?.completionContext == ScryCompletionContext.AMBUSH &&
