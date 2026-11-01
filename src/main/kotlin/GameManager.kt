@@ -1366,33 +1366,26 @@ object GameManager {
             return false
         }
 
-// Rune majeure IV : destruction d'une carte Embuscade / Préparation adverse.
-//
-// Règle des 5 cartes :
-// l'adversaire doit posséder au moins 6 cartes avant la destruction.
-//
-// Les fragments de rune ne sont PAS des cartes :
-// ils ne sont ni comptés dans cette règle, ni considérés comme des cibles.
+        // Rune majeure IV : destruction d'une carte Embuscade / Préparation adverse.
+        //
+        // Règle des 5 cartes :
+        // l'adversaire doit posséder au moins 6 cartes avant la destruction.
+        //
+        // Les fragments de rune ne sont PAS des cartes :
+        // ils ne sont ni comptés dans cette règle, ni considérés comme des cibles.
         if (rune.effectType == SoloRuneEffectType.DESTROY_OPPONENT_AMBUSH_OR_PREPARATION) {
-
-            val targetIsPlayer = owner == ChoiceOwner.OPPONENT
-
-            val targetAmbush = if (targetIsPlayer) {
-                game.playerAmbush
+            val targetSide = if (owner == ChoiceOwner.PLAYER) {
+                CardDestroyManager.Side.OPPONENT
             } else {
-                game.opponentAmbush
+                CardDestroyManager.Side.PLAYER
             }
 
-            // Il faut au moins une vraie carte à détruire.
-            if (targetAmbush.isEmpty()) {
-                return false
-            }
-
-            // Après destruction, l'adversaire doit conserver au moins 5 cartes.
-            if (!CardEffectManager.canDestroyOneCardWithFiveCardRule(
+            if (CardDestroyManager.eligibleIndices(
                     game = game,
-                    isPlayer = targetIsPlayer
-                )
+                    owner = targetSide,
+                    zone = CardDestroyManager.Zone.AMBUSH,
+                    cause = CardDestroyManager.Cause.OPPONENT_EFFECT
+                ).isEmpty()
             ) {
                 return false
             }
@@ -1825,32 +1818,27 @@ object GameManager {
             }
 
             SoloRuneEffectType.DESTROY_OPPONENT_AMBUSH_OR_PREPARATION -> {
-                val targetIsPlayer = owner == ChoiceOwner.OPPONENT
-
-                val targetAmbush = if (targetIsPlayer) {
-                    game.playerAmbush
+                val targetSide = if (owner == ChoiceOwner.PLAYER) {
+                    CardDestroyManager.Side.OPPONENT
                 } else {
-                    game.opponentAmbush
+                    CardDestroyManager.Side.PLAYER
                 }
 
-                // Sécurité : la rune ne devrait normalement jamais arriver ici
-                // si la règle des 5 cartes n'est pas respectée.
-                if (!CardEffectManager.canDestroyOneCardWithFiveCardRule(
-                        game = game,
-                        isPlayer = targetIsPlayer
-                    )
-                ) {
-                    game
-                } else if (targetAmbush.isEmpty()) {
+                val eligibleIndices = CardDestroyManager.eligibleIndices(
+                    game = game,
+                    owner = targetSide,
+                    zone = CardDestroyManager.Zone.AMBUSH,
+                    cause = CardDestroyManager.Cause.OPPONENT_EFFECT
+                )
+
+                if (eligibleIndices.isEmpty()) {
                     game
                 } else {
                     game.copy(
                         pendingChoice = PendingChoice(
                             type = "RUNE_DESTROY_OPPONENT_AMBUSH",
                             cardId = rune.id,
-                            options = targetAmbush.indices.map { index ->
-                                "AMBUSH:$index"
-                            },
+                            options = eligibleIndices.map { index -> "AMBUSH:$index" },
                             message = "Choisissez une carte Embuscade ou Préparation adverse à détruire.",
                             owner = owner
                         ),
@@ -4263,66 +4251,45 @@ object GameManager {
         }
 
         val owner = pendingChoice.owner
-        val targetIsPlayer = owner == ChoiceOwner.OPPONENT
 
-        // Sécurité serveur :
-        // la destruction doit toujours respecter la règle des 5 cartes.
-        if (!CardEffectManager.canDestroyOneCardWithFiveCardRule(
-                game = game,
-                isPlayer = targetIsPlayer
-            )
-        ) {
-            return game.copy(
-                pendingChoice = null,
-                infoMessage = "Règle des 5 cartes"
-            )
+        val targetSide = if (owner == ChoiceOwner.PLAYER) {
+            CardDestroyManager.Side.OPPONENT
+        } else {
+            CardDestroyManager.Side.PLAYER
         }
 
         if (!choice.startsWith("AMBUSH:")) {
-            return game.copy(
-                infoMessage = "Choix invalide"
-            )
+            return game.copy(infoMessage = "Choix invalide")
         }
 
-        val index = choice
-            .removePrefix("AMBUSH:")
-            .toIntOrNull()
-            ?: return game.copy(
-                infoMessage = "Choix invalide"
-            )
+        val index = choice.removePrefix("AMBUSH:").toIntOrNull()
+            ?: return game.copy(infoMessage = "Choix invalide")
 
-        val targetAmbush = if (targetIsPlayer) {
-            game.playerAmbush
-        } else {
-            game.opponentAmbush
+// Sécurité : le choix doit faire partie des options proposées.
+        if ("AMBUSH:$index" !in pendingChoice.options) {
+            return game.copy(infoMessage = "Choix invalide")
         }
 
-        if (index !in targetAmbush.indices) {
-            return game.copy(
-                infoMessage = "Choix invalide"
-            )
-        }
+        val result = CardDestroyManager.destroyAt(
+            game = game,
+            owner = targetSide,
+            zone = CardDestroyManager.Zone.AMBUSH,
+            index = index,
+            cause = CardDestroyManager.Cause.OPPONENT_EFFECT
+        )
 
-        val updatedGame = if (targetIsPlayer) {
-            game.copy(
-                playerAmbush = game.playerAmbush.filterIndexed { i, _ ->
-                    i != index
-                },
+        if (!result.destroyed) {
+            return result.game.copy(
                 pendingChoice = null,
-                infoMessage = null
-            )
-        } else {
-            game.copy(
-                opponentAmbush = game.opponentAmbush.filterIndexed { i, _ ->
-                    i != index
-                },
-                pendingChoice = null,
-                infoMessage = null
+                infoMessage = "Destruction impossible : ${result.failure}"
             )
         }
 
         return resumeAmbushAfterPendingChoice(
-            game = updatedGame,
+            game = result.game.copy(
+                pendingChoice = null,
+                infoMessage = null
+            ),
             owner = owner
         )
     }
