@@ -3239,9 +3239,6 @@ object GameManager {
                         playerEffectResolved = false,
                         opponentEffectResolved = false,
 
-                        playerEffectBlockedBySentinelle = false,
-                        opponentEffectBlockedBySentinelle = false,
-
                         playerAbilitiesBlocked = false,
                         opponentAbilitiesBlocked = false,
 
@@ -3318,30 +3315,6 @@ object GameManager {
                     val effectAnimationOrder = when (resolutionOrder) {
                         ResolutionOrder.PLAYER_FIRST -> listOf("PLAYER", "OPPONENT")
                         ResolutionOrder.OPPONENT_FIRST -> listOf("OPPONENT", "PLAYER")
-                    }
-
-                    fun doesPlayerSentinelleBlockOpponentEffect(): Boolean {
-                        if (playerCard.id != CardId.SENTINELLE) return false
-
-                        return when {
-                            opponentEffectivePower > playerEffectivePower -> true
-                            opponentEffectivePower < playerEffectivePower -> false
-
-                            // égalité parfaite : on regarde qui agit en premier
-                            else -> resolutionOrder != ResolutionOrder.OPPONENT_FIRST
-                        }
-                    }
-
-                    fun doesOpponentSentinelleBlockPlayerEffect(): Boolean {
-                        if (opponentCard.id != CardId.SENTINELLE) return false
-
-                        return when {
-                            playerEffectivePower > opponentEffectivePower -> true
-                            playerEffectivePower < opponentEffectivePower -> false
-
-                            // égalité parfaite : on regarde qui agit en premier
-                            else -> resolutionOrder != ResolutionOrder.PLAYER_FIRST
-                        }
                     }
 
                     fun applyPlayerEffect(currentGame: GameState): GameState {
@@ -3438,7 +3411,6 @@ object GameManager {
                                 if (blockedBySentinelle || blockedByAmbush) {
                                     workingGame = workingGame.copy(
                                         playerEffectResolved = true,
-                                        playerEffectBlockedBySentinelle = blockedBySentinelle,
                                         infoMessage = null
                                     )
                                 } else {
@@ -3475,7 +3447,6 @@ object GameManager {
                                 if (blockedBySentinelle || blockedByAmbush) {
                                     workingGame = workingGame.copy(
                                         opponentEffectResolved = true,
-                                        opponentEffectBlockedBySentinelle = blockedBySentinelle,
                                         infoMessage = null
                                     )
                                 } else {
@@ -3513,7 +3484,6 @@ object GameManager {
                                 if (blockedBySentinelle || blockedByAmbush) {
                                     workingGame = workingGame.copy(
                                         opponentEffectResolved = true,
-                                        opponentEffectBlockedBySentinelle = blockedBySentinelle,
                                         infoMessage = null
                                     )
                                 } else {
@@ -3548,7 +3518,6 @@ object GameManager {
                                 if (blockedBySentinelle || blockedByAmbush) {
                                     workingGame = workingGame.copy(
                                         playerEffectResolved = true,
-                                        playerEffectBlockedBySentinelle = blockedBySentinelle,
                                         infoMessage = null
                                     )
                                 } else {

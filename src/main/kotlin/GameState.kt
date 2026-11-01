@@ -428,9 +428,6 @@ data class GameState(
     val playerEffectResolved: Boolean = false,
     val opponentEffectResolved: Boolean = false,
 
-    // blockeur d'effet
-    val playerEffectBlockedBySentinelle: Boolean = false,
-    val opponentEffectBlockedBySentinelle: Boolean = false,
     // Blocage générique des capacités de la carte révélée.
     // Peut être déclenché par Sentinelle, Trappeur, Diplomate, etc.
     val playerAbilitiesBlocked: Boolean = false,
