@@ -59,6 +59,7 @@ object PostCombatEffectResolver {
         val progress = getEffectProgress(game, owner)
             ?: return game
 
+
         if (progress.completed || progress.cardId != card.id) {
             return game
         }
