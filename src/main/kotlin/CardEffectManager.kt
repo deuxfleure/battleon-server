@@ -1719,6 +1719,84 @@ object CardEffectManager {
             }
 
             // -------------------------------------------------
+            // TRAPPEUR — DÉBUSQUER UNE CARTE ADVERSE
+            // -------------------------------------------------
+            "TRAPPEUR_DEBUSQUER_CHOICE" -> {
+                if (choice !in pendingChoice.options) {
+                    game.copy(infoMessage = "Choix invalide")
+                } else if (choice == "PASS") {
+                    game.copy(
+                        pendingChoice = null,
+                        infoMessage = null
+                    )
+                } else {
+                    val targetAmbush = if (ownerIsPlayer) {
+                        game.opponentAmbush
+                    } else {
+                        game.playerAmbush
+                    }
+
+                    val trapperAmbush = if (ownerIsPlayer) {
+                        game.playerAmbush
+                    } else {
+                        game.opponentAmbush
+                    }
+
+                    val targetIndex = choice.removePrefix("DISCARD:").toIntOrNull()
+
+                    val trapperIndex = trapperAmbush.indexOfFirst {
+                        it.card.id == CardId.TRAPPEUR &&
+                                it.entryType == TacticalEntryType.PREPARATION
+                    }
+
+                    when {
+                        targetIndex == null || targetIndex !in targetAmbush.indices ->
+                            game.copy(infoMessage = "Cible invalide")
+
+                        trapperIndex < 0 ->
+                            game.copy(infoMessage = "Trappeur introuvable")
+
+                        else -> {
+                            val targetCard = targetAmbush[targetIndex].card
+                            val trapperCard = trapperAmbush[trapperIndex].card
+
+                            if (ownerIsPlayer) {
+                                game.copy(
+                                    opponentAmbush = game.opponentAmbush.filterIndexed { index, _ ->
+                                        index != targetIndex
+                                    },
+                                    opponentDiscard = game.opponentDiscard + targetCard,
+
+                                    playerAmbush = game.playerAmbush.filterIndexed { index, _ ->
+                                        index != trapperIndex
+                                    },
+                                    playerDiscard = game.playerDiscard + trapperCard,
+
+                                    pendingChoice = null,
+                                    infoMessage = null
+                                )
+                            } else {
+                                game.copy(
+                                    playerAmbush = game.playerAmbush.filterIndexed { index, _ ->
+                                        index != targetIndex
+                                    },
+                                    playerDiscard = game.playerDiscard + targetCard,
+
+                                    opponentAmbush = game.opponentAmbush.filterIndexed { index, _ ->
+                                        index != trapperIndex
+                                    },
+                                    opponentDiscard = game.opponentDiscard + trapperCard,
+
+                                    pendingChoice = null,
+                                    infoMessage = null
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // -------------------------------------------------
             // Débusquer
             // -------------------------------------------------
 
