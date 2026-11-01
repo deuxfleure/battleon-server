@@ -416,7 +416,8 @@ object PostCombatEffectResolver {
                         card = playerCard,
                         isPlayer = true,
                         currentBonus = game.playerCurrentCardVenomousBonus,
-                        effectsBlocked = game.playerCardEffectsBlockedByAmbush
+                        effectsBlocked = updatedGame.playerCardEffectsBlockedByAmbush ||
+                                updatedGame.playerAbilitiesBlocked
                     )
 
                     if (venomous > 0) {
@@ -730,7 +731,8 @@ object PostCombatEffectResolver {
                         card = opponentCard,
                         isPlayer = false,
                         currentBonus = game.opponentCurrentCardVenomousBonus,
-                        effectsBlocked = game.opponentCardEffectsBlockedByAmbush
+                        effectsBlocked = updatedGame.opponentCardEffectsBlockedByAmbush ||
+                                updatedGame.opponentAbilitiesBlocked
                     )
 
                     if (venomous > 0) {
