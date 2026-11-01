@@ -2775,28 +2775,49 @@ object GameManager {
             owner = owner
         )
 
+
         val discardAfterPurchase = if (isPlayer) {
             afterAutomaticPurchaseEffects.playerDiscard
         } else {
             afterAutomaticPurchaseEffects.opponentDiscard
         }
 
-        val hasValidDestroyTarget = discardAfterPurchase.any { it.id != CardId.SENTINELLE }
+        return if (entry.card.id == CardId.SENTINELLE) {
 
-        return if (
-            entry.card.id == CardId.SENTINELLE &&
-            hasValidDestroyTarget
-        ) {
-            afterAutomaticPurchaseEffects.copy(
-                pendingChoice = CardEffectManager.buildSentinelleBuyDestroyPendingChoice(
-                    game = afterAutomaticPurchaseEffects,
-                    owner = owner
-                ),
-                infoMessage = null
-            )
+            val ownerSide = if (isPlayer) {
+                CardDestroyManager.Side.PLAYER
+            } else {
+                CardDestroyManager.Side.OPPONENT
+            }
+
+            // Seules les cartes réellement destructibles sont proposées.
+            // La Sentinelle nouvellement achetée est exclue.
+            val targetIndices = CardDestroyManager.eligibleIndices(
+                game = afterAutomaticPurchaseEffects,
+                owner = ownerSide,
+                zone = CardDestroyManager.Zone.DISCARD,
+                cause = CardDestroyManager.Cause.REPLACEMENT,
+                bypassFiveCardRule = true
+            ).filter { it != discardAfterPurchase.lastIndex }
+
+            if (targetIndices.isEmpty()) {
+                afterAutomaticPurchaseEffects
+            } else {
+                afterAutomaticPurchaseEffects.copy(
+                    pendingChoice = PendingChoice(
+                        type = "SENTINELLE_BUY_DESTROY",
+                        cardId = CardId.SENTINELLE.name,
+                        options = targetIndices.map { "DISCARD:$it" } + "PASS",
+                        message = "La Sentinelle : choisissez une carte de votre défausse à détruire.",
+                        owner = owner
+                    ),
+                    infoMessage = null
+                )
+            }
         } else {
             afterAutomaticPurchaseEffects
         }
+
     }
 
     private fun haveBothPlayersPassedShop(game: GameState): Boolean {

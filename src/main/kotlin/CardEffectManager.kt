@@ -1363,11 +1363,9 @@ object CardEffectManager {
             game.opponentDiscard
         }
 
-        // On exclut la Sentinelle elle-même des choix possibles
-        val validOptions = discard
-            .mapIndexedNotNull { index, card ->
-                if (card.id == CardId.SENTINELLE) null else "DISCARD:$index"
-            }
+        val validOptions = discard.indices.map { index ->
+            "DISCARD:$index"
+        }
 
         return PendingChoice(
             type = "SENTINELLE_BUY_DESTROY",
@@ -2074,8 +2072,13 @@ object CardEffectManager {
             // -------------------------------------------------
             // SENTINELLE — destruction à l'achat
             // -------------------------------------------------
+
             "SENTINELLE_BUY_DESTROY" -> {
-                when {
+                if (choice !in pendingChoice.options) {
+                    game.copy(infoMessage = "Choix invalide")
+                } else {
+
+                    when {
                     choice == "PASS" -> {
                         game.copy(
                             pendingChoice = null,
@@ -2086,60 +2089,39 @@ object CardEffectManager {
                     choice.startsWith("DISCARD:") -> {
                         val index = choice.removePrefix("DISCARD:").toIntOrNull()
 
-                        if (index == null) {
-                            game.copy(
-                                infoMessage = "Choix invalide"
-                            )
-                        } else if (ownerIsPlayer) {
-                            if (index !in game.playerDiscard.indices) {
-                                game.copy(
-                                    infoMessage = "Choix invalide"
-                                )
-                            } else {
-                                val cardToDestroy = game.playerDiscard[index]
-
-                                if (cardToDestroy.id == CardId.SENTINELLE) {
-                                    game.copy(
-                                        infoMessage = "Choix invalide"
-                                    )
-                                } else {
-                                    game.copy(
-                                        playerDiscard = game.playerDiscard.filterIndexed { i, _ -> i != index },
-                                        pendingChoice = null,
-                                        infoMessage = null
-                                    )
-                                }
-                            }
+                        val ownerSide = if (ownerIsPlayer) {
+                            CardDestroyManager.Side.PLAYER
                         } else {
-                            if (index !in game.opponentDiscard.indices) {
-                                game.copy(
-                                    infoMessage = "Choix invalide"
-                                )
-                            } else {
-                                val cardToDestroy = game.opponentDiscard[index]
+                            CardDestroyManager.Side.OPPONENT
+                        }
 
-                                if (cardToDestroy.id == CardId.SENTINELLE) {
-                                    game.copy(
-                                        infoMessage = "Choix invalide"
-                                    )
-                                } else {
-                                    game.copy(
-                                        opponentDiscard = game.opponentDiscard.filterIndexed { i, _ -> i != index },
-                                        pendingChoice = null,
-                                        infoMessage = null
-                                    )
-                                }
-                            }
+                        val destruction = if (index != null) {
+                            CardDestroyManager.destroyForReplacement(
+                                game = game,
+                                owner = ownerSide,
+                                zone = CardDestroyManager.Zone.DISCARD,
+                                index = index,
+                                bypassFiveCardRule = true
+                            )
+                        } else null
+
+                        if (destruction?.destroyed == true) {
+                            destruction.game.copy(
+                                pendingChoice = null,
+                                infoMessage = null
+                            )
+                        } else {
+                            game.copy(
+                                infoMessage = "Destruction impossible"
+                            )
                         }
                     }
 
-                    else -> {
-                        game.copy(
-                            infoMessage = "Choix invalide"
-                        )
-                    }
+                    else -> game.copy(infoMessage = "Choix invalide")
+                }
                 }
             }
+
 
             //-------------------------------------------------
             // SCRUTER
