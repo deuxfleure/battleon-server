@@ -512,6 +512,26 @@ object PostCombatEffectResolver {
 
             updatedGame = updatedGame.copy(playerPostCombatCardEffectResolved = true)
         }
+            // GOLEM D'OCRE — initialisation uniquement en cas de victoire
+            if (playerWonCombat && playerCard.id == CardId.GOLEMDOCRE) {
+
+                val progress = getEffectProgress(
+                    game = updatedGame,
+                    owner = ChoiceOwner.PLAYER
+                )
+
+                if (progress == null) {
+                    updatedGame = setEffectProgress(
+                        game = updatedGame,
+                        owner = ChoiceOwner.PLAYER,
+                        progress = PostCombatEffectProgress(
+                            cardId = CardId.GOLEMDOCRE,
+                            owner = ChoiceOwner.PLAYER,
+                            nextEffectIndex = 0
+                        )
+                    )
+                }
+            }
             // MALIN — initialisation de la séquence post-combat
             if (playerWonCombat && playerCard.id == CardId.MALIN) {
 
@@ -840,7 +860,26 @@ object PostCombatEffectResolver {
 
             updatedGame = updatedGame.copy(opponentPostCombatCardEffectResolved = true)
         }
+            // GOLEM D'OCRE — initialisation uniquement en cas de victoire
+            if (opponentWonCombat && opponentCard.id == CardId.GOLEMDOCRE) {
 
+                val progress = getEffectProgress(
+                    game = updatedGame,
+                    owner = ChoiceOwner.OPPONENT
+                )
+
+                if (progress == null) {
+                    updatedGame = setEffectProgress(
+                        game = updatedGame,
+                        owner = ChoiceOwner.OPPONENT,
+                        progress = PostCombatEffectProgress(
+                            cardId = CardId.GOLEMDOCRE,
+                            owner = ChoiceOwner.OPPONENT,
+                            nextEffectIndex = 0
+                        )
+                    )
+                }
+            }
             // MALIN — initialisation de la séquence post-combat
             if (opponentWonCombat && opponentCard.id == CardId.MALIN) {
 
