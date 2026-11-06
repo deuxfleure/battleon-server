@@ -1334,24 +1334,34 @@ object GameManager {
         }
     }
 
+
     private fun hasAvailableAmbushAction(
         game: GameState,
         owner: ChoiceOwner
     ): Boolean {
+
         val hasRuneAction =
             getAvailableRuneIdsForCurrentWindow(
                 game = game,
                 owner = owner
             ).isNotEmpty()
 
-        val hasPromptableTacticalCardAction =
+        val hasTacticalCardAction =
             getPromptableTacticalCardIndices(
                 game = game,
                 owner = owner
             ).isNotEmpty()
 
-        return hasRuneAction || hasPromptableTacticalCardAction
+
+        return TacticalActionManager.hasAvailableAction(
+            hasRuneAction = hasRuneAction,
+            hasTacticalCardAction = hasTacticalCardAction,
+            hasTokenAction = false,
+            hasDiscardCardAction = false
+        )
+
     }
+
 
     private fun canActivateRune(
         game: GameState,
