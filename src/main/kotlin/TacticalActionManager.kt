@@ -226,5 +226,59 @@ object TacticalActionManager {
         }
     }
 
+    /**
+     * Détermine le prochain acteur après une action
+     * ou un passage.
+     *
+     * Après une action :
+     * - priorité à l'adversaire ;
+     * - sinon, le joueur actuel peut continuer.
+     *
+     * Après un passage :
+     * - seul l'adversaire peut reprendre la main.
+     *
+     * Un joueur ayant passé ne peut revenir que si
+     * une nouvelle opportunité a rouvert son droit d'agir.
+     */
+    fun nextActor(
+        game: GameState,
+        currentActor: ChoiceOwner,
+        currentActorPassed: Boolean,
+        playerHasAction: Boolean,
+        opponentHasAction: Boolean
+    ): ChoiceOwner? {
+
+        val otherActor = when (currentActor) {
+            ChoiceOwner.PLAYER -> ChoiceOwner.OPPONENT
+            ChoiceOwner.OPPONENT -> ChoiceOwner.PLAYER
+        }
+
+        fun canAct(owner: ChoiceOwner): Boolean {
+            return when (owner) {
+                ChoiceOwner.PLAYER ->
+                    !game.playerPassedCurrentAmbushWindow &&
+                            playerHasAction
+
+                ChoiceOwner.OPPONENT ->
+                    !game.opponentPassedCurrentAmbushWindow &&
+                            opponentHasAction
+            }
+        }
+
+        // L'adversaire est toujours prioritaire.
+        if (canAct(otherActor)) {
+            return otherActor
+        }
+
+        // Après un passage, on ne redonne pas
+        // immédiatement la main au même joueur.
+        if (!currentActorPassed && canAct(currentActor)) {
+            return currentActor
+        }
+
+        // Plus personne ne peut agir.
+        return null
+    }
+
 
 }
