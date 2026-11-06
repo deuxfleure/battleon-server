@@ -1111,35 +1111,45 @@ object GameManager {
         game: GameState,
         owner: ChoiceOwner
     ): GameState {
-        return if (
-            !hasPassedCurrentAmbushWindow(game, owner) &&
-            hasAvailableAmbushAction(game, owner)
-        ) {
-            giveAmbushPriorityTo(
-                game = game,
-                owner = owner
-            )
-        } else {
-            moveToNextAmbushActorOrFinish(
-                game = game,
-                currentActor = owner
-            )
+
+        if (game.pendingChoice != null) {
+            return game
         }
+
+        return moveToNextAmbushActorOrFinish(
+            game = game,
+            currentActor = owner
+        )
     }
 
     private fun moveToNextAmbushActorOrFinish(
         game: GameState,
         currentActor: ChoiceOwner
     ): GameState {
-        val otherActor = oppositeOwner(currentActor)
 
-        return if (
-            !hasPassedCurrentAmbushWindow(game, otherActor) &&
-            hasAvailableAmbushAction(game, otherActor)
-        ) {
+        val currentActorPassed = hasPassedCurrentAmbushWindow(
+            game = game,
+            owner = currentActor
+        )
+
+        val nextOwner = TacticalActionManager.nextActor(
+            game = game,
+            currentActor = currentActor,
+            currentActorPassed = currentActorPassed,
+            playerHasAction = hasAvailableAmbushAction(
+                game,
+                ChoiceOwner.PLAYER
+            ),
+            opponentHasAction = hasAvailableAmbushAction(
+                game,
+                ChoiceOwner.OPPONENT
+            )
+        )
+
+        return if (nextOwner != null) {
             giveAmbushPriorityTo(
                 game = game,
-                owner = otherActor
+                owner = nextOwner
             )
         } else {
             advancePastAmbushWindow(game)
@@ -1205,9 +1215,11 @@ object GameManager {
     ): GameState? = withGameLock(gameId) {
         val game = games[gameId] ?: return@withGameLock null
 
-        val updatedGame = passAmbushWindowInternal(
-            game = game,
-            owner = owner
+        val updatedGame = resolveAiAmbushActionsIfNeeded(
+            passAmbushWindowInternal(
+                game = game,
+                owner = owner
+            )
         )
 
         games[gameId] = updatedGame
@@ -1535,8 +1547,27 @@ object GameManager {
             option = option
         )
 
-        games[gameId] = updatedGame
-        updatedGame
+        // Une activation valide consomme une occasion d'agir.
+        // Si l'état est inchangé (option invalide, par exemple),
+        // on ne transfère pas la priorité.
+        if (updatedGame == game) {
+            return@withGameLock game
+        }
+
+        val finalGame = if (updatedGame.pendingChoice != null) {
+            updatedGame.copy(
+                currentAmbushActor = owner,
+                infoMessage = null
+            )
+        } else {
+            resumeAmbushAfterPendingChoice(
+                game = updatedGame,
+                owner = owner
+            )
+        }
+
+        games[gameId] = finalGame
+        finalGame
     }
 
     fun activateRune(
