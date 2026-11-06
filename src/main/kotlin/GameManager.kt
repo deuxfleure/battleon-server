@@ -888,15 +888,17 @@ object GameManager {
         }
     }
 
+
     private fun canResolveCurrentPhase(game: GameState): Boolean {
-        val deadline = game.phaseDeadlineAtMillis ?: return true
-        return System.currentTimeMillis() >= deadline
+        return PhaseManager.canResolveCurrentPhase(game)
     }
 
+
+
     private fun isWaitingForPhaseDeadline(game: GameState): Boolean {
-        val deadline = game.phaseDeadlineAtMillis ?: return false
-        return System.currentTimeMillis() < deadline
+        return PhaseManager.isWaitingForPhaseDeadline(game)
     }
+
 
     private fun giveAmbushPriorityTo(
         game: GameState,

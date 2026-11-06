@@ -161,4 +161,35 @@ object PhaseManager {
         }
     }
 
+
+    /**
+     * Vérifie si le délai de la phase est écoulé.
+     *
+     * Une phase sans deadline peut progresser
+     * immédiatement.
+     */
+    fun canResolveCurrentPhase(
+        game: GameState,
+        nowMillis: Long = System.currentTimeMillis()
+    ): Boolean {
+        val deadline = game.phaseDeadlineAtMillis
+            ?: return true
+
+        return nowMillis >= deadline
+    }
+
+    /**
+     * Vérifie si la phase attend encore
+     * l'expiration de son délai.
+     */
+    fun isWaitingForPhaseDeadline(
+        game: GameState,
+        nowMillis: Long = System.currentTimeMillis()
+    ): Boolean {
+        val deadline = game.phaseDeadlineAtMillis
+            ?: return false
+
+        return nowMillis < deadline
+    }
+
 }
