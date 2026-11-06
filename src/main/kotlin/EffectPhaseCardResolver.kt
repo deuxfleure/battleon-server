@@ -16,16 +16,13 @@ object EffectPhaseCardResolver {
 
         return when (currentCard.id) {
 
-            CardId.TISSEURDEMENSONGES -> {
-                if (ownerIsPlayer) {
-                    game.copy(
-                        playerGold = game.playerGold + 1
-                    )
-                } else {
-                    game.copy(
-                        opponentGold = game.opponentGold + 1
-                    )
-                }
+            CardId.AGILE -> {
+                game.copy(
+                    pendingChoice = CardEffectManager.buildAgilePendingChoice(
+                        owner = owner
+                    ),
+                    infoMessage = null
+                )
             }
 
             CardId.ARAIGNEESOLDAT -> {
@@ -37,54 +34,46 @@ object EffectPhaseCardResolver {
                 )
             }
 
-            CardId.NOURRICEARAIGNEE -> {
-                game.copy(
-                    pendingChoice = CardEffectManager.buildNourriceAraigneePendingChoice(
-                        game = game,
-                        owner = owner
-                    ),
-                    infoMessage = null
+            CardId.CHAMANE -> {
+                CardEffectManager.startChamaneSubterfuge(
+                    game = game,
+                    owner = owner
                 )
             }
 
-            CardId.LAMEERRANTE -> {
-                game.copy(
-                    pendingChoice = CardEffectManager.buildLameErrantePendingChoice(
-                        owner = owner
-                    ),
-                    infoMessage = null
+            CardId.CURSED,
+            CardId.SQUELETTE_HANTE -> {
+                CardEffectManager.discardTopCardWithReshuffleIfNeeded(
+                    game = game,
+                    targetIsPlayer = ownerIsPlayer
                 )
             }
 
-            CardId.AGILE -> {
-                game.copy(
-                    pendingChoice = CardEffectManager.buildAgilePendingChoice(
-                        owner = owner
-                    ),
-                    infoMessage = null
-                )
-            }
-
-            CardId.REVENDEUR -> {
-                val gameWithGold = if (ownerIsPlayer) {
-                    game.copy(playerGold = game.playerGold + 1)
-                } else {
-                    game.copy(opponentGold = game.opponentGold + 1)
-                }
-
+            CardId.DEVINDELUMIERE -> {
                 CardEffectManager.startScry(
-                    game = gameWithGold,
-                    sourceId = CardId.REVENDEUR.name,
+                    game = game,
+                    sourceId = CardId.DEVINDELUMIERE.name,
                     resolver = owner,
                     target = owner,
-                    amount = 1,
+                    amount = 2,
                     canDiscardViewedCards = true
                 )
             }
 
-            CardId.MAUVAISGENIE -> {
+            CardId.DEVINDESTENEBRES -> {
+                CardEffectManager.startScry(
+                    game = game,
+                    sourceId = CardId.DEVINDESTENEBRES.name,
+                    resolver = owner,
+                    target = if (ownerIsPlayer) ChoiceOwner.OPPONENT else ChoiceOwner.PLAYER,
+                    amount = 2,
+                    canDiscardViewedCards = true
+                )
+            }
+
+            CardId.ENRAGE -> {
                 game.copy(
-                    pendingChoice = CardEffectManager.buildBadGeniePendingChoice(
+                    pendingChoice = CardEffectManager.buildEnragePendingChoice(
                         game = game,
                         owner = owner
                     ),
@@ -99,86 +88,6 @@ object EffectPhaseCardResolver {
                         owner = owner
                     ),
                     infoMessage = null
-                )
-            }
-
-            CardId.ENRAGE -> {
-                game.copy(
-                    pendingChoice = CardEffectManager.buildEnragePendingChoice(
-                        game = game,
-                        owner = owner
-                    ),
-                    infoMessage = null
-                )
-            }
-
-            CardId.EXPERIENCEDELABORATOIRE -> {
-                game.copy(
-                    pendingChoice = CardEffectManager.buildExperienceLaboratoirePendingChoice(
-                        game = game,
-                        owner = owner
-                    ),
-                    infoMessage = null
-                )
-            }
-
-            CardId.MAGE -> {
-                game.copy(
-                    pendingChoice = CardEffectManager.buildMagePendingChoice(
-                        owner = owner
-                    ),
-                    infoMessage = null
-                )
-            }
-
-            CardId.ONIFLEAUDEGIVRE -> {
-                val pendingChoice = CardEffectManager.buildOniFleauDeGivrePendingChoice(
-                    game = game,
-                    owner = owner
-                )
-
-                if (pendingChoice != null) {
-                    game.copy(
-                        pendingChoice = pendingChoice,
-                        infoMessage = null
-                    )
-                } else {
-                    game
-                }
-            }
-
-            CardId.SAUVAGE -> {
-                val beastCount = CardEffectManager.countBeastLink(
-                    game = game,
-                    owner = owner
-                )
-
-                if (beastCount >= 2) {
-                    game.copy(
-                        pendingChoice = CardEffectManager.buildSauvagePendingChoice(
-                            game = game,
-                            owner = owner
-                        ),
-                        infoMessage = null
-                    )
-                } else {
-                    game
-                }
-            }
-
-            CardId.TACTICIEN -> {
-                game.copy(
-                    pendingChoice = CardEffectManager.buildTacticienPendingChoice(
-                        owner = owner
-                    ),
-                    infoMessage = null
-                )
-            }
-
-            CardId.CHAMANE -> {
-                CardEffectManager.startChamaneSubterfuge(
-                    game = game,
-                    owner = owner
                 )
             }
 
@@ -208,25 +117,13 @@ object EffectPhaseCardResolver {
                 )
             }
 
-            CardId.DEVINDELUMIERE -> {
-                CardEffectManager.startScry(
-                    game = game,
-                    sourceId = CardId.DEVINDELUMIERE.name,
-                    resolver = owner,
-                    target = owner,
-                    amount = 2,
-                    canDiscardViewedCards = true
-                )
-            }
-
-            CardId.REPRESAILLES -> {
-                CardEffectManager.addDiseaseToken(
-                    game = game,
-                    target = if (ownerIsPlayer) {
-                        ChoiceOwner.OPPONENT
-                    } else {
-                        ChoiceOwner.PLAYER
-                    }
+            CardId.EXPERIENCEDELABORATOIRE -> {
+                game.copy(
+                    pendingChoice = CardEffectManager.buildExperienceLaboratoirePendingChoice(
+                        game = game,
+                        owner = owner
+                    ),
+                    infoMessage = null
                 )
             }
 
@@ -237,14 +134,59 @@ object EffectPhaseCardResolver {
                 )
             }
 
-            CardId.DEVINDESTENEBRES -> {
-                CardEffectManager.startScry(
+            CardId.HEALER -> {
+                TokenManager.heal(
                     game = game,
-                    sourceId = CardId.DEVINDESTENEBRES.name,
-                    resolver = owner,
-                    target = if (ownerIsPlayer) ChoiceOwner.OPPONENT else ChoiceOwner.PLAYER,
-                    amount = 2,
-                    canDiscardViewedCards = true
+                    target = owner,
+                    amount = 1
+                )
+            }
+
+            CardId.LAMEERRANTE -> {
+                game.copy(
+                    pendingChoice = CardEffectManager.buildLameErrantePendingChoice(
+                        owner = owner
+                    ),
+                    infoMessage = null
+                )
+            }
+
+            CardId.MAGE -> {
+                game.copy(
+                    pendingChoice = CardEffectManager.buildMagePendingChoice(
+                        owner = owner
+                    ),
+                    infoMessage = null
+                )
+            }
+
+            CardId.MAITREDESCARNAGES -> {
+                game.copy(
+                    pendingChoice = CardEffectManager.buildMasterOfCarnagesPendingChoice(
+                        game = game,
+                        owner = owner
+                    ),
+                    infoMessage = null
+                )
+            }
+
+            CardId.MAUVAISGENIE -> {
+                game.copy(
+                    pendingChoice = CardEffectManager.buildBadGeniePendingChoice(
+                        game = game,
+                        owner = owner
+                    ),
+                    infoMessage = null
+                )
+            }
+
+            CardId.NOURRICEARAIGNEE -> {
+                game.copy(
+                    pendingChoice = CardEffectManager.buildNourriceAraigneePendingChoice(
+                        game = game,
+                        owner = owner
+                    ),
+                    infoMessage = null
                 )
             }
 
@@ -273,6 +215,76 @@ object EffectPhaseCardResolver {
                     amount = 1,
                     canDiscardViewedCards = true
                 )
+            }
+
+            CardId.ONIFLEAUDEGIVRE -> {
+                val pendingChoice = CardEffectManager.buildOniFleauDeGivrePendingChoice(
+                    game = game,
+                    owner = owner
+                )
+
+                if (pendingChoice != null) {
+                    game.copy(
+                        pendingChoice = pendingChoice,
+                        infoMessage = null
+                    )
+                } else {
+                    game
+                }
+            }
+
+            CardId.PORTEPAROLE -> {
+                CardEffectManager.addEmblemToken(
+                    game = game,
+                    target = owner
+                )
+            }
+
+            CardId.REPRESAILLES -> {
+                CardEffectManager.addDiseaseToken(
+                    game = game,
+                    target = if (ownerIsPlayer) {
+                        ChoiceOwner.OPPONENT
+                    } else {
+                        ChoiceOwner.PLAYER
+                    }
+                )
+            }
+
+            CardId.REVENDEUR -> {
+                val gameWithGold = if (ownerIsPlayer) {
+                    game.copy(playerGold = game.playerGold + 1)
+                } else {
+                    game.copy(opponentGold = game.opponentGold + 1)
+                }
+
+                CardEffectManager.startScry(
+                    game = gameWithGold,
+                    sourceId = CardId.REVENDEUR.name,
+                    resolver = owner,
+                    target = owner,
+                    amount = 1,
+                    canDiscardViewedCards = true
+                )
+            }
+
+            CardId.SAUVAGE -> {
+                val beastCount = CardEffectManager.countBeastLink(
+                    game = game,
+                    owner = owner
+                )
+
+                if (beastCount >= 2) {
+                    game.copy(
+                        pendingChoice = CardEffectManager.buildSauvagePendingChoice(
+                            game = game,
+                            owner = owner
+                        ),
+                        infoMessage = null
+                    )
+                } else {
+                    game
+                }
             }
 
             CardId.SQUELETTE_FAIBLESSE -> {
@@ -321,30 +333,25 @@ object EffectPhaseCardResolver {
                 }
             }
 
-            CardId.MAITREDESCARNAGES -> {
+            CardId.TACTICIEN -> {
                 game.copy(
-                    pendingChoice = CardEffectManager.buildMasterOfCarnagesPendingChoice(
-                        game = game,
+                    pendingChoice = CardEffectManager.buildTacticienPendingChoice(
                         owner = owner
                     ),
                     infoMessage = null
                 )
             }
 
-            CardId.CURSED,
-            CardId.SQUELETTE_HANTE -> {
-                CardEffectManager.discardTopCardWithReshuffleIfNeeded(
-                    game = game,
-                    targetIsPlayer = ownerIsPlayer
-                )
-            }
-
-            CardId.HEALER -> {
-                TokenManager.heal(
-                    game = game,
-                    target = owner,
-                    amount = 1
-                )
+            CardId.TISSEURDEMENSONGES -> {
+                if (ownerIsPlayer) {
+                    game.copy(
+                        playerGold = game.playerGold + 1
+                    )
+                } else {
+                    game.copy(
+                        opponentGold = game.opponentGold + 1
+                    )
+                }
             }
 
             else -> {

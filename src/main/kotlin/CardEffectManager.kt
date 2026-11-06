@@ -477,6 +477,20 @@ object CardEffectManager {
         )
     }
 
+    fun addEmblemToken(
+        game: GameState,
+        target: ChoiceOwner,
+        amount: Int = 1
+    ): GameState {
+        return TokenManager.addToken(
+            game = game,
+            target = target,
+            tokenId = TokenManager.TokenIds.EMBLEM,
+            amount = amount,
+            maxAmount = 4
+        )
+    }
+
     fun createRandomSkeletonCard(): Card {
         val skeletonId = listOf(
             CardId.SQUELETTE_HANTE,

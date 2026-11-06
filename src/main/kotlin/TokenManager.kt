@@ -7,6 +7,7 @@ object TokenManager {
         const val BURN = "BURN"
         const val DISEASE = "DISEASE"
         const val BLOOD = "BLOOD"
+        const val EMBLEM = "EMBLEM"
     }
 
     fun getTokenAmount(
