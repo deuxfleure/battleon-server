@@ -192,4 +192,52 @@ object PhaseManager {
         return nowMillis < deadline
     }
 
+
+    /**
+     * Calcule la deadline initiale d'une phase.
+     *
+     * Les fenêtres tactiques sont initialisées avec
+     * une durée courte. Leur durée définitive sera
+     * calculée à partir des actions disponibles.
+     */
+    fun initialPhaseDeadline(
+        game: GameState,
+        phase: TurnPhase,
+        nowMillis: Long
+    ): Long? {
+        return when {
+            // Phase technique sans délai.
+            phase == TurnPhase.COMBAT_CLEANUP -> null
+
+            // Préparation de partie PvP.
+            phase == TurnPhase.PRE_START && isPvpMode(game) ->
+                deadlineFrom(
+                    nowMillis,
+                    PVP_PRE_START_MILLIS
+                )
+
+            // Résolution des achats PvP.
+            phase == TurnPhase.SHOP_RESOLUTION && isPvpMode(game) ->
+                deadlineFrom(
+                    nowMillis,
+                    PVP_SHOP_MILLIS
+                )
+
+            // Fenêtres tactiques.
+            isTacticalWindow(phase) ->
+                deadlineFrom(
+                    nowMillis,
+                    EMPTY_TACTICAL_WINDOW_MILLIS
+                )
+
+            // Phases automatiques.
+            else ->
+                deadlineFrom(
+                    nowMillis,
+                    displayDurationMillis(phase)
+                )
+        }
+    }
+
+
 }

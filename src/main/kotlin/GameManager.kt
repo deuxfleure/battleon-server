@@ -843,29 +843,12 @@ object GameManager {
     ): GameState {
         val now = System.currentTimeMillis()
 
-        val deadlineAtMillis = when {
-            // Phase technique : aucune attente imposée.
-            phase == TurnPhase.COMBAT_CLEANUP -> null
+        val deadlineAtMillis = PhaseManager.initialPhaseDeadline(
+            game = game,
+            phase = phase,
+            nowMillis = now
+        )
 
-            // PRE_START : 90 secondes en PvP.
-            phase == TurnPhase.PRE_START && isPvpMode(game) ->
-                now + PVP_PRE_START_TIMEOUT_MILLIS
-
-            // SHOP : 20 secondes en PvP.
-            phase == TurnPhase.SHOP_RESOLUTION && isPvpMode(game) ->
-                now + PVP_SHOP_TIMEOUT_MILLIS
-
-            // Une Ambush commence avec sa durée minimale.
-            // Si une vraie action existe, startAmbushWindow()
-            // remplacera immédiatement cette deadline par 20 secondes.
-            isAmbushPhase(phase) ->
-                now + EMPTY_AMBUSH_DISPLAY_MILLIS
-
-            // Phases normales :
-            // 2 secondes avant résolution automatique.
-            else ->
-                now + MIN_PHASE_DISPLAY_MILLIS
-        }
 
         val enteredGame = game.copy(
             phase = phase,
