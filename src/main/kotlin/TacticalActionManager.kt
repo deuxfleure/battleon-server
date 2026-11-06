@@ -102,6 +102,34 @@ object TacticalActionManager {
     }
 
 
+    /**
+     * Vérifie si le joueur possède une action
+     * tactique disponible via ses jetons.
+     *
+     * Pour l'instant : jetons Emblème uniquement.
+     */
+    fun hasAvailableTokenAction(
+        game: GameState,
+        owner: ChoiceOwner
+    ): Boolean {
+
+        val isEmblemWindow =
+            game.phase == TurnPhase.AMBUSH_BEFORE_EFFECTS ||
+                    game.phase == TurnPhase.AMBUSH_BEFORE_COMBAT
+
+        if (!isEmblemWindow) {
+            return false
+        }
+
+        return TokenManager.getTokenAmount(
+            game = game,
+            target = owner,
+            tokenId = TokenManager.TokenIds.EMBLEM
+        ) > 0
+    }
+
+
+
 
     /**
      * Détermine si un joueur possède au moins

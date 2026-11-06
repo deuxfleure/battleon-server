@@ -924,9 +924,11 @@ object GameManager {
         game: GameState,
         owner: ChoiceOwner
     ): Boolean {
-        // Tique peut être activée uniquement pendant la fenêtre
-        // précédant la résolution des effets de la phase EFFECTS.
-        if (game.phase != TurnPhase.EFFECTS) {
+        // Tique peut être activée avant les Effets ou avant le Combat.
+        if (
+            game.phase != TurnPhase.AMBUSH_BEFORE_EFFECTS &&
+            game.phase != TurnPhase.AMBUSH_BEFORE_COMBAT
+        ) {
             return false
         }
 
@@ -1352,12 +1354,24 @@ object GameManager {
                 owner = owner
             ).isNotEmpty()
 
+        val hasDiscardCardAction =
+            canActivateTiqueFromDiscard(
+                game = game,
+                owner = owner
+            )
+
+        val hasTokenAction =
+            TacticalActionManager.hasAvailableTokenAction(
+                game = game,
+                owner = owner
+            )
+
 
         return TacticalActionManager.hasAvailableAction(
             hasRuneAction = hasRuneAction,
             hasTacticalCardAction = hasTacticalCardAction,
-            hasTokenAction = false,
-            hasDiscardCardAction = false
+            hasTokenAction = hasTokenAction,
+            hasDiscardCardAction = hasDiscardCardAction
         )
 
     }
