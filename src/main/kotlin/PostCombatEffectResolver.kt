@@ -369,6 +369,20 @@ object PostCombatEffectResolver {
         if (updatedGame.playerAbilitiesBlocked) return updatedGame
 
         if (!updatedGame.playerPostCombatCardEffectResolved) {
+
+                // EMBLÈME — bonus Bretteur attribué à la carte révélée.
+                // Résolu une seule fois, même après une interruption.
+                if (
+                    playerWonCombat &&
+                    updatedGame.playerCurrentCardBretteurBonus > 0
+                ) {
+                    updatedGame = CardEffectManager.applyBretteur(
+                        game = updatedGame,
+                        owner = ChoiceOwner.PLAYER,
+                        amount = updatedGame.playerCurrentCardBretteurBonus
+                    )
+                }
+
                 // Effets automatiques ici
                 // TISSEUR DE MENSONGES — Poison selon la différence de Force
                 if (playerWonCombat && playerCard.id == CardId.TISSEURDEMENSONGES) {
@@ -715,6 +729,19 @@ object PostCombatEffectResolver {
         if (updatedGame.opponentAbilitiesBlocked) return updatedGame
 
         if (!updatedGame.opponentPostCombatCardEffectResolved) {
+
+            // EMBLÈME — bonus Bretteur attribué à la carte révélée.
+            if (
+                opponentWonCombat &&
+                updatedGame.opponentCurrentCardBretteurBonus > 0
+            ) {
+                updatedGame = CardEffectManager.applyBretteur(
+                    game = updatedGame,
+                    owner = ChoiceOwner.OPPONENT,
+                    amount = updatedGame.opponentCurrentCardBretteurBonus
+                )
+            }
+
             if (opponentWonCombat && opponentCard.id == CardId.TISSEURDEMENSONGES) {
                 updatedGame = CardEffectManager.addPoisonToken(
                     game = updatedGame,
