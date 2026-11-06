@@ -102,33 +102,48 @@ object TacticalActionManager {
     }
 
 
+
     /**
-     * Vérifie si le joueur possède une action
-     * tactique disponible via ses jetons.
-     *
-     * Pour l'instant : jetons Emblème uniquement.
+     * Vérifie si un joueur peut activer un Emblème.
+     */
+    fun canActivateEmblem(
+        game: GameState,
+        owner: ChoiceOwner
+    ): Boolean {
+
+        if (!isEmblemActivationWindow(game.phase)) {
+            return false
+        }
+
+        if (game.pendingChoice != null) {
+            return false
+        }
+
+        val currentCard = when (owner) {
+            ChoiceOwner.PLAYER -> game.lastPlayerCard
+            ChoiceOwner.OPPONENT -> game.lastOpponentCard
+        }
+
+        if (currentCard == null) {
+            return false
+        }
+
+        return TokenManager.hasToken(
+            game = game,
+            target = owner,
+            tokenId = TokenManager.TokenIds.EMBLEM
+        )
+    }
+
+    /**
+     * Détecte les actions disponibles via les jetons.
      */
     fun hasAvailableTokenAction(
         game: GameState,
         owner: ChoiceOwner
     ): Boolean {
-
-        val isEmblemWindow =
-            game.phase == TurnPhase.AMBUSH_BEFORE_EFFECTS ||
-                    game.phase == TurnPhase.AMBUSH_BEFORE_COMBAT
-
-        if (!isEmblemWindow) {
-            return false
-        }
-
-        return TokenManager.getTokenAmount(
-            game = game,
-            target = owner,
-            tokenId = TokenManager.TokenIds.EMBLEM
-        ) > 0
+        return canActivateEmblem(game, owner)
     }
-
-
 
 
     /**
@@ -150,6 +165,21 @@ object TacticalActionManager {
                 hasTokenAction ||
                 hasDiscardCardAction
     }
+
+
+    /**
+     * Fenêtres autorisant la dépense d'un Emblème.
+     * Communes aux bonus Force et Bretteur.
+     */
+    fun isEmblemActivationWindow(
+        phase: TurnPhase
+    ): Boolean {
+        return phase == TurnPhase.AMBUSH_BEFORE_EFFECTS ||
+                phase == TurnPhase.AMBUSH_BEFORE_COMBAT
+    }
+
+
+
 
 
 }

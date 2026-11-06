@@ -1,6 +1,13 @@
+
 package com.battleon
 
+enum class EmblemBonusType {
+    POWER,
+    BRETTEUR
+}
+
 object TokenManager {
+
 
     object TokenIds {
         const val POISON = "POISON"
@@ -222,6 +229,62 @@ object TokenManager {
             amount = currentAmount
         )
     }
+
+
+    /**
+     * Consomme un Emblème et applique son bonus
+     * à la carte actuellement révélée.
+     *
+     * L'autorisation tactique est vérifiée
+     * par TacticalActionManager.
+     */
+    fun activateEmblem(
+        game: GameState,
+        owner: ChoiceOwner,
+        bonusType: EmblemBonusType
+    ): GameState {
+
+        if (!TacticalActionManager.canActivateEmblem(game, owner)) {
+            return game
+        }
+
+        val updatedGame = removeToken(
+            game = game,
+            target = owner,
+            tokenId = TokenIds.EMBLEM,
+            amount = 1
+        )
+
+        return when (owner) {
+
+            ChoiceOwner.PLAYER -> when (bonusType) {
+
+                EmblemBonusType.POWER -> updatedGame.copy(
+                    playerCurrentCardPowerBonus =
+                        updatedGame.playerCurrentCardPowerBonus + 1
+                )
+
+                EmblemBonusType.BRETTEUR -> updatedGame.copy(
+                    playerCurrentCardBretteurBonus =
+                        updatedGame.playerCurrentCardBretteurBonus + 1
+                )
+            }
+
+            ChoiceOwner.OPPONENT -> when (bonusType) {
+
+                EmblemBonusType.POWER -> updatedGame.copy(
+                    opponentCurrentCardPowerBonus =
+                        updatedGame.opponentCurrentCardPowerBonus + 1
+                )
+
+                EmblemBonusType.BRETTEUR -> updatedGame.copy(
+                    opponentCurrentCardBretteurBonus =
+                        updatedGame.opponentCurrentCardBretteurBonus + 1
+                )
+            }
+        }
+    }
+
 
     fun heal(
         game: GameState,

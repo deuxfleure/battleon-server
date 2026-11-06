@@ -347,6 +347,14 @@ data class GameState(
     val playerCurrentCardHasBruteBonus: Boolean = false,
     val opponentCurrentCardHasBruteBonus: Boolean = false,
 
+
+    // BRETTEUR — bonus temporaire accordé à la carte révélée.
+    // Chaque Emblème dépensé pour Bretteur ajoute +1.
+    // Conservé jusqu'à la résolution du post-combat.
+    val playerCurrentCardBretteurBonus: Int = 0,
+    val opponentCurrentCardBretteurBonus: Int = 0,
+
+
     // VENIMEUX — bonus accordé à la prochaine carte révélée.
     val playerNextCardVenomousBonus: Int = 0,
     val opponentNextCardVenomousBonus: Int = 0,
