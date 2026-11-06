@@ -135,6 +135,23 @@ data class PostCombatEffectProgress(
     val completed: Boolean = false
 )
 
+
+@Serializable
+enum class TacticalWindowStatus {
+    CLOSED,
+    OPEN,
+    PAUSED
+}
+
+@Serializable
+enum class PhaseExecutionStatus {
+    NOT_STARTED,
+    RESOLVING,
+    WAITING_FOR_CHOICE,
+    RESOLVED
+}
+
+
 @Serializable
 data class GameState(
 
@@ -159,6 +176,31 @@ data class GameState(
     // est terminée et que la phase peut maintenant être résolue.
     val phaseEnteredAtMillis: Long? = null,
     val phaseResolutionRequested: Boolean = false,
+
+
+    // =========================================================
+    // MOTEUR 0.2.1 — RÉSOLUTION DES PHASES
+    // =========================================================
+
+    val phaseExecutionStatus: PhaseExecutionStatus =
+        PhaseExecutionStatus.NOT_STARTED,
+
+    // Fenêtre tactique associée à la phase courante.
+    val tacticalWindowStatus: TacticalWindowStatus =
+        TacticalWindowStatus.CLOSED,
+
+    // Identifiant de la fenêtre tactique actuelle.
+    // Permet de distinguer deux ouvertures successives.
+    val tacticalWindowId: Long = 0L,
+
+    // Disponibilité calculée par le serveur.
+    val playerHasTacticalAction: Boolean = false,
+    val opponentHasTacticalAction: Boolean = false,
+
+    // Indique si ACTION a déjà été utilisé dans cette fenêtre.
+    val playerTacticalExtensionUsed: Boolean = false,
+    val opponentTacticalExtensionUsed: Boolean = false,
+
 
     // Deadline serveur de la phase / action temporisée actuelle.
     // null = aucune limite de temps active.
