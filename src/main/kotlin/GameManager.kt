@@ -3704,6 +3704,9 @@ object GameManager {
                             playerCurrentCardDamageBonus = 0,
                             opponentCurrentCardDamageBonus = 0,
 
+                            playerCurrentCardBretteurBonus = 0,
+                            opponentCurrentCardBretteurBonus = 0,
+
                             playerCurrentCardVenomousBonus = 0,
                             opponentCurrentCardVenomousBonus = 0,
 
@@ -3996,6 +3999,9 @@ object GameManager {
 
                             playerCurrentCardDamageBonus = 0,
                             opponentCurrentCardDamageBonus = 0,
+
+                            playerCurrentCardBretteurBonus = 0,
+                            opponentCurrentCardBretteurBonus = 0,
 
                             playerCurrentCardVenomousBonus = 0,
                             opponentCurrentCardVenomousBonus = 0,
