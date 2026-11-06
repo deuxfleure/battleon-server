@@ -1112,13 +1112,17 @@ object GameManager {
         owner: ChoiceOwner
     ): GameState {
 
+        // Ne jamais transférer la priorité tant qu'un choix
+        // interactif est encore en attente.
         if (game.pendingChoice != null) {
             return game
         }
 
-        return moveToNextAmbushActorOrFinish(
-            game = game,
-            currentActor = owner
+        return resolveAiAmbushActionsIfNeeded(
+            moveToNextAmbushActorOrFinish(
+                game = game,
+                currentActor = owner
+            )
         )
     }
 
@@ -1168,23 +1172,13 @@ object GameManager {
             return game
         }
 
-        val afterPass = when (owner) {
-            ChoiceOwner.PLAYER -> {
-                game.copy(
-                    playerPassedCurrentAmbushWindow = true,
-                    currentAmbushActor = null,
-                    infoMessage = null
-                )
-            }
-
-            ChoiceOwner.OPPONENT -> {
-                game.copy(
-                    opponentPassedCurrentAmbushWindow = true,
-                    currentAmbushActor = null,
-                    infoMessage = null
-                )
-            }
-        }
+        val afterPass = TacticalActionManager.markPassed(
+            game = game,
+            owner = owner
+        ).copy(
+            currentAmbushActor = null,
+            infoMessage = null
+        )
 
         return moveToNextAmbushActorOrFinish(
             game = afterPass,
