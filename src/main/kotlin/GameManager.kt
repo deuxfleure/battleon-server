@@ -1498,6 +1498,47 @@ object GameManager {
         }
     }
 
+    fun activateToken(
+        gameId: String,
+        owner: ChoiceOwner,
+        tokenId: String,
+        option: String? = null
+    ): GameState? = withGameLock(gameId) {
+
+        val game = games[gameId] ?: return@withGameLock null
+
+        // Compatibilité temporaire avec l'ancien système
+        // de priorité des fenêtres tactiques.
+        if (game.currentAmbushActor != owner) {
+            return@withGameLock game
+        }
+
+        // Vérifie que ce jeton est activable dans l'état actuel.
+        val canActivate = when (tokenId) {
+            TokenManager.TokenIds.EMBLEM ->
+                TacticalActionManager.canActivateEmblem(
+                    game = game,
+                    owner = owner
+                )
+
+            else -> false
+        }
+
+        if (!canActivate) {
+            return@withGameLock game
+        }
+
+        val updatedGame = TokenManager.activateToken(
+            game = game,
+            owner = owner,
+            tokenId = tokenId,
+            option = option
+        )
+
+        games[gameId] = updatedGame
+        updatedGame
+    }
+
     fun activateRune(
         gameId: String,
         owner: ChoiceOwner,

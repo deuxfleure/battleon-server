@@ -178,8 +178,53 @@ object TacticalActionManager {
                 phase == TurnPhase.AMBUSH_BEFORE_COMBAT
     }
 
+    /**
+     * Enregistre le passage d'un joueur pour la fenêtre tactique.
+     *
+     * Un passage reste valable tant qu'aucune nouvelle
+     * opportunité tactique n'est créée pour ce joueur.
+     */
+    fun markPassed(
+        game: GameState,
+        owner: ChoiceOwner
+    ): GameState {
+        return when (owner) {
+            ChoiceOwner.PLAYER -> game.copy(
+                playerPassedCurrentAmbushWindow = true
+            )
 
+            ChoiceOwner.OPPONENT -> game.copy(
+                opponentPassedCurrentAmbushWindow = true
+            )
+        }
+    }
 
+    /**
+     * Réautorise un joueur ayant passé lorsqu'un événement
+     * crée une nouvelle opportunité tactique.
+     *
+     * L'appelant doit avoir confirmé qu'il s'agit bien
+     * d'une nouvelle opportunité, et pas simplement
+     * d'une action qui était déjà disponible.
+     */
+    fun reopenForNewOpportunity(
+        game: GameState,
+        owner: ChoiceOwner
+    ): GameState {
+        if (!PhaseManager.isTacticalWindow(game.phase)) {
+            return game
+        }
+
+        return when (owner) {
+            ChoiceOwner.PLAYER -> game.copy(
+                playerPassedCurrentAmbushWindow = false
+            )
+
+            ChoiceOwner.OPPONENT -> game.copy(
+                opponentPassedCurrentAmbushWindow = false
+            )
+        }
+    }
 
 
 }

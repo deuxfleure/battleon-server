@@ -230,6 +230,33 @@ object TokenManager {
         )
     }
 
+    fun activateToken(
+        game: GameState,
+        owner: ChoiceOwner,
+        tokenId: String,
+        option: String? = null
+    ): GameState {
+
+        return when (tokenId) {
+
+            TokenIds.EMBLEM -> {
+                val bonusType = when (option) {
+                    "POWER" -> EmblemBonusType.POWER
+                    "BRETTEUR" -> EmblemBonusType.BRETTEUR
+                    else -> return game
+                }
+
+                activateEmblem(
+                    game = game,
+                    owner = owner,
+                    bonusType = bonusType
+                )
+            }
+
+            else -> game
+        }
+    }
+
 
     /**
      * Consomme un Emblème et applique son bonus
