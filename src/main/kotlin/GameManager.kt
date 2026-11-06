@@ -1958,25 +1958,20 @@ object GameManager {
         }
     }
 
+
     private fun isPvpMode(game: GameState): Boolean {
-        return game.mode == "DUEL" || game.mode == "SEASON" || game.mode == "RANKED"
+        return PhaseManager.isPvpMode(game)
     }
 
     private fun isSeasonMercenary(card: Card): Boolean {
         return card.faction == CardFaction.MERCENARY
     }
 
-    private fun isAmbushPhase(phase: TurnPhase): Boolean {
-        return when (phase) {
-            TurnPhase.AMBUSH_BEFORE_REVEAL,
-            TurnPhase.AMBUSH_BEFORE_EFFECTS,
-            TurnPhase.AMBUSH_BEFORE_COMBAT,
-            TurnPhase.AMBUSH_BEFORE_POST_COMBAT,
-            TurnPhase.AMBUSH_BEFORE_SHOP -> true
 
-            else -> false
-        }
+    private fun isAmbushPhase(phase: TurnPhase): Boolean {
+        return PhaseManager.isTacticalWindow(phase)
     }
+
 
     private fun advancePastAmbushWindow(game: GameState): GameState {
         val clearedGame = clearAmbushWindowState(game)

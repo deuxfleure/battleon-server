@@ -83,4 +83,82 @@ object PhaseManager {
     ): Long {
         return nowMillis + durationMillis.coerceAtLeast(0L)
     }
+
+
+    /**
+     * Détermine la prochaine phase en tenant compte
+     * des éventuelles interruptions du cycle normal.
+     */
+    fun nextPhase(game: GameState): TurnPhase {
+
+        // Esquive : aucun combat ni effet post-combat.
+        if (
+            game.phase == TurnPhase.EFFECTS &&
+            game.combatCancelledByDodge
+        ) {
+            return TurnPhase.COMBAT_CLEANUP
+        }
+
+        return when (game.phase) {
+
+            TurnPhase.PRE_START ->
+                TurnPhase.AMBUSH_BEFORE_REVEAL
+
+            TurnPhase.AMBUSH_BEFORE_REVEAL ->
+                TurnPhase.REVEAL
+
+            TurnPhase.REVEAL ->
+                TurnPhase.AMBUSH_BEFORE_EFFECTS
+
+            TurnPhase.AMBUSH_BEFORE_EFFECTS ->
+                TurnPhase.EFFECTS
+
+            TurnPhase.EFFECTS ->
+                TurnPhase.AMBUSH_BEFORE_COMBAT
+
+            TurnPhase.AMBUSH_BEFORE_COMBAT ->
+                TurnPhase.COMBAT
+
+            TurnPhase.COMBAT ->
+                TurnPhase.AMBUSH_BEFORE_POST_COMBAT
+
+            TurnPhase.AMBUSH_BEFORE_POST_COMBAT ->
+                TurnPhase.POST_COMBAT
+
+            TurnPhase.POST_COMBAT ->
+                TurnPhase.COMBAT_CLEANUP
+
+            TurnPhase.COMBAT_CLEANUP ->
+                TurnPhase.AMBUSH_BEFORE_SHOP
+
+            TurnPhase.AMBUSH_BEFORE_SHOP ->
+                TurnPhase.SHOP_RESOLUTION
+
+            TurnPhase.SHOP_RESOLUTION ->
+                TurnPhase.END_TURN
+
+            TurnPhase.END_TURN ->
+                TurnPhase.AMBUSH_BEFORE_REVEAL
+        }
+    }
+
+
+    /**
+     * Indique si une phase correspond à une fenêtre tactique.
+     *
+     * Les noms AMBUSH_BEFORE_* sont conservés pour
+     * l'instant afin de préserver le contrat existant.
+     */
+    fun isTacticalWindow(phase: TurnPhase): Boolean {
+        return when (phase) {
+            TurnPhase.AMBUSH_BEFORE_REVEAL,
+            TurnPhase.AMBUSH_BEFORE_EFFECTS,
+            TurnPhase.AMBUSH_BEFORE_COMBAT,
+            TurnPhase.AMBUSH_BEFORE_POST_COMBAT,
+            TurnPhase.AMBUSH_BEFORE_SHOP -> true
+
+            else -> false
+        }
+    }
+
 }
