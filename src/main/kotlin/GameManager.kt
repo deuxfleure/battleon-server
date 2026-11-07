@@ -891,6 +891,76 @@ object GameManager {
         return PhaseManager.isWaitingForPhaseDeadline(game)
     }
 
+
+    fun openAmbushActionMenu(
+        gameId: String,
+        owner: ChoiceOwner
+    ): GameState? = withGameLock(gameId) {
+        val game = games[gameId] ?: return@withGameLock null
+
+        // Le menu Action n'existe que pendant une fenêtre tactique.
+        if (!isAmbushPhase(game.phase)) {
+            return@withGameLock game
+        }
+
+        // Seul le joueur prioritaire peut ouvrir son menu.
+        if (game.currentAmbushActor != owner) {
+            return@withGameLock game
+        }
+
+        // Une action déjà en cours doit être terminée.
+        if (game.pendingChoice != null) {
+            return@withGameLock game
+        }
+
+        // Ne pas rouvrir un menu déjà ouvert.
+        if (game.ambushActionMenuOpen) {
+            return@withGameLock game
+        }
+
+        // Le joueur doit encore disposer d'une action.
+        if (!hasAvailableAmbushAction(game, owner)) {
+            return@withGameLock game
+        }
+
+        // L'appui sur Action doit arriver avant la fin
+        // de la fenêtre de déclaration de 2/1 seconde.
+        val now = System.currentTimeMillis()
+        val deadline = game.phaseDeadlineAtMillis
+
+        if (deadline == null || now >= deadline) {
+            return@withGameLock game
+        }
+
+        val reactivated = when (owner) {
+            ChoiceOwner.PLAYER ->
+                game.playerReactivatedCurrentAmbushWindow
+
+            ChoiceOwner.OPPONENT ->
+                game.opponentReactivatedCurrentAmbushWindow
+        }
+
+        val duration = if (reactivated) {
+            AMBUSH_REACTIVATED_ACTION_TIMEOUT_MILLIS
+        } else {
+            AMBUSH_ACTION_TIMEOUT_MILLIS
+        }
+
+        val updatedGame = game.copy(
+            ambushActionMenuOpen = true,
+            phaseDeadlineAtMillis = if (isAiControlledOpponent(game)) {
+                null
+            } else {
+                now + duration
+            },
+            infoMessage = null
+        )
+
+        games[gameId] = updatedGame
+        updatedGame
+    }
+
+
     private fun startAmbushActionResolutionTimer(
         game: GameState,
         owner: ChoiceOwner
@@ -914,7 +984,11 @@ object GameManager {
         }
 
         return game.copy(
-            phaseDeadlineAtMillis = System.currentTimeMillis() + duration,
+            phaseDeadlineAtMillis = if (isAiControlledOpponent(game)) {
+                null
+            } else {
+                System.currentTimeMillis() + duration
+            },
             infoMessage = null
         )
     }
@@ -1304,6 +1378,16 @@ object GameManager {
         owner: ChoiceOwner
     ): GameState? = withGameLock(gameId) {
         val game = games[gameId] ?: return@withGameLock null
+
+        // Un Pass volontaire ne peut pas interrompre
+        // une action tactique déjà déclarée.
+        if (
+            isAmbushPhase(game.phase) &&
+            game.currentAmbushActor == owner &&
+            game.pendingChoice != null
+        ) {
+            return@withGameLock game
+        }
 
         val updatedGame = resolveAiAmbushActionsIfNeeded(
             passAmbushWindowInternal(
@@ -4415,25 +4499,30 @@ object GameManager {
             TurnPhase.AMBUSH_BEFORE_POST_COMBAT,
             TurnPhase.AMBUSH_BEFORE_SHOP -> {
 
+                val deadlineExpired = game.phaseDeadlineAtMillis?.let {
+                    System.currentTimeMillis() >= it
+                } ?: false
+
                 updatedGame = when {
-                    // La fenêtre est toujours ouverte :
-                    // - 0,5 s si aucune action n'existe
-                    // - 20 s si un joueur possède la priorité.
-                    !canResolveCurrentPhase(game) -> {
+                    // Tant que le délai n'est pas écoulé,
+                    // on conserve la fenêtre tactique et ses choix.
+                    !deadlineExpired -> {
                         game
                     }
 
-                    // Une vraie action était disponible mais son délai
-                    // de décision vient d'expirer : cela équivaut à Pass.
+                    // Le délai de déclaration ou de résolution a expiré.
+                    // Le passage annule également un éventuel choix inachevé.
                     game.currentAmbushActor != null -> {
-                        passAmbushWindowInternal(
-                            game = game,
-                            owner = game.currentAmbushActor
+                        resolveAiAmbushActionsIfNeeded(
+                            passAmbushWindowInternal(
+                                game = game,
+                                owner = game.currentAmbushActor
+                            )
                         )
                     }
 
-                    // Aucune action n'était disponible :
-                    // les 0,5 s d'affichage viennent de s'écouler.
+                    // Aucun joueur ne pouvait agir :
+                    // les 0,5 seconde d'affichage sont écoulées.
                     else -> {
                         advancePastAmbushWindow(game)
                     }

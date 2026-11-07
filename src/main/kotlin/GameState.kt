@@ -315,6 +315,11 @@ data class GameState(
     val ambushPriorityPlayerFirst: Boolean? = null,
     val currentAmbushActor: ChoiceOwner? = null,
 
+    // Indique que le joueur prioritaire a ouvert le menu Action.
+    // Le délai de résolution de 10/5 secondes commence à cet instant.
+    // false = le joueur est encore dans sa fenêtre de décision.
+    val ambushActionMenuOpen: Boolean = false,
+
     val playerPassedCurrentAmbushWindow: Boolean = false,
     val opponentPassedCurrentAmbushWindow: Boolean = false,
 
