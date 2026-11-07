@@ -829,7 +829,16 @@ object GameManager {
 
     private const val MIN_PHASE_DISPLAY_MILLIS = 2_000L
     private const val EMPTY_AMBUSH_DISPLAY_MILLIS = 500L
-    private const val AMBUSH_DECISION_TIMEOUT_MILLIS = 20_000L
+    // Temps pour déclarer une action tactique.
+    private const val AMBUSH_DECISION_TIMEOUT_MILLIS = 2_000L
+
+    // Après une réactivation, le délai de déclaration est réduit.
+    private const val AMBUSH_REACTIVATED_DECISION_TIMEOUT_MILLIS = 1_000L
+
+    // Temps pour terminer une action déjà déclarée.
+    // Ces deux constantes seront raccordées à l'étape suivante.
+    private const val AMBUSH_ACTION_TIMEOUT_MILLIS = 10_000L
+    private const val AMBUSH_REACTIVATED_ACTION_TIMEOUT_MILLIS = 5_000L
 
     private const val PVP_DECISION_TIMEOUT_MILLIS = 20_000L
     private const val PVP_SHOP_TIMEOUT_MILLIS = 20_000L
@@ -889,9 +898,23 @@ object GameManager {
     ): GameState {
         val now = System.currentTimeMillis()
 
+        val hasBeenReactivated = when (owner) {
+            ChoiceOwner.PLAYER ->
+                game.playerReactivatedCurrentAmbushWindow
+
+            ChoiceOwner.OPPONENT ->
+                game.opponentReactivatedCurrentAmbushWindow
+        }
+
+        val decisionTimeout = if (hasBeenReactivated) {
+            AMBUSH_REACTIVATED_DECISION_TIMEOUT_MILLIS
+        } else {
+            AMBUSH_DECISION_TIMEOUT_MILLIS
+        }
+
         return game.copy(
             currentAmbushActor = owner,
-            phaseDeadlineAtMillis = now + AMBUSH_DECISION_TIMEOUT_MILLIS,
+            phaseDeadlineAtMillis = now + decisionTimeout,
             phasePauseUsed = false,
             infoMessage = null
         )
@@ -1159,27 +1182,46 @@ object GameManager {
             owner = currentActor
         )
 
+        val otherActor = oppositeOwner(currentActor)
+
+        // Après une action réellement terminée,
+        // l'adversaire ayant passé peut être réactivé,
+        // uniquement s'il possède une action disponible.
+        //
+        // Un simple passage ne réactive personne.
+        val updatedGame = if (
+            !currentActorPassed &&
+            hasAvailableAmbushAction(game, otherActor)
+        ) {
+            TacticalActionManager.reopenForNewOpportunity(
+                game = game,
+                owner = otherActor
+            )
+        } else {
+            game
+        }
+
         val nextOwner = TacticalActionManager.nextActor(
-            game = game,
+            game = updatedGame,
             currentActor = currentActor,
             currentActorPassed = currentActorPassed,
             playerHasAction = hasAvailableAmbushAction(
-                game,
+                updatedGame,
                 ChoiceOwner.PLAYER
             ),
             opponentHasAction = hasAvailableAmbushAction(
-                game,
+                updatedGame,
                 ChoiceOwner.OPPONENT
             )
         )
 
         return if (nextOwner != null) {
             giveAmbushPriorityTo(
-                game = game,
+                game = updatedGame,
                 owner = nextOwner
             )
         } else {
-            advancePastAmbushWindow(game)
+            advancePastAmbushWindow(updatedGame)
         }
     }
 
