@@ -891,6 +891,34 @@ object GameManager {
         return PhaseManager.isWaitingForPhaseDeadline(game)
     }
 
+    private fun startAmbushActionResolutionTimer(
+        game: GameState,
+        owner: ChoiceOwner
+    ): GameState {
+        if (!isAmbushPhase(game.phase)) return game
+        if (game.currentAmbushActor != owner) return game
+        if (game.pendingChoice == null) return game
+
+        val hasBeenReactivated = when (owner) {
+            ChoiceOwner.PLAYER ->
+                game.playerReactivatedCurrentAmbushWindow
+
+            ChoiceOwner.OPPONENT ->
+                game.opponentReactivatedCurrentAmbushWindow
+        }
+
+        val duration = if (hasBeenReactivated) {
+            AMBUSH_REACTIVATED_ACTION_TIMEOUT_MILLIS
+        } else {
+            AMBUSH_ACTION_TIMEOUT_MILLIS
+        }
+
+        return game.copy(
+            phaseDeadlineAtMillis = System.currentTimeMillis() + duration,
+            infoMessage = null
+        )
+    }
+
 
     private fun giveAmbushPriorityTo(
         game: GameState,
