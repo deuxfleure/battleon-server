@@ -1269,6 +1269,9 @@ object GameManager {
             game = game,
             owner = owner
         ).copy(
+            // Un choix tactique non terminé est abandonné.
+            pendingChoice = null,
+
             currentAmbushActor = null,
             infoMessage = null
         )
@@ -1646,9 +1649,9 @@ object GameManager {
         }
 
         val finalGame = if (updatedGame.pendingChoice != null) {
-            updatedGame.copy(
-                currentAmbushActor = owner,
-                infoMessage = null
+            startAmbushActionResolutionTimer(
+                game = updatedGame,
+                owner = owner
             )
         } else {
             resumeAmbushAfterPendingChoice(
@@ -1693,9 +1696,9 @@ object GameManager {
         )
 
         updatedGame = if (updatedGame.pendingChoice != null) {
-            updatedGame.copy(
-                currentAmbushActor = owner,
-                infoMessage = null
+            startAmbushActionResolutionTimer(
+                game = updatedGame,
+                owner = owner
             )
         } else {
             resumeAmbushAfterPendingChoice(
@@ -1964,7 +1967,15 @@ object GameManager {
             else -> game
         }
 
-        if (updatedGame.pendingChoice == null) {
+        if (updatedGame.pendingChoice != null) {
+            // L'action a été déclarée et attend un choix.
+            // On démarre le délai de résolution de 10 ou 5 secondes.
+            updatedGame = startAmbushActionResolutionTimer(
+                game = updatedGame,
+                owner = owner
+            )
+        } else {
+            // Action instantanée : on poursuit la fenêtre tactique.
             updatedGame = resumeAmbushAfterPendingChoice(
                 game = updatedGame,
                 owner = owner
