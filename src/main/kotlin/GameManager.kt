@@ -925,15 +925,10 @@ object GameManager {
         owner: ChoiceOwner
     ): Boolean {
 
-        // Seul le joueur ayant la priorité peut agir.
-        if (game.currentAmbushActor != owner) {
-            return false
-        }
+        // Cette fonction vérifie la disponibilité de Tique,
+        // indépendamment du joueur ayant actuellement la priorité.
 
-        // Aucun effet tactique ne peut interrompre un choix en attente.
-        if (game.pendingChoice != null) {
-            return false
-        }
+        // Tique peut être activée avant les Effets ou avant le Combat.
         // Tique peut être activée avant les Effets ou avant le Combat.
         if (
             game.phase != TurnPhase.AMBUSH_BEFORE_EFFECTS &&
@@ -1099,8 +1094,13 @@ object GameManager {
         val initializedGame = game.copy(
             ambushPriorityPlayerFirst = playerFirst,
             currentAmbushActor = null,
+
             playerPassedCurrentAmbushWindow = false,
             opponentPassedCurrentAmbushWindow = false,
+
+            playerReactivatedCurrentAmbushWindow = false,
+            opponentReactivatedCurrentAmbushWindow = false,
+
             infoMessage = null
         )
 

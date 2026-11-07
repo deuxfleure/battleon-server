@@ -318,6 +318,12 @@ data class GameState(
     val playerPassedCurrentAmbushWindow: Boolean = false,
     val opponentPassedCurrentAmbushWindow: Boolean = false,
 
+    // Le joueur a déjà été réactivé après un passage
+    // pendant cette fenêtre tactique.
+    // Ses prochains délais seront réduits.
+    val playerReactivatedCurrentAmbushWindow: Boolean = false,
+    val opponentReactivatedCurrentAmbushWindow: Boolean = false,
+
     // =========================================================
     // 7. JETONS
     // =========================================================
