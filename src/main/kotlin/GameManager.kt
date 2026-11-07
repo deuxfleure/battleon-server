@@ -1001,6 +1001,14 @@ object GameManager {
 
         val game = games[gameId] ?: return@withGameLock null
 
+        if (game.pendingChoice != null) {
+            return@withGameLock game
+        }
+
+        if (game.currentAmbushActor != owner) {
+            return@withGameLock game
+        }
+
         if (!canActivateTiqueFromDiscard(game, owner)) {
             return@withGameLock game
         }
@@ -1066,6 +1074,11 @@ object GameManager {
             game = updatedGame,
             target = owner,
             tokenId = TokenManager.TokenIds.BLOOD
+        )
+
+        updatedGame = resumeAmbushAfterPendingChoice(
+            game = updatedGame,
+            owner = owner
         )
 
         games[gameId] = updatedGame
@@ -4391,9 +4404,12 @@ object GameManager {
         )
 
         if (!result.destroyed) {
-            return result.game.copy(
-                pendingChoice = null,
-                infoMessage = "Destruction impossible : ${result.failure}"
+            return resumeAmbushAfterPendingChoice(
+                game = result.game.copy(
+                    pendingChoice = null,
+                    infoMessage = "Destruction impossible : ${result.failure}"
+                ),
+                owner = owner
             )
         }
 
@@ -4455,7 +4471,7 @@ object GameManager {
                     updatedGame.activeScryState == null &&
                     updatedGame.pendingChoice == null
 
-        if (ambushScryJustFinished) {
+        if (ambushScryJustFinished && !trapperChoiceJustFinished) {
             updatedGame = resumeAmbushAfterPendingChoice(
                 game = updatedGame,
                 owner = activeScryBeforeResolution.resolver
