@@ -924,6 +924,16 @@ object GameManager {
         game: GameState,
         owner: ChoiceOwner
     ): Boolean {
+
+        // Seul le joueur ayant la priorité peut agir.
+        if (game.currentAmbushActor != owner) {
+            return false
+        }
+
+        // Aucun effet tactique ne peut interrompre un choix en attente.
+        if (game.pendingChoice != null) {
+            return false
+        }
         // Tique peut être activée avant les Effets ou avant le Combat.
         if (
             game.phase != TurnPhase.AMBUSH_BEFORE_EFFECTS &&
