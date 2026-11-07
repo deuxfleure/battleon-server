@@ -199,14 +199,6 @@ object TacticalActionManager {
         }
     }
 
-    /**
-     * Réautorise un joueur ayant passé lorsqu'un événement
-     * crée une nouvelle opportunité tactique.
-     *
-     * L'appelant doit avoir confirmé qu'il s'agit bien
-     * d'une nouvelle opportunité, et pas simplement
-     * d'une action qui était déjà disponible.
-     */
     fun reopenForNewOpportunity(
         game: GameState,
         owner: ChoiceOwner
@@ -216,13 +208,27 @@ object TacticalActionManager {
         }
 
         return when (owner) {
-            ChoiceOwner.PLAYER -> game.copy(
-                playerPassedCurrentAmbushWindow = false
-            )
+            ChoiceOwner.PLAYER -> {
+                if (!game.playerPassedCurrentAmbushWindow) {
+                    game
+                } else {
+                    game.copy(
+                        playerPassedCurrentAmbushWindow = false,
+                        playerReactivatedCurrentAmbushWindow = true
+                    )
+                }
+            }
 
-            ChoiceOwner.OPPONENT -> game.copy(
-                opponentPassedCurrentAmbushWindow = false
-            )
+            ChoiceOwner.OPPONENT -> {
+                if (!game.opponentPassedCurrentAmbushWindow) {
+                    game
+                } else {
+                    game.copy(
+                        opponentPassedCurrentAmbushWindow = false,
+                        opponentReactivatedCurrentAmbushWindow = true
+                    )
+                }
+            }
         }
     }
 

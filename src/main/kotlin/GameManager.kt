@@ -1247,8 +1247,12 @@ object GameManager {
         return game.copy(
             ambushPriorityPlayerFirst = null,
             currentAmbushActor = null,
+
             playerPassedCurrentAmbushWindow = false,
-            opponentPassedCurrentAmbushWindow = false
+            opponentPassedCurrentAmbushWindow = false,
+
+            playerReactivatedCurrentAmbushWindow = false,
+            opponentReactivatedCurrentAmbushWindow = false
         )
     }
 
