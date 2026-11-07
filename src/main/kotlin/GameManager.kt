@@ -1355,12 +1355,17 @@ object GameManager {
             game = game,
             owner = owner
         ).copy(
-            // Un choix tactique non terminé est abandonné.
+            // Fermeture du menu Action lors du passage.
+            ambushActionMenuOpen = false,
+
+            // Nettoyage des choix abandonnés, notamment
+            // lors d'une expiration du délai serveur.
             pendingChoice = null,
 
             currentAmbushActor = null,
             infoMessage = null
         )
+
 
         return moveToNextAmbushActorOrFinish(
             game = afterPass,
@@ -1720,6 +1725,19 @@ object GameManager {
         }
 
 
+        // Une activation reçue après la fin du délai
+        // de résolution doit être refusée.
+        val actionDeadline = game.phaseDeadlineAtMillis
+
+        if (
+            actionDeadline != null &&
+            System.currentTimeMillis() >= actionDeadline
+        ) {
+            return@withGameLock game
+        }
+
+
+
         // Compatibilité temporaire avec l'ancien système
         // de priorité des fenêtres tactiques.
         if (game.currentAmbushActor != owner) {
@@ -1784,6 +1802,19 @@ object GameManager {
         if (!game.ambushActionMenuOpen) {
             return@withGameLock game
         }
+
+
+        // Une rune ne peut pas être activée
+        // après expiration du délai de résolution.
+        val actionDeadline = game.phaseDeadlineAtMillis
+
+        if (
+            actionDeadline != null &&
+            System.currentTimeMillis() >= actionDeadline
+        ) {
+            return@withGameLock game
+        }
+
 
 
         if (!canActivateRune(
@@ -1878,6 +1909,20 @@ object GameManager {
         if (!game.ambushActionMenuOpen) {
             return@withGameLock game
         }
+
+
+        // Refuser une activation arrivée après la fin
+        // du délai de résolution de l'action.
+        // En Solo / Training, une deadline null est autorisée.
+        val actionDeadline = game.phaseDeadlineAtMillis
+
+        if (
+            actionDeadline != null &&
+            System.currentTimeMillis() >= actionDeadline
+        ) {
+            return@withGameLock game
+        }
+
 
 
         if (!canActivateTacticalCard(
@@ -4641,6 +4686,28 @@ object GameManager {
     ): GameState? = withGameLock(gameId) {
 
         val game = games[gameId] ?: return@withGameLock null
+
+
+        // Sécurité des choix interactifs pendant une embuscade.
+        // Le délai est celui démarré à l'ouverture du menu Action :
+        // aucun nouveau délai n'est accordé pour un pendingChoice.
+        if (
+            isAmbushPhase(game.phase) &&
+            game.ambushActionMenuOpen &&
+            game.pendingChoice != null
+        ) {
+            val deadline = game.phaseDeadlineAtMillis
+
+            if (
+                deadline != null &&
+                System.currentTimeMillis() >= deadline
+            ) {
+                // Le moteur traitera l'expiration et le passage
+                // lors de sa prochaine résolution de phase.
+                return@withGameLock game
+            }
+        }
+
 
         val runeResolvedGame = resolveRunePendingChoice(
             game = game,
