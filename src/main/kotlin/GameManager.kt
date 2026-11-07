@@ -969,6 +969,10 @@ object GameManager {
         if (game.currentAmbushActor != owner) return game
         if (game.pendingChoice == null) return game
 
+        // Le chronomètre a déjà démarré à l'ouverture du menu Action.
+        // Ne jamais le réinitialiser lorsqu'un effet crée un pendingChoice.
+        if (game.ambushActionMenuOpen) return game
+
         val hasBeenReactivated = when (owner) {
             ChoiceOwner.PLAYER ->
                 game.playerReactivatedCurrentAmbushWindow
@@ -1018,7 +1022,8 @@ object GameManager {
             currentAmbushActor = owner,
             phaseDeadlineAtMillis = now + decisionTimeout,
             phasePauseUsed = false,
-            infoMessage = null
+            infoMessage = null,
+            ambushActionMenuOpen = false
         )
     }
 
@@ -1255,6 +1260,7 @@ object GameManager {
         return resolveAiAmbushActionsIfNeeded(startedGame)
     }
 
+
     private fun resumeAmbushAfterPendingChoice(
         game: GameState,
         owner: ChoiceOwner
@@ -1266,13 +1272,19 @@ object GameManager {
             return game
         }
 
+        // L'action est terminée : fermeture du menu Action.
+        val updatedGame = game.copy(
+            ambushActionMenuOpen = false
+        )
+
         return resolveAiAmbushActionsIfNeeded(
             moveToNextAmbushActorOrFinish(
-                game = game,
+                game = updatedGame,
                 currentActor = owner
             )
         )
     }
+
 
     private fun moveToNextAmbushActorOrFinish(
         game: GameState,
@@ -1407,6 +1419,8 @@ object GameManager {
 
             playerPassedCurrentAmbushWindow = false,
             opponentPassedCurrentAmbushWindow = false,
+
+            ambushActionMenuOpen = false,
 
             playerReactivatedCurrentAmbushWindow = false,
             opponentReactivatedCurrentAmbushWindow = false
@@ -1697,6 +1711,15 @@ object GameManager {
 
         val game = games[gameId] ?: return@withGameLock null
 
+
+        // Une action tactique doit être déclarée avant son activation.
+        // Le joueur doit avoir ouvert le menu Action pendant
+        // sa fenêtre de décision de 2/1 seconde.
+        if (!game.ambushActionMenuOpen) {
+            return@withGameLock game
+        }
+
+
         // Compatibilité temporaire avec l'ancien système
         // de priorité des fenêtres tactiques.
         if (game.currentAmbushActor != owner) {
@@ -1754,6 +1777,14 @@ object GameManager {
         runeId: String
     ): GameState? = withGameLock(gameId) {
         val game = games[gameId] ?: return@withGameLock null
+
+
+        // Le joueur doit avoir ouvert son menu Action
+        // avant de pouvoir activer une rune tactique.
+        if (!game.ambushActionMenuOpen) {
+            return@withGameLock game
+        }
+
 
         if (!canActivateRune(
                 game = game,
@@ -1840,6 +1871,14 @@ object GameManager {
         tacticalCardIndex: Int
     ): GameState? = withGameLock(gameId) {
         val game = games[gameId] ?: return@withGameLock null
+
+
+        // Une carte tactique ne peut être activée
+        // qu'après ouverture du menu Action.
+        if (!game.ambushActionMenuOpen) {
+            return@withGameLock game
+        }
+
 
         if (!canActivateTacticalCard(
                 game = game,
