@@ -2650,6 +2650,35 @@ object GameManager {
         }
     }
 
+    private fun getEffectiveShopPurchaseCost(
+        game: GameState,
+        baseCost: Int,
+        isPlayer: Boolean
+    ): Int {
+        val buyerAmbush = if (isPlayer) {
+            game.playerAmbush
+        } else {
+            game.opponentAmbush
+        }
+
+        val opponentAmbush = if (isPlayer) {
+            game.opponentAmbush
+        } else {
+            game.playerAmbush
+        }
+
+        val sultanCount = buyerAmbush.count {
+            it.card.id == CardId.SULTAN
+        }
+
+        val batardCount = opponentAmbush.count {
+            it.card.id == CardId.BATARD
+        }
+
+        return (baseCost - 2 * sultanCount + 2 * batardCount)
+            .coerceAtLeast(0)
+    }
+
     private fun evaluatePendingShopPurchaseStatus(
         game: GameState,
         cardId: String?,
