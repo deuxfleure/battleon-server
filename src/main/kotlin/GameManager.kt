@@ -2252,9 +2252,6 @@ object GameManager {
                     )
                 }
             }
-
-
-            else -> game
         }
     }
 
