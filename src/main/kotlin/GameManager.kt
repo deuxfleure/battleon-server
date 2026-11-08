@@ -1047,12 +1047,19 @@ object GameManager {
         }
     }
 
-    fun activateTiqueFromDiscard(
+    fun activateDiscardCard(
         gameId: String,
-        owner: ChoiceOwner
+        owner: ChoiceOwner,
+        cardId: CardId
     ): GameState? = withGameLock(gameId) {
 
         val game = games[gameId] ?: return@withGameLock null
+
+        // Seules les cartes disposant d'une action
+        // de défausse implémentée sont acceptées.
+        if (cardId != CardId.TIQUE) {
+            return@withGameLock game
+        }
 
         // TIQUE — action de défausse soumise aux règles
         // communes de la fenêtre tactique.

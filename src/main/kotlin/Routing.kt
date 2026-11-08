@@ -582,7 +582,7 @@ fun Application.configureRouting() {
                 call.respond(updatedGame.withServerNow())
             }
 
-            post("/duel/{gameId}/discard/tique/activate") {
+            post("/duel/{gameId}/ambush/discard/{cardId}/activate") {
                 val principal = call.principal<JWTPrincipal>()
                 val userId = principal
                     ?.payload
@@ -603,6 +603,18 @@ fun Application.configureRouting() {
                     call.respond(
                         HttpStatusCode.BadRequest,
                         mapOf("error" to "gameId manquant")
+                    )
+                    return@post
+                }
+
+                val cardIdString = call.parameters["cardId"]
+
+                val cardId = try {
+                    CardId.valueOf(cardIdString ?: "")
+                } catch (e: IllegalArgumentException) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Invalid cardId")
                     )
                     return@post
                 }
@@ -636,9 +648,10 @@ fun Application.configureRouting() {
                     }
                 }
 
-                val updatedGame = GameManager.activateTiqueFromDiscard(
+                val updatedGame = GameManager.activateDiscardCard(
                     gameId = gameId,
-                    owner = owner
+                    owner = owner,
+                    cardId = cardId
                 )
 
                 if (updatedGame == null) {
