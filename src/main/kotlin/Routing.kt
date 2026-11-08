@@ -884,6 +884,74 @@ fun Application.configureRouting() {
                 call.respond(updatedGame.withServerNow())
             }
 
+            post("/duel/{gameId}/ambush/action/open") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal?.payload?.getClaim("userId")?.asInt()
+
+                if (userId == null) {
+                    call.respond(
+                        HttpStatusCode.Unauthorized,
+                        mapOf("error" to "User not authenticated")
+                    )
+                    return@post
+                }
+
+                val gameId = call.parameters["gameId"]
+
+                if (gameId.isNullOrBlank()) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Missing gameId")
+                    )
+                    return@post
+                }
+
+                val existingGame = GameManager.getGame(gameId)
+
+                if (existingGame == null) {
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        mapOf("error" to "Game not found")
+                    )
+                    return@post
+                }
+
+                val owner = when {
+                    existingGame.mode == "TRAINING" &&
+                            existingGame.playerUserId == userId ->
+                        ChoiceOwner.PLAYER
+
+                    existingGame.playerUserId == userId ->
+                        ChoiceOwner.PLAYER
+
+                    existingGame.opponentUserId == userId ->
+                        ChoiceOwner.OPPONENT
+
+                    else -> {
+                        call.respond(
+                            HttpStatusCode.Forbidden,
+                            mapOf("error" to "User is not part of this game")
+                        )
+                        return@post
+                    }
+                }
+
+                val updatedGame = GameManager.openAmbushActionMenu(
+                    gameId = gameId,
+                    owner = owner
+                )
+
+                if (updatedGame == null) {
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        mapOf("error" to "Game not found")
+                    )
+                    return@post
+                }
+
+                call.respond(updatedGame.withServerNow())
+            }
+
             post("/duel/{gameId}/ambush/pass") {
                 val principal = call.principal<JWTPrincipal>()
                 val userId = principal!!.payload.getClaim("userId").asInt()
