@@ -90,7 +90,7 @@ object CardCatalog {
         Card(CardId.TRAPPEUR, 6, 3, CardFaction.HUMAN, purchaseLimit = 1, false, true, false,false),
         Card(CardId.EMPOISONNEUSE, 2, 4, CardFaction.DEMON, purchaseLimit = null, true, false, false,true),
 
-        Card(CardId.BATARD, 2, 2, CardFaction.DEMON, purchaseLimit = null, true, false, false, false),
+        Card(CardId.BATARD, 1, 3, CardFaction.DEMON, purchaseLimit = null, true, false, false, true),
         Card(CardId.ENIGME, 2, 3, CardFaction.BEAST, purchaseLimit = null, false, false, false, false),
         Card(CardId.GLADIATEURDAMNE, 4, 4, CardFaction.DEMON, purchaseLimit = null, false, false, false, false),
         Card(CardId.INSTINCT, 4, 3, CardFaction.HUMAN, purchaseLimit = null, false, true, false, false),
@@ -103,7 +103,7 @@ object CardCatalog {
         Card(CardId.REPONSE, 3, 4, CardFaction.BEAST, purchaseLimit = 2, false, false, false, false),
         Card(CardId.SABOTEUR, 3, 5, CardFaction.HUMAN, purchaseLimit = null, false, false, false, false),
         Card(CardId.SEIGNEURVAMPIRE, 7, 7, CardFaction.DEMON, purchaseLimit = null, false, false, false, false),
-        Card(CardId.SULTAN, 2, 2, CardFaction.HUMAN, purchaseLimit = null, true, false, false, false),
+        Card(CardId.SULTAN, 1, 3, CardFaction.HUMAN, purchaseLimit = null, true, false, false, true),
         Card(CardId.VISIONPERCANTE, 4, 4, CardFaction.BEAST, purchaseLimit = null, false, false, false, false),
         Card(CardId.ESPIEGLE, 5, 5, CardFaction.BEAST, purchaseLimit = null, false, false, false, false),
 

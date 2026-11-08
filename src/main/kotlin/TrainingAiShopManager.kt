@@ -73,7 +73,11 @@ object TrainingAiShopManager {
 
         return when {
             validTargetEntry == null -> TrainingAiShopDecision.NoTargetAvailable
-            game.opponentGold < validTargetEntry.card.cost -> TrainingAiShopDecision.PassTurn
+            game.opponentGold < GameManager.getEffectiveShopPurchaseCost(
+                game = game,
+                baseCost = validTargetEntry.card.cost,
+                isPlayer = false
+            ) -> TrainingAiShopDecision.PassTurn
             else -> TrainingAiShopDecision.BuyTarget(validTargetEntry.card.id.name)
         }
     }

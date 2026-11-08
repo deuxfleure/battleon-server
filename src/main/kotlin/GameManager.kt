@@ -2650,7 +2650,7 @@ object GameManager {
         }
     }
 
-    private fun getEffectiveShopPurchaseCost(
+    fun getEffectiveShopPurchaseCost(
         game: GameState,
         baseCost: Int,
         isPlayer: Boolean
