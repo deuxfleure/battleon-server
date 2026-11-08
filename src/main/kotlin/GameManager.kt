@@ -821,7 +821,10 @@ object GameManager {
 
     fun getGame(gameId: String): GameState? {
         val game = games[gameId] ?: return null
+        return withAmbushAvailability(game)
+    }
 
+    fun withAmbushAvailability(game: GameState): GameState {
         val isTacticalWindow =
             !game.isFinished &&
                     isAmbushPhase(game.phase)
