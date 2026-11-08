@@ -1047,6 +1047,85 @@ object GameManager {
         }
     }
 
+    private fun resolveDiscardCardEffect(
+        game: GameState,
+        owner: ChoiceOwner,
+        cardId: CardId
+    ): GameState? {
+
+        return when (cardId) {
+            CardId.TIQUE -> resolveTiqueDiscardEffect(game, owner)
+            else -> null
+        }
+    }
+
+    private fun resolveTiqueDiscardEffect(
+        game: GameState,
+        owner: ChoiceOwner
+    ): GameState? {
+
+        val bloodAmount = TokenManager.getTokenAmount(
+            game = game,
+            target = owner,
+            tokenId = TokenManager.TokenIds.BLOOD
+        )
+
+        val ownerSide = if (owner == ChoiceOwner.PLAYER) {
+            CardDestroyManager.Side.PLAYER
+        } else {
+            CardDestroyManager.Side.OPPONENT
+        }
+
+        val discard = if (owner == ChoiceOwner.PLAYER) {
+            game.playerDiscard
+        } else {
+            game.opponentDiscard
+        }
+
+        val tiqueIndex = CardDestroyManager.eligibleIndices(
+            game = game,
+            owner = ownerSide,
+            zone = CardDestroyManager.Zone.DISCARD,
+            cause = CardDestroyManager.Cause.SACRIFICE
+        ).firstOrNull { index ->
+            discard[index].id == CardId.TIQUE
+        } ?: return null
+
+        val destruction = CardDestroyManager.destroyAt(
+            game = game,
+            owner = ownerSide,
+            zone = CardDestroyManager.Zone.DISCARD,
+            index = tiqueIndex,
+            cause = CardDestroyManager.Cause.SACRIFICE
+        )
+
+        if (!destruction.destroyed) {
+            return null
+        }
+
+        val updatedGame = if (owner == ChoiceOwner.PLAYER) {
+            destruction.game.copy(
+                playerCurrentCardPowerBonus =
+                    destruction.game.playerCurrentCardPowerBonus + bloodAmount,
+                playerTiqueHealPending = true,
+                infoMessage = null
+            )
+        } else {
+            destruction.game.copy(
+                opponentCurrentCardPowerBonus =
+                    destruction.game.opponentCurrentCardPowerBonus + bloodAmount,
+                opponentTiqueHealPending = true,
+                infoMessage = null
+            )
+        }
+
+        return TokenManager.removeAllToken(
+            game = updatedGame,
+            target = owner,
+            tokenId = TokenManager.TokenIds.BLOOD
+        )
+    }
+
     fun activateDiscardCard(
         gameId: String,
         owner: ChoiceOwner,
@@ -1088,76 +1167,19 @@ object GameManager {
             return@withGameLock game
         }
 
-        val bloodAmount = TokenManager.getTokenAmount(
+        val updatedGame = resolveDiscardCardEffect(
             game = game,
-            target = owner,
-            tokenId = TokenManager.TokenIds.BLOOD
-        )
+            owner = owner,
+            cardId = cardId
+        ) ?: return@withGameLock game
 
-
-        val ownerSide = if (owner == ChoiceOwner.PLAYER) {
-            CardDestroyManager.Side.PLAYER
-        } else {
-            CardDestroyManager.Side.OPPONENT
-        }
-
-        val discard = if (owner == ChoiceOwner.PLAYER) {
-            game.playerDiscard
-        } else {
-            game.opponentDiscard
-        }
-
-        val tiqueIndex = CardDestroyManager.eligibleIndices(
-            game = game,
-            owner = ownerSide,
-            zone = CardDestroyManager.Zone.DISCARD,
-            cause = CardDestroyManager.Cause.SACRIFICE
-        ).firstOrNull { index ->
-            discard[index].id == CardId.TIQUE
-        } ?: return@withGameLock game
-
-        val destruction = CardDestroyManager.destroyAt(
-            game = game,
-            owner = ownerSide,
-            zone = CardDestroyManager.Zone.DISCARD,
-            index = tiqueIndex,
-            cause = CardDestroyManager.Cause.SACRIFICE
-        )
-
-        if (!destruction.destroyed) {
-            return@withGameLock game
-        }
-
-        var updatedGame = if (owner == ChoiceOwner.PLAYER) {
-            destruction.game.copy(
-                playerCurrentCardPowerBonus =
-                    destruction.game.playerCurrentCardPowerBonus + bloodAmount,
-                playerTiqueHealPending = true,
-                infoMessage = null
-            )
-        } else {
-            destruction.game.copy(
-                opponentCurrentCardPowerBonus =
-                    destruction.game.opponentCurrentCardPowerBonus + bloodAmount,
-                opponentTiqueHealPending = true,
-                infoMessage = null
-            )
-        }
-
-
-        updatedGame = TokenManager.removeAllToken(
-            game = updatedGame,
-            target = owner,
-            tokenId = TokenManager.TokenIds.BLOOD
-        )
-
-        updatedGame = resumeAmbushAfterPendingChoice(
+        val resumedGame = resumeAmbushAfterPendingChoice(
             game = updatedGame,
             owner = owner
         )
 
-        games[gameId] = updatedGame
-        updatedGame
+        games[gameId] = resumedGame
+        resumedGame
     }
 
     private fun startAmbushWindow(game: GameState): GameState {
