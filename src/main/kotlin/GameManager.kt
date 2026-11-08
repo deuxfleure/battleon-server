@@ -1055,15 +1055,6 @@ object GameManager {
 
         val game = games[gameId] ?: return@withGameLock null
 
-        // Seules les cartes disposant d'une action
-        // de défausse implémentée sont acceptées.
-        if (cardId != CardId.TIQUE) {
-            return@withGameLock game
-        }
-
-        // TIQUE — action de défausse soumise aux règles
-        // communes de la fenêtre tactique.
-
         // Le menu Action doit avoir été ouvert par le joueur.
         if (!game.ambushActionMenuOpen) {
             return@withGameLock game
@@ -1084,7 +1075,12 @@ object GameManager {
             return@withGameLock game
         }
 
-        if (game.currentAmbushActor != owner) {
+        if (
+            cardId !in TacticalActionManager.getAvailableDiscardCardIds(
+                game = game,
+                owner = owner
+            )
+        ) {
             return@withGameLock game
         }
 
