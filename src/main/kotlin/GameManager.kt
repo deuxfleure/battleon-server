@@ -2693,10 +2693,16 @@ object GameManager {
 
         val ownerGold = if (isPlayer) game.playerGold else game.opponentGold
 
+        val effectiveCost = getEffectiveShopPurchaseCost(
+            game = game,
+            baseCost = entry.card.cost,
+            isPlayer = isPlayer
+        )
+
         return when {
             entry.copiesRemaining <= 0 -> ShopPurchaseStatus.INVALID_OUT_OF_STOCK
             hasReachedPurchaseLimit(game, entry.card, isPlayer) -> ShopPurchaseStatus.INVALID_LIMIT_REACHED
-            ownerGold < entry.card.cost -> ShopPurchaseStatus.WAITING_FOR_GOLD
+            ownerGold < effectiveCost -> ShopPurchaseStatus.WAITING_FOR_GOLD
             else -> ShopPurchaseStatus.ACCEPTED_WAITING_OPPONENT
         }
     }
@@ -3014,7 +3020,13 @@ object GameManager {
 
         val ownerGold = if (isPlayer) game.playerGold else game.opponentGold
 
-        if (ownerGold < entry.card.cost) {
+        val effectiveCost = getEffectiveShopPurchaseCost(
+            game = game,
+            baseCost = entry.card.cost,
+            isPlayer = isPlayer
+        )
+
+        if (ownerGold < effectiveCost) {
             return if (isPlayer) {
                 game.copy(playerShopStatus = ShopPurchaseStatus.WAITING_FOR_GOLD)
             } else {
@@ -3066,7 +3078,7 @@ object GameManager {
 
         val afterPurchaseWithoutLog = if (isPlayer) {
             afterCountIncrement.copy(
-                playerGold = game.playerGold - entry.card.cost,
+                playerGold = game.playerGold - effectiveCost,
                 playerDiscard = game.playerDiscard + entry.card,
                 shopEntries = updatedShopEntries,
                 seasonMercenaryDeck = remainingMercenaryDeck,
@@ -3080,7 +3092,7 @@ object GameManager {
                 game.mode == "TRAINING" || game.mode == "SOLO"
 
             afterCountIncrement.copy(
-                opponentGold = game.opponentGold - entry.card.cost,
+                opponentGold = game.opponentGold - effectiveCost,
                 opponentDiscard = game.opponentDiscard + entry.card,
                 shopEntries = updatedShopEntries,
                 seasonMercenaryDeck = remainingMercenaryDeck,
@@ -3090,7 +3102,7 @@ object GameManager {
                 opponentPendingShopPurchaseCardId = if (shouldKeepAiTarget) {
                     chooseRandomShopTargetCardId(
                         game = afterCountIncrement.copy(
-                            opponentGold = game.opponentGold - entry.card.cost,
+                            opponentGold = game.opponentGold - effectiveCost,
                             opponentDiscard = game.opponentDiscard + entry.card,
                             shopEntries = updatedShopEntries,
                             opponentShopStatus = ShopPurchaseStatus.PURCHASE_COMPLETED
