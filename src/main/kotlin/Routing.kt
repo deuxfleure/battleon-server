@@ -699,6 +699,9 @@ fun Application.configureRouting() {
                 }
 
                 val owner = when {
+                    existingGame.mode == "TRAINING" ->
+                        ChoiceOwner.PLAYER
+
                     existingGame.playerUserId == userId ->
                         ChoiceOwner.PLAYER
 
@@ -768,6 +771,9 @@ fun Application.configureRouting() {
                 }
 
                 val owner = when {
+                    existingGame.mode == "TRAINING" ->
+                        ChoiceOwner.PLAYER
+
                     existingGame.playerUserId == userId ->
                         ChoiceOwner.PLAYER
 
@@ -902,8 +908,7 @@ fun Application.configureRouting() {
                 }
 
                 val owner = when {
-                    existingGame.mode == "TRAINING" &&
-                            existingGame.playerUserId == userId ->
+                    existingGame.mode == "TRAINING" ->
                         ChoiceOwner.PLAYER
 
                     existingGame.playerUserId == userId ->
