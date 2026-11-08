@@ -1493,9 +1493,9 @@ object GameManager {
                 CardId.PALADIN -> {
                     tacticalCard.entryType == TacticalEntryType.PREPARATION &&
                             (
-                            game.phase == TurnPhase.AMBUSH_BEFORE_COMBAT ||
-                            game.phase == TurnPhase.AMBUSH_BEFORE_POST_COMBAT
-                            )
+                                    game.phase == TurnPhase.AMBUSH_BEFORE_EFFECTS ||
+                                    game.phase == TurnPhase.AMBUSH_BEFORE_COMBAT
+                                    )
                 }
 
                 CardId.FORCETRANQUILLE -> {
