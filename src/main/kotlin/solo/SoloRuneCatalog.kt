@@ -57,11 +57,7 @@ object SoloRuneCatalog {
             id = "rune_minor_2",
             type = SoloRuneType.MINOR,
             unlockMissionId = "c1_m07",
-            activationWindows = setOf(
-                AmbushWindow.BEFORE_REVEAL,
-                AmbushWindow.BEFORE_EFFECTS,
-                AmbushWindow.BEFORE_SHOP
-            ),
+            activationWindows = allWindows,
             effectType = SoloRuneEffectType.GAIN_GOLD_AND_SCRY,
             value = 2
         ),
@@ -104,11 +100,7 @@ object SoloRuneCatalog {
             id = "rune_minor_6",
             type = SoloRuneType.MINOR,
             unlockMissionId = "c1_m34",
-            activationWindows = setOf(
-                AmbushWindow.BEFORE_REVEAL,
-                AmbushWindow.BEFORE_EFFECTS,
-                AmbushWindow.BEFORE_SHOP
-            ),
+            activationWindows = allWindows,
             effectType = SoloRuneEffectType.OPPONENT_LOSE_GOLD_AND_DARK_SCRY,
             value = 2
         ),
@@ -118,10 +110,7 @@ object SoloRuneCatalog {
             id = "rune_major_1",
             type = SoloRuneType.MAJOR,
             unlockMissionId = "c1_m15",
-            activationWindows = setOf(
-                AmbushWindow.BEFORE_EFFECTS,
-                AmbushWindow.BEFORE_SHOP
-            ),
+            activationWindows = allWindows,
             effectType = SoloRuneEffectType.GAIN_GOLD,
             value = 3
         ),
