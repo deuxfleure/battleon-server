@@ -820,7 +820,27 @@ object GameManager {
     // =========================================================
 
     fun getGame(gameId: String): GameState? {
-        return games[gameId]
+        val game = games[gameId] ?: return null
+
+        val isTacticalWindow =
+            !game.isFinished &&
+                    isAmbushPhase(game.phase)
+
+        return game.copy(
+            playerHasAmbushAction =
+                isTacticalWindow &&
+                        hasAvailableAmbushAction(
+                            game,
+                            ChoiceOwner.PLAYER
+                        ),
+
+            opponentHasAmbushAction =
+                isTacticalWindow &&
+                        hasAvailableAmbushAction(
+                            game,
+                            ChoiceOwner.OPPONENT
+                        )
+        )
     }
 
     // =========================================================

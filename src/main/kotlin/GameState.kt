@@ -306,6 +306,11 @@ data class GameState(
     // false = le joueur est encore dans sa fenêtre de décision.
     val ambushActionMenuOpen: Boolean = false,
 
+    // Disponibilité réelle des actions tactiques,
+    // calculée côté serveur pour chaque joueur.
+    val playerHasAmbushAction: Boolean = false,
+    val opponentHasAmbushAction: Boolean = false,
+
     val playerPassedCurrentAmbushWindow: Boolean = false,
     val opponentPassedCurrentAmbushWindow: Boolean = false,
 
