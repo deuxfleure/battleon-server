@@ -99,27 +99,18 @@ object TacticalActionManager {
 
         val availableCards = mutableSetOf<CardId>()
 
-        if (hasAvailableDiscardCardAction(game, owner)) {
+        if (canActivateTiqueFromDiscard(game, owner)) {
             availableCards.add(CardId.TIQUE)
         }
 
         return availableCards
     }
 
-
-    /**
-     * Détecte les cartes pouvant agir depuis
-     * la défausse pendant la fenêtre actuelle.
-     *
-     * et des futures cartes concernées.
-     */
-    fun hasAvailableDiscardCardAction(
+    private fun canActivateTiqueFromDiscard(
         game: GameState,
         owner: ChoiceOwner
     ): Boolean {
 
-        // TIQUE — activable depuis la défausse
-        // avant les Effets ou avant le Combat.
         if (
             game.phase != TurnPhase.AMBUSH_BEFORE_EFFECTS &&
             game.phase != TurnPhase.AMBUSH_BEFORE_COMBAT
@@ -165,6 +156,20 @@ object TacticalActionManager {
             target = owner,
             tokenId = TokenManager.TokenIds.BLOOD
         ) > 0
+    }
+
+
+    /**
+     * Détecte les cartes pouvant agir depuis
+     * la défausse pendant la fenêtre actuelle.
+     *
+     * et des futures cartes concernées.
+     */
+    fun hasAvailableDiscardCardAction(
+        game: GameState,
+        owner: ChoiceOwner
+    ): Boolean {
+        return getAvailableDiscardCardIds(game, owner).isNotEmpty()
     }
 
 
