@@ -2679,6 +2679,42 @@ object GameManager {
             .coerceAtLeast(0)
     }
 
+    private fun consumeShopCostAmbushCards(
+        game: GameState,
+        isPlayer: Boolean
+    ): GameState {
+        val playerConsumedCardId = if (isPlayer) {
+            CardId.SULTAN
+        } else {
+            CardId.BATARD
+        }
+
+        val opponentConsumedCardId = if (isPlayer) {
+            CardId.BATARD
+        } else {
+            CardId.SULTAN
+        }
+
+        val playerConsumedCards = game.playerAmbush.filter {
+            it.card.id == playerConsumedCardId
+        }
+
+        val opponentConsumedCards = game.opponentAmbush.filter {
+            it.card.id == opponentConsumedCardId
+        }
+
+        return game.copy(
+            playerAmbush = game.playerAmbush.filterNot {
+                it.card.id == playerConsumedCardId
+            },
+            opponentAmbush = game.opponentAmbush.filterNot {
+                it.card.id == opponentConsumedCardId
+            },
+            playerDiscard = game.playerDiscard + playerConsumedCards.map { it.card },
+            opponentDiscard = game.opponentDiscard + opponentConsumedCards.map { it.card }
+        )
+    }
+
     private fun evaluatePendingShopPurchaseStatus(
         game: GameState,
         cardId: String?,
@@ -3120,6 +3156,10 @@ object GameManager {
             buyer = if (isPlayer) "PLAYER" else "OPPONENT",
             cardId = entry.card.id.name
         )
+        val afterPurchaseWithConsumedAmbush = consumeShopCostAmbushCards(
+            game = afterPurchase,
+            isPlayer = isPlayer
+        )
 
         val owner = if (isPlayer) {
             ChoiceOwner.PLAYER
@@ -3128,7 +3168,7 @@ object GameManager {
         }
 
         val afterAutomaticPurchaseEffects = applyAutomaticPurchaseEffects(
-            game = afterPurchase,
+            game = afterPurchaseWithConsumedAmbush,
             purchasedCard = entry.card,
             owner = owner
         )
