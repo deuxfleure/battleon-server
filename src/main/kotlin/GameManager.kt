@@ -844,7 +844,6 @@ object GameManager {
     private const val PVP_SHOP_TIMEOUT_MILLIS = 20_000L
     private const val PVP_PRE_START_TIMEOUT_MILLIS = 90_000L
 
-    private const val PVP_PAUSE_EXTENSION_MILLIS = 10_000L
 
     private fun enterPhase(
         game: GameState,
@@ -2366,87 +2365,6 @@ object GameManager {
 
             else -> clearedGame
         }
-    }
-
-    fun togglePhasePause(
-        gameId: String
-    ): GameState? = withGameLock(gameId) {
-
-        val game = games[gameId] ?: return@withGameLock null
-
-        if (game.isFinished) {
-            return@withGameLock game
-        }
-
-        val now = System.currentTimeMillis()
-
-// =====================================================
-// PvP : +10 secondes, une seule fois par phase
-// =====================================================
-        if (isPvpMode(game)) {
-
-            // Le bonus a déjà été utilisé pendant cette phase.
-            if (game.phasePauseUsed) {
-                return@withGameLock game
-            }
-
-            // Il faut une deadline active à prolonger.
-            val currentDeadline =
-                game.phaseDeadlineAtMillis
-                    ?: return@withGameLock game
-
-            val updatedGame = game.copy(
-                phaseDeadlineAtMillis =
-                    currentDeadline + PVP_PAUSE_EXTENSION_MILLIS,
-
-                phasePauseUsed = true,
-                infoMessage = null
-            )
-
-            games[gameId] = updatedGame
-            return@withGameLock updatedGame
-        }
-
-// =====================================================
-// Solo / Training : vraie pause / reprise
-// =====================================================
-        if (game.mode != "SOLO" && game.mode != "TRAINING") {
-            return@withGameLock game
-        }
-
-        val updatedGame = if (!game.phaseTimerPaused) {
-
-            // PAUSE
-            val remainingMillis = game.phaseDeadlineAtMillis
-                ?.let { deadline ->
-                    (deadline - now).coerceAtLeast(0L)
-                }
-
-            game.copy(
-                phaseTimerPaused = true,
-                phaseRemainingMillisWhenPaused = remainingMillis,
-                phaseDeadlineAtMillis = null,
-                infoMessage = "Partie en pause"
-            )
-
-        } else {
-
-            // REPRISE
-            val restoredDeadline = game.phaseRemainingMillisWhenPaused
-                ?.let { remaining ->
-                    now + remaining
-                }
-
-            game.copy(
-                phaseTimerPaused = false,
-                phaseRemainingMillisWhenPaused = null,
-                phaseDeadlineAtMillis = restoredDeadline,
-                infoMessage = null
-            )
-        }
-
-        games[gameId] = updatedGame
-        updatedGame
     }
 
     fun heartbeat(
