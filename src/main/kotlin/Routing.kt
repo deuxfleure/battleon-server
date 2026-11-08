@@ -665,6 +665,75 @@ fun Application.configureRouting() {
                 call.respond(updatedGame.withServerNow())
             }
 
+            post("/duel/{gameId}/ambush/token/{tokenId}/activate") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal!!.payload.getClaim("userId").asInt()
+
+                val gameId = call.parameters["gameId"]
+                val tokenId = call.parameters["tokenId"]
+
+                if (gameId.isNullOrBlank()) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Missing gameId")
+                    )
+                    return@post
+                }
+
+                if (tokenId.isNullOrBlank()) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Missing tokenId")
+                    )
+                    return@post
+                }
+
+                val existingGame = GameManager.getGame(gameId)
+
+                if (existingGame == null) {
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        mapOf("error" to "Game not found")
+                    )
+                    return@post
+                }
+
+                val owner = when {
+                    existingGame.playerUserId == userId ->
+                        ChoiceOwner.PLAYER
+
+                    existingGame.opponentUserId == userId ->
+                        ChoiceOwner.OPPONENT
+
+                    else -> {
+                        call.respond(
+                            HttpStatusCode.Forbidden,
+                            mapOf("error" to "User is not part of this game")
+                        )
+                        return@post
+                    }
+                }
+
+                val option = call.request.queryParameters["option"]
+
+                val updatedGame = GameManager.activateToken(
+                    gameId = gameId,
+                    owner = owner,
+                    tokenId = tokenId,
+                    option = option
+                )
+
+                if (updatedGame == null) {
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        mapOf("error" to "Game not found")
+                    )
+                    return@post
+                }
+
+                call.respond(updatedGame.withServerNow())
+            }
+
             post("/duel/{gameId}/ambush/rune/{runeId}/activate") {
                 val principal = call.principal<JWTPrincipal>()
                 val userId = principal!!.payload.getClaim("userId").asInt()
