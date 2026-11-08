@@ -1354,6 +1354,41 @@ object CardEffectManager {
         )
     }
 
+    fun buildManipulateurPendingChoice(
+        game: GameState,
+        owner: ChoiceOwner
+    ): PendingChoice {
+
+        val discard = if (owner == ChoiceOwner.PLAYER) {
+            game.playerDiscard
+        } else {
+            game.opponentDiscard
+        }
+
+        val ownerSide = if (owner == ChoiceOwner.PLAYER) {
+            CardDestroyManager.Side.PLAYER
+        } else {
+            CardDestroyManager.Side.OPPONENT
+        }
+
+        val discardOptions = CardDestroyManager.eligibleIndices(
+            game = game,
+            owner = ownerSide,
+            zone = CardDestroyManager.Zone.DISCARD,
+            cause = CardDestroyManager.Cause.OWN_EFFECT
+        ).map { index ->
+            "CARD:${discard[index].id.name}"
+        }.distinct()
+
+        return PendingChoice(
+            type = "MANIPULATEUR_POWER",
+            cardId = CardId.MANIPULATEUR.name,
+            options = discardOptions + "PASS",
+            message = "Choisissez une carte à détruire pour renforcer votre prochaine carte, ou passez.",
+            owner = owner
+        )
+    }
+
     fun buildEnvouteusePendingChoice(
         game: GameState,
         owner: ChoiceOwner
@@ -2885,6 +2920,90 @@ object CardEffectManager {
                     }
                 }
             }
+
+            // -------------------------------------------------
+            // MANIPULATEUR
+            // -------------------------------------------------
+            "MANIPULATEUR_POWER" -> {
+                when {
+                    choice == "PASS" -> {
+                        if (ownerIsPlayer) {
+                            game.copy(
+                                pendingChoice = null,
+                                playerEffectResolved = true,
+                                infoMessage = null
+                            )
+                        } else {
+                            game.copy(
+                                pendingChoice = null,
+                                opponentEffectResolved = true,
+                                infoMessage = null
+                            )
+                        }
+                    }
+
+                    choice.startsWith("CARD:") -> {
+                        val targetCardId = choice.removePrefix("CARD:")
+
+                        val ownerSide = if (ownerIsPlayer) {
+                            CardDestroyManager.Side.PLAYER
+                        } else {
+                            CardDestroyManager.Side.OPPONENT
+                        }
+
+                        val sourceDiscard = if (ownerIsPlayer) {
+                            game.playerDiscard
+                        } else {
+                            game.opponentDiscard
+                        }
+
+                        val targetIndex = sourceDiscard.indexOfFirst {
+                            it.id.name == targetCardId
+                        }
+
+                        if (choice !in pendingChoice.options || targetIndex < 0) {
+                            game.copy(infoMessage = "Choix invalide")
+                        } else {
+                            val destroyedCard = sourceDiscard[targetIndex]
+
+                            val destruction = CardDestroyManager.destroyAt(
+                                game = game,
+                                owner = ownerSide,
+                                zone = CardDestroyManager.Zone.DISCARD,
+                                index = targetIndex,
+                                cause = CardDestroyManager.Cause.OWN_EFFECT
+                            )
+
+                            if (!destruction.destroyed) {
+                                game.copy(infoMessage = "Destruction impossible")
+                            } else {
+                                if (ownerIsPlayer) {
+                                    destruction.game.copy(
+                                        playerNextCardPowerBonus =
+                                            destruction.game.playerNextCardPowerBonus + destroyedCard.power,
+                                        pendingChoice = null,
+                                        playerEffectResolved = true,
+                                        infoMessage = null
+                                    )
+                                } else {
+                                    destruction.game.copy(
+                                        opponentNextCardPowerBonus =
+                                            destruction.game.opponentNextCardPowerBonus + destroyedCard.power,
+                                        pendingChoice = null,
+                                        opponentEffectResolved = true,
+                                        infoMessage = null
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    else -> {
+                        game.copy(infoMessage = "Choix invalide")
+                    }
+                }
+            }
+
             // -------------------------------------------------
             // ENVOUTEUSE
             // -------------------------------------------------

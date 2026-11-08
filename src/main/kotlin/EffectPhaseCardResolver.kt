@@ -170,6 +170,16 @@ object EffectPhaseCardResolver {
                 )
             }
 
+            CardId.MANIPULATEUR -> {
+                game.copy(
+                    pendingChoice = CardEffectManager.buildManipulateurPendingChoice(
+                        game = game,
+                        owner = owner
+                    ),
+                    infoMessage = null
+                )
+            }
+
             CardId.MAUVAISGENIE -> {
                 game.copy(
                     pendingChoice = CardEffectManager.buildBadGeniePendingChoice(

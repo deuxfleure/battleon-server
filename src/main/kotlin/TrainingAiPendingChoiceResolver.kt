@@ -673,6 +673,51 @@ object TrainingAiPendingChoiceResolver {
             }
 
             // -----------------------------------
+            // MANIPULATEUR
+            // -----------------------------------
+            "MANIPULATEUR_POWER" -> {
+                val discard = if (pendingChoice.owner == ChoiceOwner.OPPONENT) {
+                    game.opponentDiscard
+                } else {
+                    game.playerDiscard
+                }
+
+                val aiHp = if (pendingChoice.owner == ChoiceOwner.OPPONENT) {
+                    game.opponentHp
+                } else {
+                    game.playerHp
+                }
+
+                val eligibleCards = discard.filter { card ->
+                    "CARD:${card.id.name}" in pendingChoice.options
+                }
+
+                val target = eligibleCards.firstOrNull {
+                    it.id == CardId.SQUELETTE_HANTE
+                } ?: eligibleCards.firstOrNull {
+                    it.id == CardId.SQUELETTE_MALEDICTION
+                } ?: eligibleCards.firstOrNull {
+                    it.id == CardId.SQUELETTE_FAIBLESSE
+                } ?: eligibleCards.firstOrNull {
+                    it.id == CardId.CURSED
+                } ?: eligibleCards.firstOrNull {
+                    it.id == CardId.WARRIOR
+                } ?: if (aiHp < 5) {
+                    eligibleCards.firstOrNull {
+                        it.id == CardId.COLLECTOR
+                    }
+                } else {
+                    null
+                }
+
+                if (target != null) {
+                    "CARD:${target.id.name}"
+                } else {
+                    "PASS"
+                }
+            }
+
+            // -----------------------------------
             // MAGE
             // -----------------------------------
             "MAGE_CHOICE" -> {
