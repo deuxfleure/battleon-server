@@ -120,8 +120,7 @@ enum class TacticalEntryType {
 @Serializable
 data class TacticalCard(
     val card: Card,
-    val entryType: TacticalEntryType,
-    val autoSkip: Boolean = false
+    val entryType: TacticalEntryType
 )
 
 @Serializable

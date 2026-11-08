@@ -1527,17 +1527,10 @@ object GameManager {
         game: GameState,
         owner: ChoiceOwner
     ): List<Int> {
-        val tacticalCards = when (owner) {
-            ChoiceOwner.PLAYER -> game.playerAmbush
-            ChoiceOwner.OPPONENT -> game.opponentAmbush
-        }
-
         return getAvailableTacticalCardIndices(
             game = game,
             owner = owner
-        ).filter { index ->
-            !tacticalCards[index].autoSkip
-        }
+        )
     }
 
 
@@ -1846,45 +1839,6 @@ object GameManager {
                 game = updatedGame,
                 owner = owner
             )
-        }
-
-        games[gameId] = updatedGame
-        updatedGame
-    }
-
-    fun setTacticalCardAutoSkip(
-        gameId: String,
-        owner: ChoiceOwner,
-        tacticalCardIndex: Int,
-        autoSkip: Boolean
-    ): GameState? = withGameLock(gameId) {
-        val game = games[gameId] ?: return@withGameLock null
-
-        val tacticalCards = when (owner) {
-            ChoiceOwner.PLAYER -> game.playerAmbush
-            ChoiceOwner.OPPONENT -> game.opponentAmbush
-        }
-
-        if (tacticalCardIndex !in tacticalCards.indices) {
-            return@withGameLock game
-        }
-
-        val updatedCards = tacticalCards.mapIndexed { index, tacticalCard ->
-            if (index == tacticalCardIndex) {
-                tacticalCard.copy(autoSkip = autoSkip)
-            } else {
-                tacticalCard
-            }
-        }
-
-        val updatedGame = when (owner) {
-            ChoiceOwner.PLAYER -> {
-                game.copy(playerAmbush = updatedCards)
-            }
-
-            ChoiceOwner.OPPONENT -> {
-                game.copy(opponentAmbush = updatedCards)
-            }
         }
 
         games[gameId] = updatedGame
