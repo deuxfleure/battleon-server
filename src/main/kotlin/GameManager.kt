@@ -864,7 +864,6 @@ object GameManager {
             phaseEnteredAtMillis = now,
             phaseResolutionRequested = false,
             phaseDeadlineAtMillis = deadlineAtMillis,
-            phasePauseUsed = false,
 
             playerAdvanceReady = false,
             opponentAdvanceReady = false,
@@ -1020,7 +1019,6 @@ object GameManager {
         return game.copy(
             currentAmbushActor = owner,
             phaseDeadlineAtMillis = now + decisionTimeout,
-            phasePauseUsed = false,
             infoMessage = null,
             ambushActionMenuOpen = false
         )
@@ -3412,12 +3410,6 @@ object GameManager {
             return@withGameLock game
         }
 
-        if (game.phaseTimerPaused) {
-            return@withGameLock game.copy(
-                infoMessage = "Reprenez la partie avant de continuer."
-            )
-        }
-
         var updatedGame = game.copy(infoMessage = null)
 
         val phaseRequiresTimedResolution = when (game.phase) {
@@ -4714,11 +4706,6 @@ object GameManager {
     ): GameState? = withGameLock(gameId) {
         var game = games[gameId] ?: return@withGameLock null
 
-        if (game.phaseTimerPaused) {
-            return@withGameLock game.copy(
-                infoMessage = "Reprenez la partie avant de continuer."
-            )
-        }
         var safetyCounter = 0
 
             if (
