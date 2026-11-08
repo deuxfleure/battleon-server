@@ -86,6 +86,26 @@ object TacticalActionManager {
         }
     }
 
+    /**
+     * Liste des cartes activables depuis la défausse.
+     *
+     * Chaque nouvelle carte disposant d'une action
+     * de défausse sera ajoutée ici.
+     */
+    fun getAvailableDiscardCardIds(
+        game: GameState,
+        owner: ChoiceOwner
+    ): Set<CardId> {
+
+        val availableCards = mutableSetOf<CardId>()
+
+        if (hasAvailableDiscardCardAction(game, owner)) {
+            availableCards.add(CardId.TIQUE)
+        }
+
+        return availableCards
+    }
+
 
     /**
      * Détecte les cartes pouvant agir depuis
