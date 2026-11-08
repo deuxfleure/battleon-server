@@ -1047,75 +1047,6 @@ object GameManager {
         }
     }
 
-    private fun canActivateTiqueFromDiscard(
-        game: GameState,
-        owner: ChoiceOwner
-    ): Boolean {
-
-        // Cette fonction vérifie la disponibilité de Tique,
-        // indépendamment du joueur ayant actuellement la priorité.
-
-        // Tique peut être activée avant les Effets ou avant le Combat.
-        // Tique peut être activée avant les Effets ou avant le Combat.
-        if (
-            game.phase != TurnPhase.AMBUSH_BEFORE_EFFECTS &&
-            game.phase != TurnPhase.AMBUSH_BEFORE_COMBAT
-        ) {
-            return false
-        }
-
-        // Une carte doit être actuellement révélée.
-        val currentCard = when (owner) {
-            ChoiceOwner.PLAYER -> game.lastPlayerCard
-            ChoiceOwner.OPPONENT -> game.lastOpponentCard
-        }
-
-        if (currentCard == null) {
-            return false
-        }
-
-        // Tique doit être présente dans la défausse du propriétaire.
-        val discard = when (owner) {
-            ChoiceOwner.PLAYER -> game.playerDiscard
-            ChoiceOwner.OPPONENT -> game.opponentDiscard
-        }
-
-        if (discard.none { it.id == CardId.TIQUE }) {
-            return false
-        }
-
-        // La destruction de Tique doit laisser au moins 5 cartes.
-
-        val ownerSide = if (owner == ChoiceOwner.PLAYER) {
-            CardDestroyManager.Side.PLAYER
-        } else {
-            CardDestroyManager.Side.OPPONENT
-        }
-
-        // Tique doit être destructible dans la défausse.
-        // CardDestroyManager vérifie aussi la règle des 5 cartes.
-        val canDestroyTique = CardDestroyManager.eligibleIndices(
-            game = game,
-            owner = ownerSide,
-            zone = CardDestroyManager.Zone.DISCARD,
-            cause = CardDestroyManager.Cause.SACRIFICE
-        ).any { index ->
-            discard[index].id == CardId.TIQUE
-        }
-
-        if (!canDestroyTique) {
-            return false
-        }
-
-
-        // Il faut au moins un jeton Sang.
-        return TokenManager.getTokenAmount(
-            game = game,
-            target = owner,
-            tokenId = TokenManager.TokenIds.BLOOD
-        ) > 0
-    }
-
     fun activateTiqueFromDiscard(
         gameId: String,
         owner: ChoiceOwner
@@ -1131,7 +1062,7 @@ object GameManager {
             return@withGameLock game
         }
 
-        if (!canActivateTiqueFromDiscard(game, owner)) {
+        if (!TacticalActionManager.hasAvailableDiscardCardAction(game, owner)) {
             return@withGameLock game
         }
 
@@ -1561,7 +1492,7 @@ object GameManager {
             ).isNotEmpty()
 
         val hasDiscardCardAction =
-            canActivateTiqueFromDiscard(
+            TacticalActionManager.hasAvailableDiscardCardAction(
                 game = game,
                 owner = owner
             )

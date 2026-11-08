@@ -91,14 +91,60 @@ object TacticalActionManager {
      * Détecte les cartes pouvant agir depuis
      * la défausse pendant la fenêtre actuelle.
      *
-     * TODO : intégrer les règles du Phénix
      * et des futures cartes concernées.
      */
     fun hasAvailableDiscardCardAction(
         game: GameState,
         owner: ChoiceOwner
     ): Boolean {
-        return false
+
+        // TIQUE — activable depuis la défausse
+        // avant les Effets ou avant le Combat.
+        if (
+            game.phase != TurnPhase.AMBUSH_BEFORE_EFFECTS &&
+            game.phase != TurnPhase.AMBUSH_BEFORE_COMBAT
+        ) {
+            return false
+        }
+
+        val currentCard = when (owner) {
+            ChoiceOwner.PLAYER -> game.lastPlayerCard
+            ChoiceOwner.OPPONENT -> game.lastOpponentCard
+        }
+
+        if (currentCard == null) {
+            return false
+        }
+
+        val discard = when (owner) {
+            ChoiceOwner.PLAYER -> game.playerDiscard
+            ChoiceOwner.OPPONENT -> game.opponentDiscard
+        }
+
+        val ownerSide = if (owner == ChoiceOwner.PLAYER) {
+            CardDestroyManager.Side.PLAYER
+        } else {
+            CardDestroyManager.Side.OPPONENT
+        }
+
+        val canDestroyTique = CardDestroyManager.eligibleIndices(
+            game = game,
+            owner = ownerSide,
+            zone = CardDestroyManager.Zone.DISCARD,
+            cause = CardDestroyManager.Cause.SACRIFICE
+        ).any { index ->
+            discard[index].id == CardId.TIQUE
+        }
+
+        if (!canDestroyTique) {
+            return false
+        }
+
+        return TokenManager.getTokenAmount(
+            game = game,
+            target = owner,
+            tokenId = TokenManager.TokenIds.BLOOD
+        ) > 0
     }
 
 
