@@ -1054,6 +1054,25 @@ object GameManager {
 
         val game = games[gameId] ?: return@withGameLock null
 
+        // TIQUE — action de défausse soumise aux règles
+        // communes de la fenêtre tactique.
+
+        // Le menu Action doit avoir été ouvert par le joueur.
+        if (!game.ambushActionMenuOpen) {
+            return@withGameLock game
+        }
+
+        // L'activation doit arriver avant la fin du délai.
+        // En Solo / Training, une deadline null est autorisée.
+        val actionDeadline = game.phaseDeadlineAtMillis
+
+        if (
+            actionDeadline != null &&
+            System.currentTimeMillis() >= actionDeadline
+        ) {
+            return@withGameLock game
+        }
+
         if (game.pendingChoice != null) {
             return@withGameLock game
         }
