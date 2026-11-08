@@ -230,25 +230,36 @@ object TokenManager {
         )
     }
 
+
     fun activateToken(
         game: GameState,
         owner: ChoiceOwner,
         tokenId: String,
         option: String? = null
     ): GameState {
-
         return when (tokenId) {
-
             TokenIds.EMBLEM -> {
-                val bonusType = when (option) {
-                    "POWER" -> EmblemBonusType.POWER
-                    "BRETTEUR" -> EmblemBonusType.BRETTEUR
+                val (bonusType, targetIsOpponent) = when (option) {
+                    "POWER:SELF" -> EmblemBonusType.POWER to false
+                    "POWER:OPPONENT" -> EmblemBonusType.POWER to true
+                    "BRETTEUR:SELF" -> EmblemBonusType.BRETTEUR to false
+                    "BRETTEUR:OPPONENT" -> EmblemBonusType.BRETTEUR to true
                     else -> return game
+                }
+
+                val target = if (targetIsOpponent) {
+                    when (owner) {
+                        ChoiceOwner.PLAYER -> ChoiceOwner.OPPONENT
+                        ChoiceOwner.OPPONENT -> ChoiceOwner.PLAYER
+                    }
+                } else {
+                    owner
                 }
 
                 activateEmblem(
                     game = game,
                     owner = owner,
+                    target = target,
                     bonusType = bonusType
                 )
             }
@@ -257,21 +268,26 @@ object TokenManager {
         }
     }
 
-
     /**
-     * Consomme un Emblème et applique son bonus
-     * à la carte actuellement révélée.
-     *
-     * L'autorisation tactique est vérifiée
-     * par TacticalActionManager.
+     * Consomme un Emblème appartenant à owner
+     * et applique le bonus à la carte révélée de target.
      */
     fun activateEmblem(
         game: GameState,
         owner: ChoiceOwner,
+        target: ChoiceOwner,
         bonusType: EmblemBonusType
     ): GameState {
-
         if (!TacticalActionManager.canActivateEmblem(game, owner)) {
+            return game
+        }
+
+        val targetCard = when (target) {
+            ChoiceOwner.PLAYER -> game.lastPlayerCard
+            ChoiceOwner.OPPONENT -> game.lastOpponentCard
+        }
+
+        if (targetCard == null) {
             return game
         }
 
@@ -282,10 +298,8 @@ object TokenManager {
             amount = 1
         )
 
-        return when (owner) {
-
+        return when (target) {
             ChoiceOwner.PLAYER -> when (bonusType) {
-
                 EmblemBonusType.POWER -> updatedGame.copy(
                     playerCurrentCardPowerBonus =
                         updatedGame.playerCurrentCardPowerBonus + 1
@@ -298,7 +312,6 @@ object TokenManager {
             }
 
             ChoiceOwner.OPPONENT -> when (bonusType) {
-
                 EmblemBonusType.POWER -> updatedGame.copy(
                     opponentCurrentCardPowerBonus =
                         updatedGame.opponentCurrentCardPowerBonus + 1
