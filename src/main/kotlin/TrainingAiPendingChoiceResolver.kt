@@ -844,7 +844,8 @@ object TrainingAiPendingChoiceResolver {
                 val index = chooseAiScryCardIndex(game)
 
                 if (index == null) {
-                    "SCRY_FINISH"
+                    pendingChoice.options.firstOrNull()
+                        ?: error("Scrutage IA : aucune carte disponible pour SCRY_SELECT_CARD")
                 } else {
                     "SCRY_CARD:$index"
                 }
