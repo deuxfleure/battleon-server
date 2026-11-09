@@ -736,7 +736,8 @@ object GameManager {
                 CardCatalog.getCard(cardId).isSpider
             }
 
-        val opponentSpiderCardIds = playerSpiderCardIds
+        val opponentSpiderCardIds =
+            config.aiSpiderCardIds ?: playerSpiderCardIds
 
         val game = GameState(
             gameId = UUID.randomUUID().toString(),

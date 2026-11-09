@@ -50,6 +50,8 @@ data class SoloMissionGameConfig(
     val selectedRuneIds: List<String>,
     val selectedCardIds: List<String>,
 
+    val aiSpiderCardIds: List<CardId>? = null,
+
     val reward: SoloMissionReward = SoloMissionReward(),
 )
 
