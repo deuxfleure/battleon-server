@@ -152,27 +152,42 @@ object TrainingAiPendingChoiceResolver {
         }
     }
 
-    private fun chooseAiSentinelleBuyDestroy(game: GameState, pendingChoice: PendingChoice): String {
+
+    private fun chooseAiSentinelleBuyDestroy(
+        game: GameState,
+        pendingChoice: PendingChoice
+    ): String {
         val discard = if (pendingChoice.owner == ChoiceOwner.OPPONENT) {
             game.opponentDiscard
         } else {
             game.playerDiscard
         }
 
-        // Priorité 1 : détruire CURSED
-        val cursedIndex = discard.indexOfFirst { it.id == CardId.CURSED }
-        if (cursedIndex != -1) {
-            return "DISCARD:$cursedIndex"
+        val cursedIndex = discard.indexOfFirst {
+            it.id == CardId.CURSED
         }
 
-        // Priorité 2 : détruire WARRIOR
-        val warriorIndex = discard.indexOfFirst { it.id == CardId.WARRIOR }
-        if (warriorIndex != -1) {
-            return "DISCARD:$warriorIndex"
+        if (cursedIndex >= 0) {
+            val option = "DISCARD:$cursedIndex"
+            if (option in pendingChoice.options) {
+                return option
+            }
+        }
+
+        val warriorIndex = discard.indexOfFirst {
+            it.id == CardId.WARRIOR
+        }
+
+        if (warriorIndex >= 0) {
+            val option = "DISCARD:$warriorIndex"
+            if (option in pendingChoice.options) {
+                return option
+            }
         }
 
         return "PASS"
     }
+
 
     private fun chooseAiExperienceLaboratoire(
         game: GameState,
