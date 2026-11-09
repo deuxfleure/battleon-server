@@ -735,19 +735,6 @@ object TrainingAiPendingChoiceResolver {
             }
 
             // -----------------------------------
-            // MAGE DESTROY RESERVE
-            // (simple : choix aléatoire)
-            // -----------------------------------
-            "MAGE_DESTROY_RESERVE" -> {
-
-                if (pendingChoice.options.isNotEmpty()) {
-                    pendingChoice.options.random()
-                } else {
-                    "PASS"
-                }
-            }
-
-            // -----------------------------------
             // TACTICIEN
             // -----------------------------------
             "TACTICIEN_REPLACE_REVEALED" -> {
