@@ -427,14 +427,19 @@ fun Application.configureRouting() {
                     runeLoadout.minorRightRuneId
                 )
 
+
+                val ownedCardIds = UserService.getOwnedCardIds(userId)
+
                 val gameState = GameManager.createSoloMissionGame(
                     playerUserId = userId,
                     playerName = me.displayName,
                     missionId = request.missionId,
                     difficulty = difficulty,
                     selectedRuneIds = serverSelectedRuneIds,
-                    selectedCardIds = request.selectedCardIds
+                    selectedCardIds = request.selectedCardIds,
+                    ownedCardIds = ownedCardIds
                 )
+
 
                 if (gameState == null) {
                     call.respond(

@@ -696,7 +696,8 @@ object GameManager {
         missionId: String,
         difficulty: SoloMissionDifficulty,
         selectedRuneIds: List<String>,
-        selectedCardIds: List<String>
+        selectedCardIds: List<String>,
+        ownedCardIds: List<String>
     ): GameState? {
         val mission = SoloMissionCatalog.findMission(missionId)
             ?: return null
@@ -722,6 +723,20 @@ object GameManager {
         }
 
         val shopEntries = createSoloShop(config)
+
+        val playerSpiderCardIds = ownedCardIds
+            .mapNotNull { cardId ->
+                try {
+                    CardId.valueOf(cardId)
+                } catch (_: Exception) {
+                    null
+                }
+            }
+            .filter { cardId ->
+                CardCatalog.getCard(cardId).isSpider
+            }
+
+        val opponentSpiderCardIds = playerSpiderCardIds
 
         val game = GameState(
             gameId = UUID.randomUUID().toString(),
@@ -776,8 +791,8 @@ object GameManager {
 
             shopEntries = shopEntries,
 
-            playerAvailableSpiderCardIds = emptyList(),
-            opponentAvailableSpiderCardIds = emptyList(),
+            playerAvailableSpiderCardIds = playerSpiderCardIds,
+            opponentAvailableSpiderCardIds = opponentSpiderCardIds,
 
             playerPurchasedCardCounts = emptyMap(),
             opponentPurchasedCardCounts = emptyMap(),
