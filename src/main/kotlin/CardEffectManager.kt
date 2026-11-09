@@ -1436,8 +1436,7 @@ object CardEffectManager {
             cardId = CardId.MAGE.name,
             options = listOf(
                 "BRUTE",
-                "POWER",
-                "DESTROY_RESERVE"
+                "POWER"
             ),
             message = "Choisissez un effet pour Le Mage",
             owner = owner
@@ -1485,28 +1484,6 @@ object CardEffectManager {
             options = options,
             message = "Remplacer une carte de la défausse par un Œuf d'Araignée ?",
             owner = owner
-        )
-    }
-
-
-    private fun buildMageDestroyReservePendingChoice(
-        game: GameState,
-        owner: ChoiceOwner
-    ): GameState{
-        val availableOptions = game.shopEntries
-            .mapIndexedNotNull { index, entry ->
-                if (entry.copiesRemaining > 0) "SHOP:$index" else null
-            }
-
-        return game.copy(
-            pendingChoice = PendingChoice(
-                type = "MAGE_DESTROY_RESERVE",
-                cardId = CardId.MAGE.name,
-                options = availableOptions,
-                message = "Choisissez une carte de la réserve à détruire.",
-                owner = owner
-            ),
-            infoMessage = null
         )
     }
 
@@ -3137,13 +3114,6 @@ object CardEffectManager {
                         }
                     }
 
-                    "DESTROY_RESERVE" -> {
-                        buildMageDestroyReservePendingChoice(
-                            game = game,
-                            owner = pendingChoice.owner
-                        )
-                    }
-
                     else -> {
                         game.copy(
                             infoMessage = "Choix invalide"
@@ -3152,59 +3122,6 @@ object CardEffectManager {
                 }
             }
 
-            // -------------------------------------------------
-            // MAGE — DESTRUCTION DANS LA RÉSERVE
-            // -------------------------------------------------
-            "MAGE_DESTROY_RESERVE" -> {
-                if (!choice.startsWith("SHOP:")) {
-                    return game.copy(
-                        infoMessage = "Choix invalide"
-                    )
-                }
-
-                val index = choice.removePrefix("SHOP:").toIntOrNull()
-                    ?: return game.copy(
-                        infoMessage = "Choix invalide"
-                    )
-
-                if (index !in game.shopEntries.indices) {
-                    return game.copy(
-                        infoMessage = "Choix invalide"
-                    )
-                }
-
-                val targetEntry = game.shopEntries[index]
-
-                if (targetEntry.copiesRemaining <= 0) {
-                    return game.copy(
-                        infoMessage = "Pile vide"
-                    )
-                }
-
-                val newShopEntries = game.shopEntries.mapIndexed { i, entry ->
-                    if (i == index) {
-                        entry.copy(copiesRemaining = entry.copiesRemaining - 1)
-                    } else {
-                        entry
-                    }
-                }
-
-                if (ownerIsPlayer) {
-                    game.copy(
-                        shopEntries = newShopEntries,
-                        pendingChoice = null,
-                        playerEffectResolved = true,
-                        infoMessage = null
-                    )
-                } else {
-                    game.copy(
-                        shopEntries = newShopEntries,
-                        pendingChoice = null,
-                        opponentEffectResolved = true,
-                        infoMessage = null
-                    )
-                }
-            }
 
             // -------------------------------------------------
             // TACTICIEN

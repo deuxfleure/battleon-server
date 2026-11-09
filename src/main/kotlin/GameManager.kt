@@ -2558,13 +2558,15 @@ object GameManager {
             ?.name
     }
 
+
     private fun resolveAiPendingChoiceIfNeeded(game: GameState): GameState {
         var workingGame = game
+        var resolutionCount = 0
+        val maxResolutions = 50
 
         while (true) {
             val pendingChoice = workingGame.pendingChoice ?: return workingGame
 
-            // On ne résout automatiquement que les choix appartenant à l'IA adverse
             if (pendingChoice.owner != ChoiceOwner.OPPONENT) {
                 return workingGame
             }
@@ -2573,13 +2575,51 @@ object GameManager {
                 return workingGame
             }
 
-            val aiChoice = AiPendingChoiceManager.chooseOption(workingGame) ?: return workingGame.copy(
-                infoMessage = "Aucun choix IA disponible"
+            if (resolutionCount >= maxResolutions) {
+                System.err.println(
+                    "ERREUR IA : limite de résolutions atteinte. " +
+                            "Type=${pendingChoice.type}, " +
+                            "Carte=${pendingChoice.cardId}"
+                )
+
+                return workingGame.copy(
+                    infoMessage = "Erreur IA : limite de résolutions atteinte"
+                )
+            }
+
+            val aiChoice = AiPendingChoiceManager.chooseOption(workingGame)
+                ?: return workingGame.copy(
+                    infoMessage = "Aucun choix IA disponible"
+                )
+
+            val resolvedGame = CardEffectManager.resolvePendingChoice(
+                workingGame,
+                aiChoice
             )
 
-            workingGame = CardEffectManager.resolvePendingChoice(workingGame, aiChoice)
+            // Un message d'erreur seul ne constitue pas une progression.
+            if (
+                resolvedGame.copy(infoMessage = null) ==
+                workingGame.copy(infoMessage = null)
+            ) {
+                System.err.println(
+                    "ERREUR IA : choix sans progression. " +
+                            "Type=${pendingChoice.type}, " +
+                            "Carte=${pendingChoice.cardId}, " +
+                            "Option=$aiChoice, " +
+                            "Message=${resolvedGame.infoMessage}"
+                )
+
+                return resolvedGame.copy(
+                    infoMessage = "Erreur IA : choix bloqué ($aiChoice)"
+                )
+            }
+
+            workingGame = resolvedGame
+            resolutionCount++
         }
     }
+
     private fun hasReachedPurchaseLimit(
         game: GameState,
         card: Card,
