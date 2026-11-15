@@ -818,6 +818,46 @@ object TrainingAiPendingChoiceResolver {
             }
 
             // -----------------------------------
+            // ESPIÈGLE — renvoyer la carte adverse
+            // au sommet de son deck
+            // -----------------------------------
+            "ESPIEGLE_CHOICE" -> {
+                val aiIsOpponent =
+                    pendingChoice.owner == ChoiceOwner.OPPONENT
+
+                val enemyCard = if (aiIsOpponent) {
+                    game.lastPlayerCard
+                } else {
+                    game.lastOpponentCard
+                }
+
+                val enemyGold = if (aiIsOpponent) {
+                    game.playerGold
+                } else {
+                    game.opponentGold
+                }
+
+                val shouldReturn = when {
+                    enemyCard == null -> false
+
+                    enemyCard.id == CardId.EXPERIENCEDELABORATOIRE ->
+                        enemyGold < 3
+
+                    else -> enemyCard.power in 1..2
+                }
+
+                if (
+                    shouldReturn &&
+                    "ESPIEGLE_RETURN" in pendingChoice.options
+                ) {
+                    "ESPIEGLE_RETURN"
+                } else {
+                    "PASS"
+                }
+            }
+
+
+            // -----------------------------------
             // CHAMANE
             // -----------------------------------
             "CHAMANE_SUBTERFUGE" -> {

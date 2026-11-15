@@ -66,6 +66,45 @@ object PostCombatEffectResolver {
 
         return when (card.id) {
 
+
+            CardId.ESPIEGLE -> {
+                when (progress.nextEffectIndex) {
+                    0 -> {
+                        val target = if (owner == ChoiceOwner.PLAYER) {
+                            game.lastOpponentCard
+                        } else {
+                            game.lastPlayerCard
+                        }
+
+                        if (target == null) {
+                            setEffectProgress(
+                                game = game,
+                                owner = owner,
+                                progress = progress.copy(
+                                    nextEffectIndex = 1,
+                                    completed = true
+                                )
+                            )
+                        } else {
+                            game.copy(
+                                pendingChoice =
+                                    CardEffectManager.buildEspieglePendingChoice(owner),
+                                infoMessage = null
+                            )
+                        }
+                    }
+
+                    else -> {
+                        setEffectProgress(
+                            game = game,
+                            owner = owner,
+                            progress = progress.copy(completed = true)
+                        )
+                    }
+                }
+            }
+
+
             CardId.GOLEMDOCRE -> {
                 when (progress.nextEffectIndex) {
 
@@ -562,6 +601,24 @@ object PostCombatEffectResolver {
                     )
                 }
             }
+
+
+            if (playerWonCombat && playerCard.id == CardId.ESPIEGLE) {
+                if (getEffectProgress(updatedGame, ChoiceOwner.PLAYER) == null) {
+                    updatedGame = setEffectProgress(
+                        game = updatedGame,
+                        owner = ChoiceOwner.PLAYER,
+                        progress = PostCombatEffectProgress(
+                            cardId = CardId.ESPIEGLE,
+                            owner = ChoiceOwner.PLAYER,
+                            nextEffectIndex = 0
+                        )
+                    )
+                }
+            }
+
+
+
             // MALIN — initialisation de la séquence post-combat
             if (playerWonCombat && playerCard.id == CardId.MALIN) {
 
@@ -923,6 +980,23 @@ object PostCombatEffectResolver {
                     )
                 }
             }
+
+
+            if (opponentWonCombat && opponentCard.id == CardId.ESPIEGLE) {
+                if (getEffectProgress(updatedGame, ChoiceOwner.OPPONENT) == null) {
+                    updatedGame = setEffectProgress(
+                        game = updatedGame,
+                        owner = ChoiceOwner.OPPONENT,
+                        progress = PostCombatEffectProgress(
+                            cardId = CardId.ESPIEGLE,
+                            owner = ChoiceOwner.OPPONENT,
+                            nextEffectIndex = 0
+                        )
+                    )
+                }
+            }
+
+
             // MALIN — initialisation de la séquence post-combat
             if (opponentWonCombat && opponentCard.id == CardId.MALIN) {
 

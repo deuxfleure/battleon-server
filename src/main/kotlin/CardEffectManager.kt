@@ -1455,6 +1455,22 @@ object CardEffectManager {
         )
     }
 
+
+
+    fun buildEspieglePendingChoice(
+        owner: ChoiceOwner
+    ): PendingChoice {
+        return PendingChoice(
+            type = "ESPIEGLE_CHOICE",
+            cardId = CardId.ESPIEGLE.name,
+            options = listOf("ESPIEGLE_RETURN", "PASS"),
+            message = "Renvoyer la carte adverse au sommet de son deck ?",
+            owner = owner
+        )
+    }
+
+
+
     fun buildAraigneeGeantePendingChoice(
         game: GameState,
         owner: ChoiceOwner
@@ -1496,6 +1512,52 @@ object CardEffectManager {
         val ownerIsPlayer = pendingChoice.owner == ChoiceOwner.PLAYER
 
         return when (pendingChoice.type) {
+
+
+            "ESPIEGLE_CHOICE" -> {
+                if (choice !in pendingChoice.options) {
+                    game.copy(infoMessage = "Choix invalide")
+                } else {
+                    val target = if (ownerIsPlayer) {
+                        game.lastOpponentCard
+                    } else {
+                        game.lastPlayerCard
+                    }
+
+                    val updatedGame = if (
+                        choice == "ESPIEGLE_RETURN" &&
+                        target != null
+                    ) {
+                        if (ownerIsPlayer) {
+                            game.copy(
+                                opponentDeck = listOf(target) + game.opponentDeck,
+                                lastOpponentCard = null,
+                                opponentDisplayedTurnCard = null
+                            )
+                        } else {
+                            game.copy(
+                                playerDeck = listOf(target) + game.playerDeck,
+                                lastPlayerCard = null,
+                                playerDisplayedTurnCard = null
+                            )
+                        }
+                    } else {
+                        game
+                    }
+
+                    val advancedGame =
+                        PostCombatEffectResolver.advanceEffectProgress(
+                            game = updatedGame,
+                            owner = pendingChoice.owner
+                        )
+
+                    advancedGame.copy(
+                        pendingChoice = null,
+                        infoMessage = null
+                    )
+                }
+            }
+
 
             // -------------------------------------------------
             // SAUVAGE — Défausse de 0 à 3 cartes
