@@ -3332,6 +3332,31 @@ object GameManager {
         return workingGame
     }
 
+    private fun handleAiShopPurchaseFailure(game: GameState): GameState {
+        if (!isAiControlledOpponent(game)) return game
+
+        val isFailure = when (game.opponentShopStatus) {
+            ShopPurchaseStatus.INVALID_LIMIT_REACHED,
+            ShopPurchaseStatus.INVALID_OUT_OF_STOCK,
+            ShopPurchaseStatus.PURCHASE_SNIPED_BY_PRIORITY -> true
+
+            else -> false
+        }
+
+        if (!isFailure) return game
+
+        val failureCount = game.trainingAiShopFailureCount + 1
+
+        println("IA SHOP : refus $failureCount/5")
+
+        return game.copy(
+            trainingAiShopFailureCount = failureCount,
+            opponentPendingShopPurchaseCardId = null,
+            opponentShopStatus = ShopPurchaseStatus.NONE,
+            opponentPassedShop = failureCount >= 5
+        )
+    }
+
     fun requestShopPurchase(
         gameId: String,
         cardId: String,
@@ -3468,6 +3493,7 @@ object GameManager {
             currentShopBuyerIsPlayer = playerFirst,
             playerPassedShop = false,
             opponentPassedShop = false,
+            trainingAiShopFailureCount = 0,
             playerShopStatus = evaluatePendingShopPurchaseStatus(
                 game = game,
                 cardId = game.playerPendingShopPurchaseCardId,
@@ -4504,7 +4530,9 @@ object GameManager {
                         )
 
                     } else {
-                        updatedGame = resolveShopRound(workingGame)
+                        updatedGame = handleAiShopPurchaseFailure(
+                            resolveShopRound(workingGame)
+                        )
 
                         if (updatedGame.pendingChoice != null) {
                             updatedGame = resolveAiPendingChoiceIfNeeded(updatedGame)

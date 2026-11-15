@@ -457,6 +457,9 @@ data class GameState(
     val playerShopStatus: ShopPurchaseStatus = ShopPurchaseStatus.NONE,
     val opponentShopStatus: ShopPurchaseStatus = ShopPurchaseStatus.NONE,
 
+    // Nombre de demandes d'achat refusées à l'IA durant la phase d'achat.
+    val trainingAiShopFailureCount: Int = 0,
+
     // =========================================================
     // 15. SHOP : ORDRE ET ALTERNANCE D’ACHAT
     // shopPriorityPlayerFirst :
