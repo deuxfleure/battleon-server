@@ -45,6 +45,9 @@ object UserService {
                 }
             }
         }
+        PlayerProgressInitializer.initializePlayer(
+            getAuthUserByUsername(user.username)!!.id
+        )
     }
 
     fun initializePlayerCollection(userId: Int) {

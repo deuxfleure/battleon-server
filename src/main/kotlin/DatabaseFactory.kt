@@ -30,5 +30,6 @@ object DatabaseFactory {
                 UserSoloRuneLoadout
             )
         }
+        PlayerProgressInitializer.initializeAllPlayers()
     }
 }
