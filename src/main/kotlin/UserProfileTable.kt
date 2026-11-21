@@ -24,6 +24,7 @@ object UserProfile : Table("user_profile") {
     val language = varchar("language", 10).default("FR")
 
     val hasBattlePass = bool("has_battle_pass").default(false)
+    val battlePassCoupons = integer("battle_pass_coupons").default(0)
 
     override val primaryKey = PrimaryKey(id)
 }

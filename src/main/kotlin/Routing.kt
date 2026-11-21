@@ -256,16 +256,21 @@ fun Application.configureRouting() {
                 call.respond(mapOf("cards" to collection))
             }
 
-            post("/profile/buy-battlepass") {
+            post("/profile/activate-battlepass") {
                 val principal = call.principal<JWTPrincipal>()
                 val userId = principal!!.payload.getClaim("userId").asInt()
 
-                val success = UserService.buyBattlePass(userId)
+                val success = UserService.activateBattlePassWithCoupon(userId)
 
                 if (success) {
-                    call.respond(mapOf("message" to "Battlepass acheté"))
+                    call.respond(
+                        mapOf("message" to "Battle Pass activé avec un coupon")
+                    )
                 } else {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Impossible d'acheter le battlepass"))
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Impossible d'activer le Battle Pass")
+                    )
                 }
             }
 

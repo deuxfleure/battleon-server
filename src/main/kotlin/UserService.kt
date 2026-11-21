@@ -34,6 +34,7 @@ object UserService {
                 it[dust] = 0
                 it[email] = null
                 it[hasBattlePass] = false
+                it[battlePassCoupons] = 0
             }
 
             ProfileCosmeticCatalog.defaultUnlocked.forEach { cosmetic ->
@@ -136,28 +137,69 @@ object UserService {
     }
 
     //==============================================
-    //======== battle Pass cost ====================
+    //======== Battle Pass : coupon ================
     //==============================================
-    private const val BATTLE_PASS_COST = 9999
 
-    fun buyBattlePass(userId: Int): Boolean {
+    fun activateBattlePassWithCoupon(userId: Int): Boolean {
         return transaction {
+            // Verrouille le profil pendant l'activation pour éviter
+            // que deux requêtes consomment le même coupon.
             val profile = UserProfile
                 .selectAll()
                 .where { UserProfile.userAuthId eq userId }
+                .forUpdate()
                 .singleOrNull()
                 ?: return@transaction false
 
-            val alreadyHasBattlePass = profile[UserProfile.hasBattlePass]
-            val currentGems = profile[UserProfile.gems]
+            if (profile[UserProfile.hasBattlePass]) {
+                return@transaction false
+            }
 
-            if (alreadyHasBattlePass) return@transaction false
-            if (currentGems < BATTLE_PASS_COST) return@transaction false
+            val coupons = profile[UserProfile.battlePassCoupons]
+            if (coupons < 1) {
+                return@transaction false
+            }
 
-            UserProfile.update({ UserProfile.userAuthId eq userId }) {
+            // Vérifier que le cinquième emplacement existe AVANT
+            // de consommer le coupon.
+            val slotExists = UserDeckSlots
+                .selectAll()
+                .where {
+                    (UserDeckSlots.userAuthId eq userId) and
+                            (UserDeckSlots.slotNumber eq 5)
+                }
+                .singleOrNull() != null
+
+            if (!slotExists) {
+                return@transaction false
+            }
+
+            // Débloquer l'emplacement.
+            val updatedSlots = UserDeckSlots.update({
+                (UserDeckSlots.userAuthId eq userId) and
+                        (UserDeckSlots.slotNumber eq 5)
+            }) {
+                it[isUnlocked] = true
+            }
+
+            // Une anomalie doit annuler toute la transaction.
+            check(updatedSlots == 1) {
+                "Battle Pass: impossible de débloquer le slot 5"
+            }
+
+            // Activer le Battle Pass et consommer un coupon.
+            val updatedProfiles = UserProfile.update({
+                UserProfile.userAuthId eq userId
+            }) {
                 it[hasBattlePass] = true
-                it[gems] = currentGems - BATTLE_PASS_COST
-            } > 0
+                it[battlePassCoupons] = coupons - 1
+            }
+
+            check(updatedProfiles == 1) {
+                "Battle Pass: impossible de mettre à jour le profil"
+            }
+
+            true
         }
     }
 
