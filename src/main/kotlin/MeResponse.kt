@@ -20,6 +20,7 @@ data class MeResponse(
     val losses: Int,
     val email: String?,
     val hasBattlePass: Boolean,
+    val battlePassCoupons: Int,
     val language: String,
 )
 

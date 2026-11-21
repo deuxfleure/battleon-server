@@ -129,6 +129,7 @@ object UserService {
                     losses = profileRow[UserProfile.losses],
                     email = profileRow[UserProfile.email],
                     hasBattlePass = profileRow[UserProfile.hasBattlePass],
+                    battlePassCoupons = profileRow[UserProfile.battlePassCoupons],
                 )
             } else {
                 null

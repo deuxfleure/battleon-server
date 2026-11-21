@@ -1,0 +1,259 @@
+
+package com.battleon
+
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.transactions.transaction
+import kotlin.random.Random
+
+data class BoosterReward(
+    val type: String,
+    val cardId: String? = null,
+    val isRare: Boolean = false,
+    val isNew: Boolean = false,
+    val dustEarned: Int = 0
+)
+
+data class BoosterOpenResult(
+    val success: Boolean,
+    val error: String? = null,
+    val rewards: List<BoosterReward> = emptyList(),
+    val gemsRemaining: Int = 0,
+    val dustEarned: Int = 0
+)
+
+object BoosterService {
+
+    private const val BOOSTER_PRICE = 1000
+    private const val RARE_CHANCE = 10
+    private const val DECK_SLOT_CHANCE = 1
+    private const val RARE_PITY = 10
+    private const val COMMON_PITY = 3
+
+    fun buyAndOpen(
+        userId: Int,
+        type: BoosterType
+    ): BoosterOpenResult = transaction {
+        val profile = UserProfile
+            .selectAll()
+            .where { UserProfile.userAuthId eq userId }
+            .forUpdate()
+            .singleOrNull()
+            ?: return@transaction BoosterOpenResult(
+                success = false,
+                error = "Profil introuvable"
+            )
+
+        val gems = profile[UserProfile.gems]
+
+        if (gems < BOOSTER_PRICE) {
+            return@transaction BoosterOpenResult(
+                success = false,
+                error = "Gemmes insuffisantes"
+            )
+        }
+
+        val setIds = when (type) {
+            BoosterType.PERMANENT -> SeasonConfig.getPermanentSets()
+            BoosterType.SEASONAL -> SeasonConfig.getSeasonalSets()
+        }
+
+        if (setIds.isEmpty()) {
+            return@transaction BoosterOpenResult(
+                success = false,
+                error = "Booster indisponible cette saison"
+            )
+        }
+
+        val sets = setIds.map(CardSetCatalog::getSet)
+        val commons = sets.flatMap { it.commonCards }.distinct()
+        val rares = sets.flatMap { it.rareCards }.distinct()
+
+        check(commons.isNotEmpty()) {
+            "Booster sans cartes communes"
+        }
+        check(rares.isNotEmpty()) {
+            "Booster sans cartes rares"
+        }
+
+        val progress = UserBoosterProgress
+            .selectAll()
+            .where {
+                (UserBoosterProgress.userAuthId eq userId) and
+                        (UserBoosterProgress.boosterType eq type)
+            }
+            .forUpdate()
+            .singleOrNull()
+            ?: error("Progression booster manquante : $userId / $type")
+
+        val slot7 = UserDeckSlots
+            .selectAll()
+            .where {
+                (UserDeckSlots.userAuthId eq userId) and
+                        (UserDeckSlots.slotNumber eq 7)
+            }
+            .singleOrNull()
+            ?: error("Emplacement 7 manquant pour $userId")
+
+        val owned = UserCardCollection
+            .selectAll()
+            .where { UserCardCollection.userAuthId eq userId }
+            .associateBy { it[UserCardCollection.cardId] }
+
+        val copies = owned.mapValues { (_, row) ->
+            row[UserCardCollection.ownedCopies]
+        }.toMutableMap()
+
+        val rewards = mutableListOf<BoosterReward>()
+        var totalDust = 0
+        var foundRare = false
+        var foundNewCommon = false
+
+        val rarePityDue =
+            progress[UserBoosterProgress.boostersWithoutRare] >= RARE_PITY - 1
+
+        val commonPityDue =
+            progress[UserBoosterProgress.boostersWithoutNewCommon] >= COMMON_PITY - 1
+
+        fun grantCard(cardId: CardId, rare: Boolean) {
+            val key = cardId.name
+            val previousCopies = copies[key] ?: 0
+            val previouslyOwned =
+                owned[key]?.get(UserCardCollection.isOwned) == true ||
+                        previousCopies > 0
+
+            val isNew = !previouslyOwned && previousCopies == 0
+            val usableLimit = (
+                    CardCatalog.getCard(cardId).purchaseLimit ?: 3
+                    ).coerceIn(1, 3)
+
+            val dust = if (previousCopies >= usableLimit) {
+                if (rare) 100 else 10
+            } else {
+                0
+            }
+
+            totalDust += dust
+
+            // On conserve jusqu'à 3 exemplaires, même si
+            // la limite d'utilisation de la carte est inférieure.
+            val newCopies = (previousCopies + 1).coerceAtMost(3)
+            copies[key] = newCopies
+
+            if (owned[key] == null) {
+                UserCardCollection.insert {
+                    it[userAuthId] = userId
+                    it[UserCardCollection.cardId] = key
+                    it[isOwned] = true
+                    it[ownedCopies] = newCopies
+                    it[selectedSkinId] = null
+                }
+            } else {
+                UserCardCollection.update({
+                    (UserCardCollection.userAuthId eq userId) and
+                            (UserCardCollection.cardId eq key)
+                }) {
+                    it[isOwned] = true
+                    it[ownedCopies] = newCopies
+                }
+            }
+
+            if (rare) foundRare = true
+            if (!rare && isNew) foundNewCommon = true
+
+            rewards += BoosterReward(
+                type = "CARD",
+                cardId = key,
+                isRare = rare,
+                isNew = isNew,
+                dustEarned = dust
+            )
+        }
+
+        fun drawCommon(guaranteeNew: Boolean = false): CardId {
+            if (guaranteeNew) {
+                val missing = commons.filter { card ->
+                    val key = card.name
+                    (copies[key] ?: 0) == 0 &&
+                            owned[key]?.get(UserCardCollection.isOwned) != true
+                }
+
+                if (missing.isNotEmpty()) {
+                    return missing.random()
+                }
+            }
+
+            return commons.random()
+        }
+
+        fun drawRare(): CardId = rares.random()
+
+        // Récompense 1 : chance de débloquer le 7e deck.
+        val unlockDeck =
+            !slot7[UserDeckSlots.isUnlocked] &&
+                    Random.nextInt(100) < DECK_SLOT_CHANCE
+
+        if (unlockDeck) {
+            val updated = UserDeckSlots.update({
+                (UserDeckSlots.userAuthId eq userId) and
+                        (UserDeckSlots.slotNumber eq 7) and
+                        (UserDeckSlots.isUnlocked eq false)
+            }) {
+                it[isUnlocked] = true
+            }
+
+            check(updated == 1) {
+                "Impossible de débloquer l'emplacement 7"
+            }
+
+            rewards += BoosterReward(type = "DECK_SLOT_7")
+        } else {
+            val rare = Random.nextInt(100) < RARE_CHANCE
+            grantCard(
+                if (rare) drawRare() else drawCommon(),
+                rare
+            )
+        }
+
+        // Récompense 2 : garantie rare au dixième booster.
+        if (rarePityDue && !foundRare) {
+            grantCard(drawRare(), true)
+        } else {
+            grantCard(drawCommon(), false)
+        }
+
+        // Récompense 3 : garantie d'une nouvelle commune.
+        grantCard(
+            drawCommon(
+                guaranteeNew = commonPityDue && !foundNewCommon
+            ),
+            false
+        )
+
+        UserBoosterProgress.update({
+            (UserBoosterProgress.userAuthId eq userId) and
+                    (UserBoosterProgress.boosterType eq type)
+        }) {
+            it[boostersWithoutRare] =
+                if (foundRare) 0
+                else progress[UserBoosterProgress.boostersWithoutRare] + 1
+
+            it[boostersWithoutNewCommon] =
+                if (foundNewCommon) 0
+                else progress[UserBoosterProgress.boostersWithoutNewCommon] + 1
+        }
+
+        UserProfile.update({
+            UserProfile.userAuthId eq userId
+        }) {
+            it[UserProfile.gems] = gems - BOOSTER_PRICE
+            it[UserProfile.dust] = profile[UserProfile.dust] + totalDust
+        }
+
+        BoosterOpenResult(
+            success = true,
+            rewards = rewards,
+            gemsRemaining = gems - BOOSTER_PRICE,
+            dustEarned = totalDust
+        )
+    }
+}
