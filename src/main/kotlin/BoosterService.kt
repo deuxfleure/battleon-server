@@ -167,6 +167,22 @@ object BoosterService {
                 isNew = isNew,
                 dustEarned = dust
             )
+            // Débloquer automatiquement les cartes liées
+            // uniquement si la carte principale n'est pas transformée en poussière.
+
+            if (dust == 0) {
+                for (linkedCardId in LinkedCardCatalog.getLinkedCards(cardId)) {
+                    UserCardCollection.upsert(
+                        UserCardCollection.userAuthId,
+                        UserCardCollection.cardId
+                    ) {
+                        it[UserCardCollection.userAuthId] = userId
+                        it[UserCardCollection.cardId] = linkedCardId.name
+                        it[UserCardCollection.isOwned] = true
+                    }
+                }
+            }
+
         }
 
         fun drawCommon(guaranteeNew: Boolean = false): CardId {
