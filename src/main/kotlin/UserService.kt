@@ -385,7 +385,8 @@ object UserService {
 
                 val ownedCopies = (ownedRow
                     ?.get(UserCardCollection.ownedCopies)
-                    ?: 0).coerceIn(0, maxCopies)
+                    ?: 0).coerceIn(0, 3)
+
 
                 PlayerCollectionCard(
                     cardId = cardIdString,

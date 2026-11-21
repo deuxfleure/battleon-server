@@ -191,6 +191,8 @@ object BoosterService {
             row[UserCardCollection.ownedCopies]
         }.toMutableMap()
 
+        val knownCardIds = owned.keys.toMutableSet()
+
         val rewards = mutableListOf<BoosterReward>()
         var totalDust = 0
         var foundRare = false
@@ -227,7 +229,7 @@ object BoosterService {
             val newCopies = (previousCopies + 1).coerceAtMost(3)
             copies[key] = newCopies
 
-            if (owned[key] == null) {
+            if (key !in knownCardIds) {
                 UserCardCollection.insert {
                     it[userAuthId] = userId
                     it[UserCardCollection.cardId] = key
@@ -235,6 +237,7 @@ object BoosterService {
                     it[ownedCopies] = newCopies
                     it[selectedSkinId] = null
                 }
+                knownCardIds.add(key)
             } else {
                 UserCardCollection.update({
                     (UserCardCollection.userAuthId eq userId) and
