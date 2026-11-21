@@ -5,5 +5,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class BoosterBuyRequest(
-    val type: String
+    val type: String,
+    val requestId: String
 )

@@ -27,7 +27,8 @@ object DatabaseFactory {
                 UserDeckSlots,
                 UserSoloMissionProgress,
                 UserRunes,
-                UserSoloRuneLoadout
+                UserSoloRuneLoadout,
+                UserBoosterPurchases
             )
         }
         PlayerProgressInitializer.initializeAllPlayers()

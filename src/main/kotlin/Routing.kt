@@ -281,6 +281,22 @@ fun Application.configureRouting() {
 
                 val request = call.receive<BoosterBuyRequest>()
 
+
+                val validRequestId = try {
+                    UUID.fromString(request.requestId).toString() == request.requestId
+                } catch (_: IllegalArgumentException) {
+                    false
+                }
+
+                if (!validRequestId) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Identifiant d'achat invalide")
+                    )
+                    return@post
+                }
+
+
                 val boosterType = BoosterType.entries.firstOrNull {
                     it.name == request.type
                 }
@@ -293,9 +309,10 @@ fun Application.configureRouting() {
                     return@post
                 }
 
-                val result = BoosterService.buyAndOpen(
+                val result = BoosterService.buyAndOpenOnce(
                     userId = userId,
-                    type = boosterType
+                    type = boosterType,
+                    requestId = request.requestId
                 )
 
                 if (result.success) {

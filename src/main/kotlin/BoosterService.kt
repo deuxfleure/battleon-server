@@ -5,6 +5,9 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.random.Random
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 @Serializable
 data class BoosterReward(
@@ -31,6 +34,88 @@ object BoosterService {
     private const val DECK_SLOT_CHANCE = 1
     private const val RARE_PITY = 10
     private const val COMMON_PITY = 3
+
+
+    private val purchaseJson = Json
+
+    fun buyAndOpenOnce(
+        userId: Int,
+        type: BoosterType,
+        requestId: String
+    ): BoosterOpenResult = transaction {
+
+        // Sérialise les achats d'un même joueur.
+        val profileExists = UserProfile
+            .selectAll()
+            .where { UserProfile.userAuthId eq userId }
+            .forUpdate()
+            .singleOrNull() != null
+
+        if (!profileExists) {
+            return@transaction BoosterOpenResult(
+                success = false,
+                error = "Profil introuvable"
+            )
+        }
+
+        // Une demande déjà traitée doit rendre exactement
+        // son ancien résultat, sans nouveau tirage.
+        val previous = UserBoosterPurchases
+            .selectAll()
+            .where {
+                (UserBoosterPurchases.userAuthId eq userId) and
+                        (UserBoosterPurchases.requestId eq requestId)
+            }
+            .singleOrNull()
+
+        if (previous != null) {
+            if (previous[UserBoosterPurchases.boosterType] != type.name) {
+                return@transaction BoosterOpenResult(
+                    success = false,
+                    error = "Identifiant d'achat déjà utilisé pour un autre booster"
+                )
+            }
+
+            val savedResult = previous[UserBoosterPurchases.resultJson]
+                ?: error("Achat enregistré sans résultat")
+
+            return@transaction purchaseJson.decodeFromString<BoosterOpenResult>(
+                savedResult
+            )
+        }
+
+        // Réserve l'identifiant avant le tirage.
+        // L'insertion est annulée si la transaction échoue.
+        UserBoosterPurchases.insert {
+            it[UserBoosterPurchases.userAuthId] = userId
+            it[UserBoosterPurchases.requestId] = requestId
+            it[UserBoosterPurchases.boosterType] = type.name
+            it[UserBoosterPurchases.resultJson] = null
+        }
+
+        // La transaction de buyAndOpen rejoint celle-ci.
+        val result = buyAndOpen(userId, type)
+
+        // Les achats refusés ne sont pas enregistrés.
+        if (!result.success) {
+            UserBoosterPurchases.deleteWhere {
+                (UserBoosterPurchases.userAuthId eq userId) and
+                        (UserBoosterPurchases.requestId eq requestId)
+            }
+            return@transaction result
+        }
+
+        // Sauvegarde la réponse exacte avant le commit.
+        UserBoosterPurchases.update({
+            (UserBoosterPurchases.userAuthId eq userId) and
+                    (UserBoosterPurchases.requestId eq requestId)
+        }) {
+            it[resultJson] = purchaseJson.encodeToString(result)
+        }
+
+        result
+    }
+
 
     fun buyAndOpen(
         userId: Int,
