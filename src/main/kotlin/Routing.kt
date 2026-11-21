@@ -274,6 +274,38 @@ fun Application.configureRouting() {
                 }
             }
 
+
+            post("/shop/boosters/buy") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal!!.payload.getClaim("userId").asInt()
+
+                val request = call.receive<BoosterBuyRequest>()
+
+                val boosterType = BoosterType.entries.firstOrNull {
+                    it.name == request.type
+                }
+
+                if (boosterType == null) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Type de booster invalide")
+                    )
+                    return@post
+                }
+
+                val result = BoosterService.buyAndOpen(
+                    userId = userId,
+                    type = boosterType
+                )
+
+                if (result.success) {
+                    call.respond(HttpStatusCode.OK, result)
+                } else {
+                    call.respond(HttpStatusCode.BadRequest, result)
+                }
+            }
+
+
             post("/shop/redeem-code") {
                 val principal = call.principal<JWTPrincipal>()
                 val userId = principal!!.payload.getClaim("userId").asInt()

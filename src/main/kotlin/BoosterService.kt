@@ -4,7 +4,9 @@ package com.battleon
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.random.Random
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class BoosterReward(
     val type: String,
     val cardId: String? = null,
@@ -13,6 +15,7 @@ data class BoosterReward(
     val dustEarned: Int = 0
 )
 
+@Serializable
 data class BoosterOpenResult(
     val success: Boolean,
     val error: String? = null,
