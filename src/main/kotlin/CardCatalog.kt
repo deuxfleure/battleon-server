@@ -3,23 +3,28 @@ package com.battleon
 object CardCatalog {
 
     private val cardsById: Map<CardId, Card> = listOf(
-        // Carte NO COST
+        // =====================================================
+        // cartes de base
+        // =====================================================
         Card(CardId.COLLECTOR, 1, 0, CardFaction.MERCENARY, purchaseLimit = null,false,false,false,false),
         Card(CardId.WARRIOR, 3, 0,CardFaction.BEAST, purchaseLimit = null,false,false,false,false),
         Card(CardId.CURSED, 2, 0,CardFaction.DEMON, purchaseLimit = null,false,false,false,false),
         Card(CardId.HEALER, 2, 0,CardFaction.HUMAN, purchaseLimit = null,false,false,false,false),
 
+        // =====================================================
+        // cartes liée de base
+        // =====================================================
+
         Card(CardId.SQUELETTE_HANTE, 1, 0,CardFaction.DEMON, purchaseLimit = null,false,false,false,false),
         Card(CardId.SQUELETTE_MALEDICTION, 1, 0,CardFaction.DEMON, purchaseLimit = null,false,false,false,false),
         Card(CardId.SQUELETTE_FAIBLESSE, 1, 0,CardFaction.DEMON, purchaseLimit = null,false,false,false,false),
-
-        //Card(CardId.ARAIGNEEGOLIATH, 5, 0, CardFaction.BEAST, purchaseLimit = null, false, false, true,false),
         Card(CardId.ARAIGNEESOLDAT, 3, 0, CardFaction.BEAST, purchaseLimit = null, false, false, true,false),
         Card(CardId.NOURRICEARAIGNEE, 2, 0, CardFaction.BEAST, purchaseLimit = null, false, false, true,false),
         Card(CardId.OEUFDARAIGNEE, 0, 0, CardFaction.BEAST, purchaseLimit = null, false, false, true,false),
-        Card(CardId.GOLEMDOCRE,8,0, CardFaction.MERCENARY, purchaseLimit = null, false, false, false,false),
-        Card(CardId.BOULETDECANON, 1, 0, CardFaction.MERCENARY, purchaseLimit = null, false, false, false,false),
 
+        // =====================================================
+        // cartes starter
+        // =====================================================
         Card(CardId.AGILE, 4, 4,CardFaction.BEAST, purchaseLimit = null,false,false,false,false),
         Card(CardId.ARAIGNEEGEANTE, 3, 5,CardFaction.BEAST, purchaseLimit = null,false,false,true,false),
         Card(CardId.BULLDOZER, 6, 6,CardFaction.BEAST, purchaseLimit = null,false,false,false,false),
@@ -54,61 +59,171 @@ object CardCatalog {
         Card(CardId.THERMOGUERRIER, 2, 4,CardFaction.HUMAN, purchaseLimit = null,false,false,false,false),
 
         // =====================================================
-        // Mission Solo et cartes de booster saison 1
+        // Mission Solo et cartes de booster de base
         // =====================================================
 
-        Card(CardId.EXPERIENCEDELABORATOIRE, 2, 5,CardFaction.HUMAN, purchaseLimit = null,false,false,false,false),
-        Card(CardId.COSTAUD, 4, 3, CardFaction.BEAST, purchaseLimit = null, false, false, false,false),
-        Card(CardId.REPRESAILLES, 3, 2, CardFaction.BEAST, purchaseLimit = null, false, false, false,false),
-        Card(CardId.MUSICIEN, 1, 2, CardFaction.HUMAN, purchaseLimit = 2, true, false, false,false),
-        Card(CardId.FIDELE, 3, 3, CardFaction.HUMAN, purchaseLimit = null, false, false, false,false),
-        Card(CardId.GARDEVAUDOU, 3, 3, CardFaction.DEMON, purchaseLimit = null, false, false, false,false),
-        Card(CardId.JONGLEURDEJANTE, 1, 3, CardFaction.DEMON, purchaseLimit = 2, false, false, false,false),
+        Card(CardId.EMPOISONNEUSE, 2, 4, CardFaction.DEMON, purchaseLimit = null, true, false, false,true),
+        Card(CardId.ONIFLEAUDEGIVRE, 3, 3, CardFaction.DEMON, purchaseLimit = null, false, false, false,false),
+        Card(CardId.ARAIGNEEJUVENILE, 2, 3, CardFaction.BEAST, purchaseLimit = null, false, false, true,false),
         Card(CardId.ECUMEDESMERS, 3, 3, CardFaction.BEAST, purchaseLimit = null, false, false, false,false),
-        Card(CardId.TIQUE, 1, 3, CardFaction.BEAST, purchaseLimit = null, false, false, false,false),
-        Card(CardId.ROI, 4, 4, CardFaction.HUMAN, purchaseLimit = null, false, false, false,false),
+        Card(CardId.ENCHAINE, 3, 3, CardFaction.BEAST, purchaseLimit = null, false, false, false,false),
+        Card(CardId.ENRAGE, 6, 6, CardFaction.DEMON, purchaseLimit = null, false, false, false,false),
+        Card(CardId.ESPIEGLE, 5, 5, CardFaction.BEAST, purchaseLimit = null, false, false, false, false),
         Card(CardId.EVEQUE, 1, 3, CardFaction.HUMAN, purchaseLimit = 2, false, false, false,false),
-        Card(CardId.DEVOREURDESPOIRS, 3, 3, CardFaction.DEMON, purchaseLimit = null, false, false, false,false),
-        Card(CardId.MALIN, 4, 4, CardFaction.BEAST, purchaseLimit = null, false, false, false,false),
+        Card(CardId.EXPERIENCEDELABORATOIRE, 2, 5,CardFaction.HUMAN, purchaseLimit = null,false,false,false,false),
+        Card(CardId.OEIL, 2, 3, CardFaction.DEMON, purchaseLimit = null, false, false, false,false),
         Card(CardId.FORCETRANQUILLE, 3, 3, CardFaction.BEAST, purchaseLimit = null, false, false, false,false),
         Card(CardId.REINEARAIGNEE, 4, 4, CardFaction.BEAST, purchaseLimit = null, false, true, true,true),
         Card(CardId.SOURNOISE, 3, 3, CardFaction.HUMAN, purchaseLimit = null, true, false, false,false),
-        Card(CardId.CONTAGIEUX, 3, 3, CardFaction.DEMON, purchaseLimit = null, false, false, false,false),
-        Card(CardId.TISSEURDEMENSONGES, 3, 4, CardFaction.DEMON, purchaseLimit = null, false, false, false,false),
-        Card(CardId.ENCHAINE, 3, 3, CardFaction.BEAST, purchaseLimit = null, false, false, false,false),
-        Card(CardId.GARDIENSACRE, 1, 5, CardFaction.BEAST, purchaseLimit = null, false, false, false,false),
-        Card(CardId.PORTEPAROLE, 2, 2, CardFaction.HUMAN, purchaseLimit = null, false, false, false,false),
-        Card(CardId.DISCIPLEDELAFLAMME, 3, 4, CardFaction.HUMAN, purchaseLimit = null, false, false, false,false),
-        Card(CardId.LAMEERRANTE, 3, 3, CardFaction.HUMAN, purchaseLimit = null, false, false, false,false),
-        Card(CardId.ONIFLEAUDEGIVRE, 3, 3, CardFaction.DEMON, purchaseLimit = null, false, false, false,false),
-        Card(CardId.SAUVAGE, 4, 6, CardFaction.BEAST, purchaseLimit = null, false, false, false,false),
-        Card(CardId.ARAIGNEEJUVENILE, 2, 3, CardFaction.BEAST, purchaseLimit = null, false, false, true,false),
-        Card(CardId.PALADIN, 4, 4, CardFaction.HUMAN, purchaseLimit = null, false, true, false,false),
-        Card(CardId.ENRAGE, 6, 6, CardFaction.DEMON, purchaseLimit = null, false, false, false,false),
-        Card(CardId.PERFIDE, 3, 3, CardFaction.DEMON, purchaseLimit = null, false, false, false,false),
-        Card(CardId.OEIL, 2, 3, CardFaction.DEMON, purchaseLimit = null, false, false, false,false),
-        Card(CardId.TRAPPEUR, 6, 3, CardFaction.HUMAN, purchaseLimit = 1, false, true, false,false),
-        Card(CardId.EMPOISONNEUSE, 2, 4, CardFaction.DEMON, purchaseLimit = null, true, false, false,true),
-
+        Card(CardId.TIQUE, 1, 3, CardFaction.BEAST, purchaseLimit = 2, false, false, false,false),
         Card(CardId.BATARD, 1, 3, CardFaction.DEMON, purchaseLimit = null, true, false, false, true),
-        Card(CardId.ENIGME, 2, 3, CardFaction.BEAST, purchaseLimit = null, false, false, false, false),
-        Card(CardId.GLADIATEURDAMNE, 4, 4, CardFaction.DEMON, purchaseLimit = null, false, false, false, false),
-        Card(CardId.INSTINCT, 4, 3, CardFaction.HUMAN, purchaseLimit = null, false, true, false, false),
-        Card(CardId.INVENTEUR, 2, 3, CardFaction.HUMAN, purchaseLimit = null, false, false, false, false),
-        Card(CardId.LYCANTHROPE, 3, 4, CardFaction.HUMAN, purchaseLimit = null, false, false, false, false),
-        Card(CardId.MAITREDESPOTIONS, 5, 5, CardFaction.DEMON, purchaseLimit = null, false, false, false, false),
+        Card(CardId.CANONNIER, 3, 4, CardFaction.HUMAN,purchaseLimit = 2,true,false, false, true),
+        Card(CardId.CONTAGIEUX, 3, 3, CardFaction.DEMON, purchaseLimit = null, false, false, false,false),
+        Card(CardId.COSTAUD, 4, 3, CardFaction.BEAST, purchaseLimit = null, false, false, false,false),
+        Card(CardId.DEVOREURDESPOIRS, 3, 3, CardFaction.DEMON, purchaseLimit = null, false, false, false,false),
+        Card(CardId.DISCIPLEDELAFLAMME, 3, 4, CardFaction.HUMAN, purchaseLimit = null, false, false, false,false),
+        Card(CardId.FIDELE, 3, 3, CardFaction.HUMAN, purchaseLimit = null, false, false, false,false),
+        Card(CardId.GARDEVAUDOU, 3, 3, CardFaction.DEMON, purchaseLimit = null, false, false, false,false),
+        Card(CardId.GARDIENSACRE, 1, 5, CardFaction.BEAST, purchaseLimit = null, false, false, false,false),
+        Card(CardId.JONGLEURDEJANTE, 1, 3, CardFaction.DEMON, purchaseLimit = 2, false, false, false,false),
+        Card(CardId.MALIN, 4, 4, CardFaction.BEAST, purchaseLimit = null, false, false, false,false),
         Card(CardId.MANIPULATEUR, 2, 4, CardFaction.DEMON, purchaseLimit = null, false, false, false, false),
-        Card(CardId.MINEURDEFOND, 4, 5, CardFaction.BEAST, purchaseLimit = null, false, false, false, false),
-        Card(CardId.MOUCHERON, 1, 2, CardFaction.DEMON, purchaseLimit = null, true, false, false, false),
-        Card(CardId.REPONSE, 3, 4, CardFaction.BEAST, purchaseLimit = 2, false, false, false, false),
-        Card(CardId.SABOTEUR, 3, 5, CardFaction.HUMAN, purchaseLimit = null, false, false, false, false),
-        Card(CardId.SEIGNEURVAMPIRE, 7, 7, CardFaction.DEMON, purchaseLimit = null, false, false, false, false),
+        Card(CardId.MUSICIEN, 1, 2, CardFaction.HUMAN, purchaseLimit = 2, true, false, false,false),
+        Card(CardId.PALADIN, 4, 4, CardFaction.HUMAN, purchaseLimit = null, false, true, false,false),
+        Card(CardId.PERFIDE, 3, 3, CardFaction.DEMON, purchaseLimit = null, false, false, false,false),
+        Card(CardId.PORTEPAROLE, 2, 2, CardFaction.HUMAN, purchaseLimit = null, false, false, false,false),
+        Card(CardId.ROI, 4, 4, CardFaction.HUMAN, purchaseLimit = null, false, false, false,false),
+        Card(CardId.SAUVAGE, 4, 6, CardFaction.BEAST, purchaseLimit = null, false, false, false,false),
         Card(CardId.SULTAN, 1, 3, CardFaction.HUMAN, purchaseLimit = null, true, false, false, true),
-        Card(CardId.VISIONPERCANTE, 4, 4, CardFaction.BEAST, purchaseLimit = null, false, false, false, false),
-        Card(CardId.ESPIEGLE, 5, 5, CardFaction.BEAST, purchaseLimit = null, false, false, false, false),
+        Card(CardId.TISSEURDEMENSONGES, 3, 4, CardFaction.DEMON, purchaseLimit = null, false, false, false,false),
+        Card(CardId.TRAPPEUR, 6, 3, CardFaction.HUMAN, purchaseLimit = 1, false, true, false,false),
+        Card(CardId.REPRESAILLES, 3, 2, CardFaction.BEAST, purchaseLimit = null, false, false, false,false),
 
         // =====================================================
-        // MERCENAIRES SAISON
+        // Mission Solo et cartes de booster saison 1
+        // =====================================================
+
+        Card(CardId.ENIGME, 2, 3, CardFaction.BEAST, purchaseLimit = null, false, false, false, false),
+        Card(CardId.LAMEERRANTE, 3, 3, CardFaction.HUMAN, purchaseLimit = null, false, false, false,false),
+        Card(CardId.VISIONPERCANTE, 4, 4, CardFaction.BEAST, purchaseLimit = null, false, false, false, false),
+        Card(CardId.LYCANTHROPE, 3, 4, CardFaction.HUMAN, purchaseLimit = null, false, false, false, false),
+        Card(CardId.MOUCHERON, 1, 2, CardFaction.DEMON, purchaseLimit = null, true, false, false, false),
+        Card(CardId.SEIGNEURVAMPIRE, 7, 7, CardFaction.DEMON, purchaseLimit = null, false, false, false, false),
+
+        // =====================================================
+        // Mission Solo et cartes de booster saison 2
+        // =====================================================
+        Card(CardId.INVENTEUR, 2, 3, CardFaction.HUMAN, purchaseLimit = null, false, false, false, false),
+        Card(CardId.REPONSE, 3, 4, CardFaction.BEAST, purchaseLimit = 2, false, false, false, false),
+        Card(CardId.GLADIATEURDAMNE, 4, 4, CardFaction.DEMON, purchaseLimit = null, false, false, false, false),
+        Card(CardId.MAITREDESPOTIONS, 5, 5, CardFaction.DEMON, purchaseLimit = null, false, false, false, false),
+        Card(CardId.MINEURDEFOND, 4, 5, CardFaction.BEAST, purchaseLimit = null, false, false, false, false),
+        Card(CardId.SABOTEUR, 3, 5, CardFaction.HUMAN, purchaseLimit = null, false, false, false, false),
+
+        // =====================================================
+        // Cartes de booster saison 3
+        // =====================================================
+
+        // =====================================================
+        // Cartes de booster saison 4
+        // =====================================================
+
+        // =====================================================
+        // Cartes de booster saison 5
+        // =====================================================
+
+        // =====================================================
+        // Cartes de booster saison 6
+        // =====================================================
+        // Card(CardId.INSTINCT, 4, 3, CardFaction.HUMAN, purchaseLimit = null, false, true, false, false),
+
+        // =====================================================
+        // Cartes de booster saison 7
+        // =====================================================
+
+        // =====================================================
+        // Cartes de booster saison 8
+        // =====================================================
+
+        // =====================================================
+        // Cartes de booster saison 9
+        // =====================================================
+
+        // =====================================================
+        // Cartes de booster saison 10
+        // =====================================================
+
+        // =====================================================
+        // Cartes de booster saison 11
+        // =====================================================
+
+        // =====================================================
+        // Cartes de booster saison 12
+        // =====================================================
+
+        // =====================================================
+        // Cartes de booster saison 13
+        // =====================================================
+
+        // =====================================================
+        // Cartes de booster saison 14
+        // =====================================================
+
+        // =====================================================
+        // Cartes de booster saison 15
+        // =====================================================
+
+        // =====================================================
+        // Cartes de booster saison 16
+        // =====================================================
+
+        // =====================================================
+        // Cartes de booster saison 17
+        // =====================================================
+
+        // =====================================================
+        // Cartes de booster saison 18
+        // =====================================================
+
+        // =====================================================
+        // Cartes de booster saison 19
+        // =====================================================
+
+        // =====================================================
+        // Cartes de booster saison 20
+        // =====================================================
+
+        // =====================================================
+        // Cartes de booster saison 21
+        // =====================================================
+
+        // =====================================================
+        // Cartes de booster saison 22
+        // =====================================================
+
+        // =====================================================
+        // Cartes de booster saison 23
+        // =====================================================
+
+        // =====================================================
+        // Cartes de booster saison 24
+        // =====================================================
+
+        // =====================================================
+        // cartes liée saison
+        // =====================================================
+        // S0
+        Card(CardId.GOLEMDOCRE,8,0, CardFaction.MERCENARY, purchaseLimit = null, false, false, false,false),
+        Card(CardId.BOULETDECANON, 1, 0, CardFaction.MERCENARY, purchaseLimit = null, false, false, false,false),
+        // S1
+        Card(CardId.LOUPGAROU, 5, 0, CardFaction.DEMON,purchaseLimit = null, false, false, false,false),
+
+        // S??
+        //Card(CardId.ARAIGNEEGOLIATH, 5, 0, CardFaction.BEAST, purchaseLimit = null, false, false, true,false),
+
+
+        // =====================================================
+        // MERCENAIRES SAISON 1
         // =====================================================
         Card(CardId.MERCENARY_TNT, 5, 3, CardFaction.MERCENARY, purchaseLimit = 1, false, false, false,false),
         Card(CardId.MERCENARY_ASSASSIN, 5, 3, CardFaction.MERCENARY, purchaseLimit = 1, false, false, false,false),
@@ -137,6 +252,7 @@ object CardCatalog {
         CardId.OEUFDARAIGNEE,
         CardId.GOLEMDOCRE,
         CardId.BOULETDECANON,
+        CardId.LOUPGAROU,
 
         // =====================================================
         // MERCENAIRES (UNIQUEMENT MODE SAISON)

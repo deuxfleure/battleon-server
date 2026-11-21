@@ -80,6 +80,8 @@ enum class CardId {
     OEIL,
     TRAPPEUR,
     EMPOISONNEUSE,
+    CANONNIER,
+    LOUPGAROU,
 
     BATARD,
     ENIGME,
