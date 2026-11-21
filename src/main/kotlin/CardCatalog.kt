@@ -59,7 +59,7 @@ object CardCatalog {
         Card(CardId.THERMOGUERRIER, 2, 4,CardFaction.HUMAN, purchaseLimit = null,false,false,false,false),
 
         // =====================================================
-        // Mission Solo et cartes de booster de base
+        // Mission Solo et cartes de booster de base (Saison 0)
         // =====================================================
 
         Card(CardId.EMPOISONNEUSE, 2, 4, CardFaction.DEMON, purchaseLimit = null, true, false, false,true),
@@ -105,7 +105,7 @@ object CardCatalog {
 
         Card(CardId.ENIGME, 2, 3, CardFaction.BEAST, purchaseLimit = null, false, false, false, false),
         Card(CardId.LAMEERRANTE, 3, 3, CardFaction.HUMAN, purchaseLimit = null, false, false, false,false),
-        Card(CardId.VISIONPERCANTE, 4, 4, CardFaction.BEAST, purchaseLimit = null, false, false, false, false),
+        Card(CardId.VISIONPERCANTE, 5, 4, CardFaction.BEAST, purchaseLimit = null, false, false, false, false),
         Card(CardId.LYCANTHROPE, 3, 4, CardFaction.HUMAN, purchaseLimit = null, false, false, false, false),
         Card(CardId.MOUCHERON, 1, 2, CardFaction.DEMON, purchaseLimit = null, true, false, false, false),
         Card(CardId.SEIGNEURVAMPIRE, 7, 7, CardFaction.DEMON, purchaseLimit = null, false, false, false, false),
