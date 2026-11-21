@@ -329,24 +329,26 @@ object UserService {
                 val cardIdString = card.id.name
                 val ownedRow = ownedRowsByCardId[cardIdString]
 
-                val ownedCopies = ownedRow
-                    ?.get(UserCardCollection.ownedCopies)
-                    ?: 0
-
                 val canBeTried = !CardCatalog.isExcludedFromShop(card.id)
+
+                val maxCopies = if (canBeTried) {
+                    card.purchaseLimit ?: 3
+                } else {
+                    1
+                }
+
+                val ownedCopies = (ownedRow
+                    ?.get(UserCardCollection.ownedCopies)
+                    ?: 0).coerceIn(0, maxCopies)
 
                 PlayerCollectionCard(
                     cardId = cardIdString,
-                    isOwned = ownedCopies > 0,
+                    isOwned = ownedRow?.get(UserCardCollection.isOwned) ?: false,
                     selectedSkinId = ownedRow
                         ?.get(UserCardCollection.selectedSkinId),
                     canBeTried = canBeTried,
                     ownedCopies = ownedCopies,
-                    maxCopies = if (canBeTried) {
-                        card.purchaseLimit ?: 3
-                    } else {
-                        1
-                    },
+                    maxCopies = maxCopies,
                     cost = card.cost,
                     power = card.power,
                     faction = card.faction.name
