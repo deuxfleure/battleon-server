@@ -323,6 +323,50 @@ fun Application.configureRouting() {
             }
 
 
+            // TODO TEMP_BOOSTER_TEST : Supprimer cette route avant la sortie publique.
+            post("/shop/test/reset-boosters") {
+
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal!!.payload.getClaim("userId").asInt()
+
+                if (!BoosterTestService.isAllowed(userId)) {
+                    call.respond(
+                        HttpStatusCode.Forbidden,
+                        mapOf("error" to "Compte non autorisé")
+                    )
+                    return@post
+                }
+
+                val request = call.receive<BoosterTestResetRequest>()
+
+                if (request.gems !in 0..1000000) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Montant de gemmes invalide")
+                    )
+                    return@post
+                }
+
+                val success = BoosterTestService.reset(
+                    userId = userId,
+                    gems = request.gems
+                )
+
+                if (success) {
+                    call.respond(
+                        HttpStatusCode.OK,
+                        mapOf("message" to "Réinitialisation réussie")
+                    )
+                } else {
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        mapOf("error" to "Profil introuvable")
+                    )
+                }
+            }
+
+
+
             post("/shop/redeem-code") {
                 val principal = call.principal<JWTPrincipal>()
                 val userId = principal!!.payload.getClaim("userId").asInt()
