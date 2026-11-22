@@ -4,10 +4,27 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class CardId {
+    // =====================================================
+    // cartes de base
+    // =====================================================
     COLLECTOR,
     WARRIOR,
     CURSED,
     HEALER,
+
+    // =====================================================
+    // cartes liée de base
+    // =====================================================
+    SQUELETTE_HANTE,
+    SQUELETTE_MALEDICTION,
+    SQUELETTE_FAIBLESSE,
+    ARAIGNEESOLDAT,
+    NOURRICEARAIGNEE,
+    OEUFDARAIGNEE,
+
+    // =====================================================
+    // cartes starter
+    // =====================================================
     AGILE,
     ARAIGNEEGEANTE,
     BULLDOZER,
@@ -38,70 +55,85 @@ enum class CardId {
     SENTINELLE,
     TACTICIEN,
     THERMOGUERRIER,
-    SQUELETTE_HANTE,
-    SQUELETTE_MALEDICTION,
-    SQUELETTE_FAIBLESSE,
-    ARAIGNEESOLDAT,
-    NOURRICEARAIGNEE,
-    OEUFDARAIGNEE,
-    GOLEMDOCRE,
-    BOULETDECANON,
 
-    // SET Solo
-    EXPERIENCEDELABORATOIRE,
-    COSTAUD,
-    REPRESAILLES,
-    MUSICIEN,
-    FIDELE,
-    GARDEVAUDOU,
-    JONGLEURDEJANTE,
+    // =====================================================
+    // Mission Solo et cartes de booster de base (Saison 0)
+    // =====================================================
+    EMPOISONNEUSE,
+    ONIFLEAUDEGIVRE,
+    ARAIGNEEJUVENILE,
     ECUMEDESMERS,
-    TIQUE,
-    ROI,
+    ENCHAINE,
+    ENRAGE,
+    ESPIEGLE,
     EVEQUE,
-    DEVOREURDESPOIRS,
-    MALIN,
+    EXPERIENCEDELABORATOIRE,
+    OEIL,
     FORCETRANQUILLE,
     REINEARAIGNEE,
     SOURNOISE,
-    CONTAGIEUX,
-    TISSEURDEMENSONGES,
-    ENCHAINE,
-    GARDIENSACRE,
-    PORTEPAROLE,
-    DISCIPLEDELAFLAMME,
-    LAMEERRANTE,
-    ONIFLEAUDEGIVRE,
-    SAUVAGE,
-    ARAIGNEEJUVENILE,
-    PALADIN,
-    ENRAGE,
-    PERFIDE,
-    OEIL,
-    TRAPPEUR,
-    EMPOISONNEUSE,
+    TIQUE,
+    BATARD,
     CANONNIER,
+    CONTAGIEUX,
+    COSTAUD,
+    DEVOREURDESPOIRS,
+    DISCIPLEDELAFLAMME,
+    FIDELE,
+    GARDEVAUDOU,
+    GARDIENSACRE,
+    JONGLEURDEJANTE,
+    MALIN,
+    MANIPULATEUR,
+    MUSICIEN,
+    PALADIN,
+    PERFIDE,
+    PORTEPAROLE,
+    ROI,
+    SAUVAGE,
+    SULTAN,
+    TISSEURDEMENSONGES,
+    TRAPPEUR,
+    REPRESAILLES,
+
+    // =====================================================
+    // Mission Solo et cartes de booster saison 1
+    // =====================================================
+    ENIGME,
+    LAMEERRANTE,
+    VISIONPERCANTE,
+    LYCANTHROPE,
+    MOUCHERON,
+    SEIGNEURVAMPIRE,
+
+    // =====================================================
+    // Mission Solo et cartes de booster saison 2
+    // =====================================================
+    // À activer lors de la sortie de la Saison 2
+    // INVENTEUR,
+    // REPONSE,
+    // GLADIATEURDAMNE,
+    // MAITREDESPOTIONS,
+    // MINEURDEFOND,
+    // SABOTEUR,
+
+    // =====================================================
+    // Cartes de booster saison 6
+    // =====================================================
+    // INSTINCT,
+
+    // =====================================================
+    // cartes liée saison
+    // =====================================================
+    // S0
+    GOLEMDOCRE,
+    BOULETDECANON,
+    // S1
     LOUPGAROU,
 
-    BATARD,
-    ENIGME,
-    GLADIATEURDAMNE,
-    INSTINCT,
-    INVENTEUR,
-    LYCANTHROPE,
-    MAITREDESPOTIONS,
-    MANIPULATEUR,
-    MINEURDEFOND,
-    MOUCHERON,
-    REPONSE,
-    SABOTEUR,
-    SEIGNEURVAMPIRE,
-    SULTAN,
-    VISIONPERCANTE,
-    ESPIEGLE,
-
-
-    // SEASON Mercenary
+    // =====================================================
+    // MERCENAIRES SAISON 1
+    // =====================================================
     MERCENARY_TNT,
     MERCENARY_ASSASSIN,
     MERCENARY_COLOSSE,
@@ -111,6 +143,7 @@ enum class CardId {
     MERCENARY_PORTEUR_DE_PESTE,
     MERCENARY_PSYCHOPATHE,
     MERCENARY_VOLEUR,
+
 }
 
 @Serializable

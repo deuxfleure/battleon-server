@@ -113,12 +113,12 @@ object CardCatalog {
         // =====================================================
         // Mission Solo et cartes de booster saison 2
         // =====================================================
-        Card(CardId.INVENTEUR, 2, 3, CardFaction.HUMAN, purchaseLimit = null, false, false, false, false),
-        Card(CardId.REPONSE, 3, 4, CardFaction.BEAST, purchaseLimit = 2, false, false, false, false),
-        Card(CardId.GLADIATEURDAMNE, 4, 4, CardFaction.DEMON, purchaseLimit = null, false, false, false, false),
-        Card(CardId.MAITREDESPOTIONS, 5, 5, CardFaction.DEMON, purchaseLimit = null, false, false, false, false),
-        Card(CardId.MINEURDEFOND, 4, 5, CardFaction.BEAST, purchaseLimit = null, false, false, false, false),
-        Card(CardId.SABOTEUR, 3, 5, CardFaction.HUMAN, purchaseLimit = null, false, false, false, false),
+        //Card(CardId.INVENTEUR, 2, 3, CardFaction.HUMAN, purchaseLimit = null, false, false, false, false),
+        //Card(CardId.REPONSE, 3, 4, CardFaction.BEAST, purchaseLimit = 2, false, false, false, false),
+        //Card(CardId.GLADIATEURDAMNE, 4, 4, CardFaction.DEMON, purchaseLimit = null, false, false, false, false),
+        //Card(CardId.MAITREDESPOTIONS, 5, 5, CardFaction.DEMON, purchaseLimit = null, false, false, false, false),
+        //Card(CardId.MINEURDEFOND, 4, 5, CardFaction.BEAST, purchaseLimit = null, false, false, false, false),
+        //Card(CardId.SABOTEUR, 3, 5, CardFaction.HUMAN, purchaseLimit = null, false, false, false, false),
 
         // =====================================================
         // Cartes de booster saison 3
