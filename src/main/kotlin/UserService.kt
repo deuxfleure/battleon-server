@@ -110,6 +110,13 @@ object UserService {
                 .where { UserProfile.userAuthId eq userId }
                 .singleOrNull()
 
+            val pityByType = UserBoosterProgress.selectAll()
+                .where { UserBoosterProgress.userAuthId eq userId }
+                .associate { row ->
+                    row[UserBoosterProgress.boosterType] to
+                            row[UserBoosterProgress.boostersWithoutRare]
+                }
+
             if (authRow != null && profileRow != null) {
                 MeResponse(
                     id = authRow[UserAuth.id],
@@ -130,6 +137,9 @@ object UserService {
                     email = profileRow[UserProfile.email],
                     hasBattlePass = profileRow[UserProfile.hasBattlePass],
                     battlePassCoupons = profileRow[UserProfile.battlePassCoupons],
+                    permanentRarePity = pityByType[BoosterType.PERMANENT] ?: 0,
+                    seasonalRarePity = pityByType[BoosterType.SEASONAL] ?: 0,
+                    seasonalBoosterAvailable = SeasonConfig.isSeasonalBoosterAvailable(),
                 )
             } else {
                 null

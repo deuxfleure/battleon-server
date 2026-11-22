@@ -21,6 +21,9 @@ data class MeResponse(
     val email: String?,
     val hasBattlePass: Boolean,
     val battlePassCoupons: Int,
+    val permanentRarePity: Int,
+    val seasonalRarePity: Int,
+    val seasonalBoosterAvailable: Boolean,
     val language: String,
 )
 
