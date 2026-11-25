@@ -27,7 +27,8 @@ enum class PaquetValidationErrorType {
     INSUFFICIENT_OWNED_COPIES,
     COPY_LIMIT_EXCEEDED,
     PERMANENT_RANKED_BAN,
-    WEEKLY_RANKED_BAN
+    WEEKLY_RANKED_BAN,
+    STANDARD_PVP_BAN
 }
 
 @Serializable
