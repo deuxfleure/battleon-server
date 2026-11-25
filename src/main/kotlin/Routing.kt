@@ -256,6 +256,67 @@ fun Application.configureRouting() {
                 call.respond(mapOf("cards" to collection))
             }
 
+
+            // =====================================================
+            // PAQUETS
+            // =====================================================
+
+            get("/paquets") {
+
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal!!.payload.getClaim("userId").asInt()
+
+                val slots = PaquetService.getPaquetSlots(userId)
+
+                call.respond(HttpStatusCode.OK, slots)
+            }
+
+            post("/paquets/{slotNumber}/save") {
+
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal!!.payload.getClaim("userId").asInt()
+
+                val slotNumber = call.parameters["slotNumber"]?.toIntOrNull()
+
+                if (
+                    slotNumber == null ||
+                    !PaquetRules.isValidSlotNumber(slotNumber)
+                ) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        SavePaquetResponse(
+                            success = false,
+                            error = "INVALID_SLOT_NUMBER"
+                        )
+                    )
+                    return@post
+                }
+
+                val request = call.receive<SavePaquetRequest>()
+
+                val result = PaquetService.savePaquet(
+                    userId = userId,
+                    slotNumber = slotNumber,
+                    request = request
+                )
+
+                val status = when {
+                    result.success -> HttpStatusCode.OK
+
+                    result.error == "SLOT_LOCKED" ->
+                        HttpStatusCode.Forbidden
+
+                    result.error == "SLOT_NOT_FOUND" ||
+                            result.error == "PROFILE_NOT_FOUND" ->
+                        HttpStatusCode.NotFound
+
+                    else -> HttpStatusCode.BadRequest
+                }
+
+                call.respond(status, result)
+            }
+
+
             post("/profile/activate-battlepass") {
                 val principal = call.principal<JWTPrincipal>()
                 val userId = principal!!.payload.getClaim("userId").asInt()

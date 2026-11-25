@@ -5,6 +5,8 @@ import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 // TODO TEMP_BOOSTER_TEST : Supprimer ce fichier avant la sortie publique.
 
@@ -52,7 +54,26 @@ object BoosterTestService {
                 it[updatedAtMillis] = 0L
             }
 
-            // 2. Reverrouiller le septième emplacement.
+            // 2a. Restaurer le paquet tutoriel.
+            UserPaquetSlots.update({
+                (UserPaquetSlots.userAuthId eq userId) and
+                        (UserPaquetSlots.slotNumber eq 1)
+            }) {
+                it[isUnlocked] = true
+                it[paquetName] = StarterPaquet.NAME
+                it[paquetCards] = Json.encodeToString(StarterPaquet.CARDS)
+                it[updatedAtMillis] = System.currentTimeMillis()
+            }
+
+            // 2b. Garantir la disponibilité du deuxième emplacement.
+            UserPaquetSlots.update({
+                (UserPaquetSlots.userAuthId eq userId) and
+                        (UserPaquetSlots.slotNumber eq 2)
+            }) {
+                it[isUnlocked] = true
+            }
+
+            // 2c. Reverrouiller le septième emplacement.
             UserPaquetSlots.update({
                 (UserPaquetSlots.userAuthId eq userId) and
                         (UserPaquetSlots.slotNumber eq 7)
