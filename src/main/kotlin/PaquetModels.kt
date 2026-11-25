@@ -67,3 +67,11 @@ data class SavePaquetRequest(
     val paquetName: String?,
     val paquetCards: List<PaquetCardEntry>
 )
+
+@Serializable
+data class SavePaquetResponse(
+    val success: Boolean,
+    val error: String? = null,
+    val slot: PaquetSlotDto? = null,
+    val validation: PaquetValidationResult? = null
+)
