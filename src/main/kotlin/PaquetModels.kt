@@ -42,6 +42,7 @@ data class PaquetValidationError(
 @Serializable
 data class PaquetValidationResult(
     val totalCards: Int,
+    val canBeSaved: Boolean,
     val standardReady: Boolean,
     val rankedReady: Boolean,
     val status: PaquetStatus,

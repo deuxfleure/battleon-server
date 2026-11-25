@@ -16,6 +16,25 @@ object StandardPvpBans {
         CardId.MERCENARY_PORTEUR_DE_PESTE,
         CardId.MERCENARY_PSYCHOPATHE,
         CardId.MERCENARY_VOLEUR,
+
+        // =====================================================
+        // cartes liée de base
+        // =====================================================
+        CardId.SQUELETTE_HANTE,
+        CardId.SQUELETTE_MALEDICTION,
+        CardId.SQUELETTE_FAIBLESSE,
+        CardId.ARAIGNEESOLDAT,
+        CardId.NOURRICEARAIGNEE,
+        CardId.OEUFDARAIGNEE,
+
+        // =====================================================
+        // cartes liée saison
+        // =====================================================
+        // S0
+        CardId.GOLEMDOCRE,
+        CardId.BOULETDECANON,
+        // S1
+        CardId.LOUPGAROU,
     )
 }
 
