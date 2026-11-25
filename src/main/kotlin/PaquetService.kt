@@ -37,6 +37,18 @@ object PaquetService {
         }
     }
 
+    fun getRules(): PaquetRulesDto {
+        return PaquetRulesDto(
+            minCards = PaquetRules.MIN_CARDS,
+            maxCards = PaquetRules.MAX_CARDS,
+            maxNameLength = PaquetRules.MAX_NAME_LENGTH,
+            banVersion = RankedBanService.getBanVersion(),
+            standardPvpBannedCards = StandardPvpBans.BANNED_CARDS,
+            permanentlyRankedBannedCards = PermanentRankedBans.BANNED_CARDS,
+            weeklyRankedBannedCards = WeeklyRankedBans.BANNED_CARDS
+        )
+    }
+
     // =====================================================
     // DISPONIBILITE D'UN EMPLACEMENT
     // =====================================================

@@ -75,3 +75,14 @@ data class SavePaquetResponse(
     val slot: PaquetSlotDto? = null,
     val validation: PaquetValidationResult? = null
 )
+
+@Serializable
+data class PaquetRulesDto(
+    val minCards: Int,
+    val maxCards: Int,
+    val maxNameLength: Int,
+    val banVersion: Int,
+    val standardPvpBannedCards: Set<CardId>,
+    val permanentlyRankedBannedCards: Set<CardId>,
+    val weeklyRankedBannedCards: Set<CardId>
+)

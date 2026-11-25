@@ -261,6 +261,13 @@ fun Application.configureRouting() {
             // PAQUETS
             // =====================================================
 
+            get("/paquets/rules") {
+                call.respond(
+                    HttpStatusCode.OK,
+                    PaquetService.getRules()
+                )
+            }
+
             get("/paquets") {
 
                 val principal = call.principal<JWTPrincipal>()
