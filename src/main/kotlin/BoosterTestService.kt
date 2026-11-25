@@ -40,12 +40,12 @@ object BoosterTestService {
             // Complète les éventuelles données manquantes.
             PlayerProgressInitializer.initializePlayer(userId)
 
-            // 1. Vider tous les decks sauvegardés.
-            UserDeckSlots.update({
-                UserDeckSlots.userAuthId eq userId
+            // 1. Vider tous les paquets sauvegardés.
+            UserPaquetSlots.update({
+                UserPaquetSlots.userAuthId eq userId
             }) {
-                it[deckName] = null
-                it[deckCards] = "[]"
+                it[paquetName] = null
+                it[paquetCards] = "[]"
                 it[standardReady] = false
                 it[rankedReady] = false
                 it[validatedBanVersion] = 0
@@ -53,9 +53,9 @@ object BoosterTestService {
             }
 
             // 2. Reverrouiller le septième emplacement.
-            UserDeckSlots.update({
-                (UserDeckSlots.userAuthId eq userId) and
-                        (UserDeckSlots.slotNumber eq 7)
+            UserPaquetSlots.update({
+                (UserPaquetSlots.userAuthId eq userId) and
+                        (UserPaquetSlots.slotNumber eq 7)
             }) {
                 it[isUnlocked] = false
             }

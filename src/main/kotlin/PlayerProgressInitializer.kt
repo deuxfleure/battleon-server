@@ -1,8 +1,6 @@
 
 package com.battleon
 
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -27,22 +25,22 @@ object PlayerProgressInitializer {
                 }
             }
 
-            // Sept emplacements de deck.
+            // Sept emplacements de paquet.
             for (slot in 1..7) {
                 val source = when (slot) {
-                    in 1..4 -> DeckUnlockSource.BASE
-                    5 -> DeckUnlockSource.BATTLE_PASS
-                    6 -> DeckUnlockSource.PURCHASE
-                    else -> DeckUnlockSource.BOOSTER
+                    in 1..4 -> PaquetUnlockSource.BASE
+                    5 -> PaquetUnlockSource.BATTLE_PASS
+                    6 -> PaquetUnlockSource.PURCHASE
+                    else -> PaquetUnlockSource.BOOSTER
                 }
 
-                UserDeckSlots.insertIgnore {
+                UserPaquetSlots.insertIgnore {
                     it[userAuthId] = userId
                     it[slotNumber] = slot
                     it[unlockSource] = source
                     it[isUnlocked] = slot in 1..4
-                    it[deckName] = null
-                    it[deckCards] = "[]"
+                    it[paquetName] = null
+                    it[paquetCards] = "[]"
                     it[standardReady] = false
                     it[rankedReady] = false
                     it[validatedBanVersion] = 0

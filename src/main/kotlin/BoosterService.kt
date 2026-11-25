@@ -5,7 +5,6 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.random.Random
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
@@ -31,7 +30,7 @@ object BoosterService {
 
     private const val BOOSTER_PRICE = 1000
     private const val RARE_CHANCE = 10
-    private const val DECK_SLOT_CHANCE = 1
+    private const val PAQUET_SLOT_CHANCE = 1
     private const val RARE_PITY = 10
     private const val COMMON_PITY = 3
 
@@ -173,11 +172,11 @@ object BoosterService {
             .singleOrNull()
             ?: error("Progression booster manquante : $userId / $type")
 
-        val slot7 = UserDeckSlots
+        val slot7 = UserPaquetSlots
             .selectAll()
             .where {
-                (UserDeckSlots.userAuthId eq userId) and
-                        (UserDeckSlots.slotNumber eq 7)
+                (UserPaquetSlots.userAuthId eq userId) and
+                        (UserPaquetSlots.slotNumber eq 7)
             }
             .singleOrNull()
             ?: error("Emplacement 7 manquant pour $userId")
@@ -294,16 +293,16 @@ object BoosterService {
 
         fun drawRare(): CardId = rares.random()
 
-        // Récompense 1 : chance de débloquer le 7e deck.
-        val unlockDeck =
-            !slot7[UserDeckSlots.isUnlocked] &&
-                    Random.nextInt(100) < DECK_SLOT_CHANCE
+        // Récompense 1 : chance de débloquer le 7e paquet.
+        val unlockPaquet =
+            !slot7[UserPaquetSlots.isUnlocked] &&
+                    Random.nextInt(100) < PAQUET_SLOT_CHANCE
 
-        if (unlockDeck) {
-            val updated = UserDeckSlots.update({
-                (UserDeckSlots.userAuthId eq userId) and
-                        (UserDeckSlots.slotNumber eq 7) and
-                        (UserDeckSlots.isUnlocked eq false)
+        if (unlockPaquet) {
+            val updated = UserPaquetSlots.update({
+                (UserPaquetSlots.userAuthId eq userId) and
+                        (UserPaquetSlots.slotNumber eq 7) and
+                        (UserPaquetSlots.isUnlocked eq false)
             }) {
                 it[isUnlocked] = true
             }
@@ -312,7 +311,7 @@ object BoosterService {
                 "Impossible de débloquer l'emplacement 7"
             }
 
-            rewards += BoosterReward(type = "DECK_SLOT_7")
+            rewards += BoosterReward(type = "PAQUET_SLOT_7")
         } else {
             val rare = Random.nextInt(100) < RARE_CHANCE
             grantCard(

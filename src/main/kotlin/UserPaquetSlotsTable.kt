@@ -3,21 +3,21 @@ package com.battleon
 
 import org.jetbrains.exposed.sql.Table
 
-enum class DeckUnlockSource {
+enum class PaquetUnlockSource {
     BASE,
     BATTLE_PASS,
     PURCHASE,
     BOOSTER
 }
 
-object UserDeckSlots : Table("user_deck_slots") {
+object UserPaquetSlots : Table("user_paquet_slots") {
 
     val id = integer("id").autoIncrement()
     val userAuthId = integer("user_auth_id")
 
     val slotNumber = integer("slot_number")
 
-    val unlockSource = enumerationByName<DeckUnlockSource>(
+    val unlockSource = enumerationByName<PaquetUnlockSource>(
         "unlock_source",
         20
     )
@@ -26,12 +26,12 @@ object UserDeckSlots : Table("user_deck_slots") {
     // Le slot Battle Pass est disponible selon l'état du pass.
     val isUnlocked = bool("is_unlocked").default(false)
 
-    val deckName = varchar("deck_name", 60).nullable()
+    val paquetName = varchar("paquet_name", 60).nullable()
 
     // Composition enregistrée, sérialisée en JSON.
-    val deckCards = text("deck_cards").default("[]")
+    val paquetCards = text("paquet_cards").default("[]")
 
-    // Validité des decks.
+    // Validité des paquets.
     val standardReady = bool("standard_ready").default(false)
     val rankedReady = bool("ranked_ready").default(false)
 

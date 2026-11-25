@@ -24,7 +24,7 @@ object DatabaseFactory {
                 UserProfileCosmetics,
                 PromoCodes,
                 UserBoosterProgress,
-                UserDeckSlots,
+                UserPaquetSlots,
                 UserSoloMissionProgress,
                 UserRunes,
                 UserSoloRuneLoadout,

@@ -1,6 +1,5 @@
 package com.battleon
 
-import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
@@ -173,11 +172,11 @@ object UserService {
 
             // Vérifier que le cinquième emplacement existe AVANT
             // de consommer le coupon.
-            val slotExists = UserDeckSlots
+            val slotExists = UserPaquetSlots
                 .selectAll()
                 .where {
-                    (UserDeckSlots.userAuthId eq userId) and
-                            (UserDeckSlots.slotNumber eq 5)
+                    (UserPaquetSlots.userAuthId eq userId) and
+                            (UserPaquetSlots.slotNumber eq 5)
                 }
                 .singleOrNull() != null
 
@@ -186,9 +185,9 @@ object UserService {
             }
 
             // Débloquer l'emplacement.
-            val updatedSlots = UserDeckSlots.update({
-                (UserDeckSlots.userAuthId eq userId) and
-                        (UserDeckSlots.slotNumber eq 5)
+            val updatedSlots = UserPaquetSlots.update({
+                (UserPaquetSlots.userAuthId eq userId) and
+                        (UserPaquetSlots.slotNumber eq 5)
             }) {
                 it[isUnlocked] = true
             }

@@ -17,7 +17,7 @@ import com.battleon.solo.SoloRuneLoadoutUpdateResult
 
 
 // !!!!!!!!!!!!!!!!!!!! A METTRE A JOUR A CHAQUE NOUVELLE VERSION !!!!!!!!!!!!!!!!!!!!!!!!!!!!
-private const val MIN_SUPPORTED_APP_VERSION_CODE = 202 //0.2.02
+private const val MIN_SUPPORTED_APP_VERSION_CODE = 205 //0.2.05
 
 private fun GameState.withServerNow(): GameState {
     return GameManager.withAmbushAvailability(this).copy(
