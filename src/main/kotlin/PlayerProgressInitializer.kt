@@ -1,8 +1,12 @@
 
 package com.battleon
 
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.update
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object PlayerProgressInitializer {
@@ -15,6 +19,7 @@ object PlayerProgressInitializer {
      */
     fun initializePlayer(userId: Int) {
         transaction {
+
             // Deux compteurs indépendants pour les boosters.
             BoosterType.entries.forEach { type ->
                 UserBoosterProgress.insertIgnore {
@@ -26,33 +31,71 @@ object PlayerProgressInitializer {
             }
 
             // Sept emplacements de paquet.
-            for (slot in 1..7) {
+            for (slot in 1..PaquetRules.SLOT_COUNT) {
+
                 val source = when (slot) {
-                    in 1..4 -> PaquetUnlockSource.BASE
+                    in 1..2 -> PaquetUnlockSource.BASE
+                    in 3..4 -> PaquetUnlockSource.PROGRESSION
                     5 -> PaquetUnlockSource.BATTLE_PASS
                     6 -> PaquetUnlockSource.PURCHASE
-                    else -> PaquetUnlockSource.BOOSTER
+                    7 -> PaquetUnlockSource.BOOSTER
+                    else -> error("Emplacement de paquet inconnu")
                 }
 
                 UserPaquetSlots.insertIgnore {
                     it[userAuthId] = userId
                     it[slotNumber] = slot
                     it[unlockSource] = source
-                    it[isUnlocked] = slot in 1..4
-                    it[paquetName] = null
-                    it[paquetCards] = "[]"
+                    it[isUnlocked] = slot in 1..2
+
+                    it[paquetName] = if (slot == 1) {
+                        StarterPaquet.NAME
+                    } else {
+                        null
+                    }
+
+                    it[paquetCards] = if (slot == 1) {
+                        Json.encodeToString(StarterPaquet.CARDS)
+                    } else {
+                        "[]"
+                    }
+
                     it[standardReady] = false
                     it[rankedReady] = false
                     it[validatedBanVersion] = 0
-                    it[updatedAtMillis] = 0L
+
+                    it[updatedAtMillis] = if (slot == 1) {
+                        System.currentTimeMillis()
+                    } else {
+                        0L
+                    }
                 }
+            }
+
+            // Attribution du paquet tutoriel aux anciens comptes
+            // dont le premier emplacement n'a jamais été initialisé.
+            UserPaquetSlots.update({
+                (UserPaquetSlots.userAuthId eq userId) and
+                        (UserPaquetSlots.slotNumber eq 1) and
+                        (UserPaquetSlots.updatedAtMillis eq 0L) and
+                        (UserPaquetSlots.paquetName.isNull()) and
+                        (UserPaquetSlots.paquetCards eq "[]")
+            }) {
+                it[paquetName] = StarterPaquet.NAME
+                it[paquetCards] = Json.encodeToString(
+                    StarterPaquet.CARDS
+                )
+                it[standardReady] = false
+                it[rankedReady] = false
+                it[validatedBanVersion] = 0
+                it[updatedAtMillis] = System.currentTimeMillis()
             }
         }
     }
 
     /**
      * Initialise tous les comptes existants.
-     * Les lignes déjà présentes sont conservées.
+     * Les compositions déjà présentes sont conservées.
      */
     fun initializeAllPlayers() {
         val userIds = transaction {

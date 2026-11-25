@@ -5,6 +5,7 @@ import org.jetbrains.exposed.sql.Table
 
 enum class PaquetUnlockSource {
     BASE,
+    PROGRESSION,
     BATTLE_PASS,
     PURCHASE,
     BOOSTER

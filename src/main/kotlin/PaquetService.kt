@@ -52,6 +52,7 @@ object PaquetService {
 
             PaquetUnlockSource.BATTLE_PASS -> hasBattlePass
 
+            PaquetUnlockSource.PROGRESSION,
             PaquetUnlockSource.PURCHASE,
             PaquetUnlockSource.BOOSTER ->
                 row[UserPaquetSlots.isUnlocked]

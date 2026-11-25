@@ -9,6 +9,9 @@ object PaquetRules {
     const val DEFAULT_COPY_LIMIT = 3
     const val MAX_NAME_LENGTH = 20
 
+    const val SLOT_3_UNLOCK_LEVEL = 3
+    const val SLOT_4_UNLOCK_LEVEL = 6
+
     const val SLOT_COUNT = 7
 
     fun isValidSlotNumber(slotNumber: Int): Boolean {
